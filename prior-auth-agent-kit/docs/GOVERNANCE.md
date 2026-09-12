@@ -72,7 +72,7 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | Risk tier | Moderate (CHARTER.md) |
 | Setting | Medicare Advantage utilization review, lumbar MRI, Noridian LCD L34220 (rev. 2025-10-23) |
 | Foundation model and version | [vendor, model, version]; re-evaluated on [second version] |
-| Lifecycle state | [In development / Released 1.0 on date / Suspended / Retired] |
+| Lifecycle state | In development |
 | Last evaluation | [date], EVALUATION.md |
 | Kill switch owner | Enlai Weng |
 
