@@ -37,7 +37,7 @@ Monitoring sample for this portfolio build: the golden set plus any new cases au
 
 ## Escalation
 
-Single operator: Enlai Weng, [contact]. For a portfolio build this section exists to show the shape; it names one person.
+Single operator: Enlai Weng,  234715621+enlaiweng@users.noreply.github.com . For a portfolio build this section exists to show the shape; it names one person.
 
 ## Adoption note
 

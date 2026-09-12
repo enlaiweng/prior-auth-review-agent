@@ -4,7 +4,7 @@ The EDOM governance spine in one file: regime mapping, risk register, decision l
 
 ## Governance paragraph
 
-One person, [name], holds every role in this build, including the ones EDOM keeps separate (engineering lead, evaluation lead, compliance and risk). The line may be stopped by that person under the kill switch conditions in RUNBOOK.md. There is no quarterly review; the equivalent is the release 2 decision.
+One person, Enlai Weng, holds every role in this build, including the ones EDOM keeps separate (engineering lead, evaluation lead, compliance and risk). The line may be stopped by that person under the kill switch conditions in RUNBOOK.md. There is no quarterly review; the equivalent is the release 2 decision.
 
 ## Regime mapping
 
@@ -25,7 +25,7 @@ Not applicable to this build, stated so a reader does not look for them: ONC HTI
 
 ## Risk register
 
-Seeded from the NIST AI 600-1 generative AI risk categories that apply. Owner is [name] on every row. Status and date change as the build proceeds.
+Seeded from the NIST AI 600-1 generative AI risk categories that apply. Owner is Enlai Weng on every row. Status and date change as the build proceeds.
 
 | ID | Risk | Category (NIST 600-1) | Mitigation | Status | Date |
 |---|---|---|---|---|---|
@@ -51,7 +51,7 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | 2026-09-09 | Approve output retained and issued by the system without pre-review, after the regulatory check | Design authority | No rule located restricts automated approval; two tension points mitigated by design | Regime mapping above |
 | 2026-09-10 | Golden set fixed at 20 cases; commercial variant moved to release 2 | Scope cut | At 20 hours per week, completion probability 0.93 to 0.99 versus 0.76 with the 30-case scope held open | Load test; ADR-4 |
 | 2026-09-10 | Vendor-update re-evaluation planned as a named run | Loop (planned) | Cheapest demonstrated Phase 7 loop | EVAL_PLAN.md |
-| 2026-09-10 | Repository created; hours committed: [X] per week; models: [primary id], [second id]; ADR-6 answer: [ ] | Scope | Sets the hours assumption the week-two check tests against; pins the versions the version log tracks | ARCHITECTURE.md |
+| 2026-09-10 | Repository created; hours committed: [X] per week; models: [primary id], [second id]; ADR-6 answer: [ None ] | Scope | Sets the hours assumption the week-two check tests against; pins the versions the version log tracks | ARCHITECTURE.md |
 | 2026-09-10 | Charter signed; authority statement final | Gate | Phase 1 exit; no Phase 2 work before this commit | CHARTER.md |
 | 2026-09-11 | Demo surface chosen: [option]; ADR-1 [amended / unchanged] | Design authority | [ ] | ARCHITECTURE.md ADR-7 |
 | 2026-09-11 | Eval plan committed; thresholds fixed; criterion inventory verified against L34220 rev. 2025-10-23 | Gate | Phase 3 commitment precedes any agent work | EVAL_PLAN.md |
@@ -68,13 +68,13 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | Field | Value |
 |---|---|
 | Feature | Prior Auth Review Agent |
-| Owner | [name] |
+| Owner | Enlai Weng |
 | Risk tier | Moderate (CHARTER.md) |
 | Setting | Medicare Advantage utilization review, lumbar MRI, Noridian LCD L34220 (rev. 2025-10-23) |
 | Foundation model and version | [vendor, model, version]; re-evaluated on [second version] |
 | Lifecycle state | [In development / Released 1.0 on date / Suspended / Retired] |
 | Last evaluation | [date], EVALUATION.md |
-| Kill switch owner | [name] |
+| Kill switch owner | Enlai Weng |
 
 ## Sources for the regime mapping (checked 2026-09-09)
 

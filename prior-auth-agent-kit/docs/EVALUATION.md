@@ -58,7 +58,7 @@ Fields that do not apply to a synthetic-data portfolio build are marked "not app
 
 ### Identification and release
 
-Name: Prior Auth Review Agent. Developer: [name]. Version: [tag]. Release date: [date]. Contact: [email]. Regulatory status: not a medical device; decision support for a payer reviewer, on synthetic data.
+Name: Prior Auth Review Agent. Developer: Enlai Weng. Version: [tag]. Release date: [date]. Contact: [email]. Regulatory status: not a medical device; decision support for a payer reviewer, on synthetic data.
 
 ### Uses and directions
 

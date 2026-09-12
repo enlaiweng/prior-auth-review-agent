@@ -4,7 +4,6 @@ EDOM Phase 3 artifact, kept with the golden set. Shape follows Gebru et al., Dat
 
 ## Motivation
 
-Created to evaluate a prior authorization review agent against Medicare LCD L34220 (Lumbar MRI) when no public prior authorization case data exists. Authored by [name], [dates].
 
 ## Composition
 
@@ -12,7 +11,7 @@ Twenty cases. Each case is one FHIR R4 bundle (Patient, Condition, Procedure, Ob
 
 ## Labels and labeling protocol
 
-Per-criterion status (supported, unsupported, undeterminable) for every L34220 criterion applicable to the case, the record element supporting each status, the expected routing, and, for gap cases, the named missing item. Protocol: each case adjudicated against the policy text by [name] on [date], then re-adjudicated blind to the first pass after at least [7] days. Disagreements resolved by [rule: re-read the policy text; if still split, label undeterminable and route]. Second-pass agreement: [x of 20 cases identical at the routing level; y of z criterion statuses identical]. This is self-agreement by a single adjudicator, stated plainly.
+Per-criterion status (supported, unsupported, undeterminable) for every L34220 criterion applicable to the case, the record element supporting each status, the expected routing, and, for gap cases, the named missing item. Protocol: each case adjudicated against the policy text by Enlai Weng on [date], then re-adjudicated blind to the first pass after at least [7] days. Disagreements resolved by [rule: re-read the policy text; if still split, label undeterminable and route]. Second-pass agreement: [x of 20 cases identical at the routing level; y of z criterion statuses identical]. This is self-agreement by a single adjudicator, stated plainly.
 
 ## Provenance and generation
 
