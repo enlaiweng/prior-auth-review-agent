@@ -1,3 +1,4 @@
 /tools/
 /data/synthea/output/
 .venv/
+.DS_Store
