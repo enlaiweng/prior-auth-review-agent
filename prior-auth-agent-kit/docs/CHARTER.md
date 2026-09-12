@@ -2,7 +2,7 @@
 
 EDOM Phase 1 commitment. Written before design. Signed by the product owner, Enlai Weng, who holds every role on this build. Amended, not rewritten, if the workflow or the rules change.
 
-Committed on: [date of first commit].
+Committed on: Sept 12, 2026.
 
 ## Purpose
 
@@ -40,7 +40,7 @@ Release 2, after deployment: a commercial-payer variant requiring six weeks of c
 
 ## Constraints
 
-Clock: hard stop October 7, 2026, about four weeks from charter signature; may move to October 14 under the week-two rule below. Hours: [X] per week, dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4) gives a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope is a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
+Clock: hard stop October 7, 2026, about four weeks from charter signature; may move to October 14 under the week-two rule below. Hours: 10 per week, dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4) gives a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope is a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
 
 ## Success measures
 
@@ -76,4 +76,4 @@ UM nurse's worklist  <-- decision point; agent output appears here
 
 Intended use, users, population, and out-of-scope uses as stated above. Completed in EVALUATION.md after evaluation.
 
-Signed: Enlai Weng, [date].
+Signed: Enlai Weng, 9/12/2026.
