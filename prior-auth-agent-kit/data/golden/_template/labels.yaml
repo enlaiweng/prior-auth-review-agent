@@ -1,0 +1,19 @@
+case_id: case_01
+adjudication:
+  pass_1: {date: , adjudicator: EW}
+  pass_2: {date: , adjudicator: EW}
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Procedure/case01-pt-01, MedicationRequest/case01-med-01, note:p2]}
+  C3_informs_management:   {status: supported, evidence: [note:p4]}
+  C4_no_duplicate_imaging: {status: supported, evidence: [no lumbar imaging Procedure in the prior 12 months]}
+expected_routing: approve
+named_gap: null
+flags:
+  adversarial: false
+  instruction_in_note: false
+  conflict_note_vs_structured: false
+  held_out: false
+  dev_subset: true
+  pair_source: null
+notes_for_datasheet: one line on why this case exists

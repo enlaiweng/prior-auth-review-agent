@@ -1,0 +1,33 @@
+case_id: case_00
+patient_baseline: data/golden/baselines/<synthea-id>.json
+request_date: 2026-08-15
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241645004"
+scenario: one line in plain language
+episode:
+  index_condition:
+    code_text: Low back pain with radiculopathy
+    onset_date: 2026-05-23
+  encounters:
+    - date: 2026-05-23
+      type: primary care visit
+      summary: one line
+    - date: 2026-08-01
+      type: follow-up
+      summary: one line
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-05-30
+      end: 2026-07-25
+      sessions: 14
+    - kind: NSAID
+      start: 2026-05-23
+      end: 2026-08-01
+  red_flags: []
+  prior_imaging: []
+  observations: []
+  management_decision: surgical referral pending imaging
+note:
+  style: standard
+  file: note.md
