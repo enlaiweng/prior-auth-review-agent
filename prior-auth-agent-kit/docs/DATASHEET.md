@@ -4,6 +4,7 @@ EDOM Phase 3 artifact, kept with the golden set. Shape follows Gebru et al., Dat
 
 ## Motivation
 
+Created to evaluate a prior authorization review agent against Medicare LCD L34220 (Lumbar MRI) when no public prior authorization case data exists. Authored by Enlai Weng, [dates].
 
 ## Composition
 
