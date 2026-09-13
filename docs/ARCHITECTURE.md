@@ -18,7 +18,7 @@ At the decision point the reviewer sees, for every applicable criterion: status 
 
 Data sources: Synthea-generated patients (Apache 2.0) for demographics and baseline history; authored clinical episodes and notes written for each golden case; policy text from the CMS Medicare Coverage Database (Noridian LCD L34220 narrative, revision effective October 23, 2025, quoted with attribution; code tables not redistributed). No real patient data. Labeling: per-criterion adjudication by protocol (DATASHEET.md).
 
-Model: [vendor model and version]; a second version for the vendor-update re-evaluation: [version]. Retrieval: the policy text split by criterion and retrieved per case; cached so it is not re-sent per call. Structured output: a fixed decision schema validated before display. Vendor dependency chain: [model vendor], [orchestration platform], Synthea, HL7 FHIR validator.
+Model: claude-sonnet-5; a second version for the vendor-update re-evaluation: claude-sonnet-4-6. Retrieval: the policy text split by criterion and retrieved per case; cached so it is not re-sent per call. Structured output: a fixed decision schema validated before display. Vendor dependency chain: Anthropic, Claude API, Synthea, HL7 FHIR validator.
 
 Data flow with the sensitive-data boundary:
 
@@ -44,6 +44,6 @@ ADR-4 (2026-09-10). Golden set fixed at 20 cases from day one; commercial six-we
 
 ADR-5 (2026-09-03). No custom Synthea low-back-pain module. Reason: authored episodes are faster and more controllable for 20 cases.
 
-ADR-6 ([date]). [If a published prior authorization skill, FHIR server, or coverage server is used: name it, and state that the golden set, evaluation, and runbook are this project's contribution. If none is used, say so in one line.]
+ADR-6 (2026-09-13). No published prior authorization skill, FHIR server, or coverage server reused; the retrieval, adjudication logic, golden set, evaluation harness, and runbook are all original to this project.
 
 ADR-7 ([date]). Demo surface: [one of: hosted endpoint with a one-page viewer and audit list / command-line entry point writing static reports / workspace orchestration with a viewer]. Reason: [ ]. [If the hosted endpoint: ADR-1 is amended so that plumbing code (request intake, the model call with tools, rendering) may exist for deployment; the agent's behavior still lives in its specification, not in code.]
