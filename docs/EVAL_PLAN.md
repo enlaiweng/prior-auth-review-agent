@@ -2,7 +2,7 @@
 
 EDOM Phase 3 commitment. Written before build. The release decision in RELEASE_DECISION.md is signed against the thresholds here. Production thresholds for monitoring are a separate set at the end.
 
-Committed on: [date, before the first agent prompt is written].
+Committed on: 2026-09-14.
 
 ## Key question
 
@@ -15,7 +15,7 @@ The criteria the agent checks, from L34220 (revision effective October 23, 2025)
 C1. A red-flag indication is present. The LCD's list: major trauma; minor trauma in a potentially osteoporotic patient; history of cancer; fever; chills; unexplained weight loss; recent bacterial infection; IV drug abuse; immune suppression; pain that worsens when supine or at night; saddle anesthesia; recent onset of bladder dysfunction; clinically significant or progressive neurologic deficit in the lower extremity; unexpected laxity of the anal sphincter; perianal or perineal sensory loss; clinically significant motor weakness; other nerve root compromise. A red flag counts as supported when it is documented in the record (structured data or note); a red flag asserted only in narrative with nothing structured behind it is labeled undeterminable and the case routes.
 C2. For a non-red-flag condition, the patient "has not responded to a reasonable trial of conservative management lasting at least four weeks," and the MRI is being considered after at least one month of symptoms.
 C3. The study will inform medical decision-making: a surgical intervention or other aggressive treatment (for example intervertebral joint injection) is under consideration, and the findings would affect treatment choices.
-C4. The study is not a duplication of other imaging (such as a spinal CT) unless documentation supports the need for both, for example inconclusive findings on the prior study or a documented change in clinical status.
+C4. The study is not a duplication of other imaging (such as a spinal CT) unless documentation supports the need for both, for example inconclusive findings on the prior study.
 
 A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence.
 
@@ -78,7 +78,7 @@ The full set is run three times at the pinned model version and temperature befo
 
 ## Vendor-update re-evaluation
 
-The full golden set is run on a second model version [second model id] within seven days of release. Results go in EVALUATION.md's maintenance section and in CHANGELOG.md as a verification entry. This is the Phase 7 vendor-update loop, run once on purpose.
+The full golden set is run on a second model version claude-sonnet-4-6 within seven days of release. Results go in EVALUATION.md's maintenance section and in CHANGELOG.md as a verification entry. This is the Phase 7 vendor-update loop, run once on purpose.
 
 ## Error analysis
 

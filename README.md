@@ -6,6 +6,12 @@ It has three outputs: approve, request specific missing documentation, or route 
 
 Built on synthetic patients only. No real patient data anywhere in this repository.
 
+## What's under evaluation
+
+The evaluation below tests the agent as a whole, not the underlying language model by itself. The agent is a pipeline of four parts (the prompt, the retrieval step, the model, and the output-structuring logic) that turns a FHIR record plus the retrieved policy text into a single structured decision object; the model is the one piece swapped out for the vendor-update re-evaluation in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The diagram shows that full path, from input to the metrics below.
+
+![System under test: the prior-auth agent as a pipeline, with Claude Sonnet 5 as one component rather than the whole system](docs/system-under-test.svg)
+
 ## Results
 
 Golden set of 20 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs at pinned version and temperature; range shown where it matters.
