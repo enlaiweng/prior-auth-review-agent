@@ -4,11 +4,11 @@ EDOM Phase 6 artifact. In place before the first user. Holds the deploy and roll
 
 ## Deploy
 
-[Steps, three to eight lines: environment, secrets, start the agent service or orchestration, start the demo surface, smoke test with case 01.]
+Set environment: ANTHROPIC_API_KEY and CHECKLIST_MODE=false as Worker secrets via wrangler secret put. Deploy the Worker with wrangler deploy. Confirm the static viewer loads at the Worker's URL and the case dropdown lists all twenty golden-set case IDs. Smoke test by selecting case 01, submitting, and confirming the returned decision matches the recorded adjudication label with citations rendering. Confirm the audit list shows the case 01 entry.
 
 ## Roll back
 
-[Steps: stop the current version, restore the previous agent version tag from CHANGELOG.md, re-run the smoke test.] Rollback target is always the last version with a signed release decision.
+Set CHECKLIST_MODE=true via wrangler secret put for an immediate disable, or redeploy the previous Worker version if the rollback is code-level rather than a flag flip. Confirm case 01 now returns per-criterion status only, with no approve field. If it's a code rollback, restore the previous agent version tag from CHANGELOG.md and re-run the case 01 smoke test.
 
 ## Kill switch
 

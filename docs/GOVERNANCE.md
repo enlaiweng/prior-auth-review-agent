@@ -53,7 +53,7 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | 2026-09-10 | Vendor-update re-evaluation planned as a named run | Loop (planned) | Cheapest demonstrated Phase 7 loop | EVAL_PLAN.md |
 | 2026-09-10 | Repository created; hours committed: [X] per week; models: [primary id], [second id]; ADR-6 answer: [ None ] | Scope | Sets the hours assumption the week-two check tests against; pins the versions the version log tracks | ARCHITECTURE.md |
 | 2026-09-10 | Charter signed; authority statement final | Gate | Phase 1 exit; no Phase 2 work before this commit | CHARTER.md |
-| 2026-09-11 | Demo surface chosen: [option]; ADR-1 [amended / unchanged] | Design authority | [ ] | ARCHITECTURE.md ADR-7 |
+2026-09-14 | Demo surface chosen: hosted web endpoint (Cloudflare Worker) + static viewer, MVP-scoped to the 20 golden-set cases; ADR-1 amended | Design authority | Only surface honoring RUNBOOK.md's runtime kill switch (system stays available, stops deciding) and the strongest production-deployment claim for the portfolio's purpose | ARCHITECTURE.md ADR-7 [ ] | ARCHITECTURE.md ADR-7 |
 | 2026-09-11 | Eval plan committed; thresholds fixed; criterion inventory verified against L34220 rev. 2025-10-23 | Gate | Phase 3 commitment precedes any agent work | EVAL_PLAN.md |
 | 2026-09-15 | First five cases timed: [t1..t5] minutes, average [a] | Scope | Calibration against the 40 to 100 minute assumption | data/golden/timing.csv |
 | 2026-09-16 | Week 1: [n] hours against 20; seven cases authored | Scope | Weekly cadence | plan |
