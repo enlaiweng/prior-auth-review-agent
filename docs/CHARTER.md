@@ -2,7 +2,7 @@
 
 EDOM Phase 1 commitment. Written before design. Signed by the product owner, Enlai Weng, who holds every role on this build. Amended, not rewritten, if the workflow or the rules change.
 
-Committed on: Sept 12, 2026.
+Committed on: 2026-09-12.
 
 ## Purpose
 
@@ -76,4 +76,4 @@ UM nurse's worklist  <-- decision point; agent output appears here
 
 Intended use, users, population, and out-of-scope uses as stated above. Completed in EVALUATION.md after evaluation.
 
-Signed: Enlai Weng, 9/12/2026.
+Signed: Enlai Weng, 2026-09-12.
