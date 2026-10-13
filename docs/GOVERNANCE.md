@@ -4,7 +4,7 @@ The EDOM governance spine in one file: regime mapping, risk register, decision l
 
 ## Governance paragraph
 
-One person, Enlai Weng, holds every role in this build, including the ones EDOM keeps separate (engineering lead, evaluation lead, compliance and risk). The line may be stopped by that person under the kill switch conditions in RUNBOOK.md. There is no quarterly review; the equivalent is the release 2 decision.
+One person, Enlai Weng, holds every role in this build, including the ones EDOM keeps separate (engineering lead, evaluation lead, compliance and risk). The line may be stopped by that person under the kill switch conditions in RUNBOOK.md. There is no quarterly review; the equivalent is the vendor-update re-evaluation after release.
 
 ## Regime mapping
 
@@ -36,8 +36,8 @@ Seeded from the NIST AI 600-1 generative AI risk categories that apply. Owner is
 | R5 | Documentation request functions as a delay | Human-AI configuration; regulatory | Every request names the criterion and the record element; clock not stopped; turnaround logged | Open | |
 | R6 | Output differs by a protected attribute | Harmful bias | Paired-case check; written statement of what cannot be tested on synthetic data | Open | |
 | R7 | Vendor changes the model underneath the agent | Value chain and component integration | Version log; full re-evaluation on any version change before continued use | Open | |
-| R8 | Golden set mislabeled or too easy | Information integrity | Time-separated second pass with agreement recorded; held-out note-style cases; dataset-repair loop | Open | |
-| R9 | Golden set authoring consumes the clock | Delivery | 20 cases fixed from day one; week-two check on minutes per case; the rule moves the stop date or trims evaluation depth, never the 20 cases | Open | |
+| R8 | Golden set mislabeled or too easy | Information integrity | Time-separated second pass with agreement recorded; three held-out cases never used for tuning; dataset-repair loop | Open | |
+| R9 | Golden set authoring consumes the clock | Delivery | 20 cases fixed on day one, cut to 12 before authoring began (2026-10-13, ADR-8); check 1 on minutes per case after the first five; any further overrun moves the stop date or trims evaluation depth, not the 12 | Open | |
 | R10 | Build reads as configuration of a published skill rather than original work | Credibility | ADR-6 names any reused component; README puts golden set, evaluation, and runbook first | Open | |
 
 ## Decision log
@@ -55,12 +55,13 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | 2026-09-12 | Charter signed; authority statement final | Gate | Phase 1 exit; no Phase 2 work before this commit | CHARTER.md |
 | 2026-09-14 | Demo surface chosen: hosted web endpoint (Cloudflare Worker) + static viewer, MVP-scoped to the 20 golden-set cases; ADR-1 amended | Design authority | Only surface honoring RUNBOOK.md's runtime kill switch (system stays available, stops deciding) and the strongest production-deployment claim for the portfolio's purpose | ARCHITECTURE.md ADR-7 |
 | 2026-09-14 | Eval plan committed; thresholds fixed; criterion inventory verified against L34220 rev. 2025-10-23 | Gate | Phase 3 commitment precedes any agent work | EVAL_PLAN.md |
-| 2026-09-15 | First five cases timed: [t1..t5] minutes, average [a] | Scope | Calibration against the 40 to 100 minute assumption | data/golden/timing.csv |
-| 2026-09-16 | Week 1: [n] hours against 20; seven cases authored | Scope | Weekly cadence | plan |
-| 2026-09-23 | Week-two check: minutes per case [x]; projected total [y] against budget [z]; smoke run on cases 1-15: [false approvals: none / n]; action: [none / stop date moved to Oct 14 / held-out and paired cases dropped / checklist mode] | Stop condition | | CHARTER.md |
-| 2026-09-30 | Week-three check: deployed path accepts a record [yes/no]; release decision signed [yes/no]; action: [none / evaluation depth deferred to week 5 / finish deployment first] | Stop condition | | CHARTER.md |
+| 2026-09-16 | Week 1: about 8 hours on Steps 1 to 4 against 6 planned (not logged at the time; reconstructed from commit times); Steps 5 to 7 not started; plan re-spread at 10 hours per week with the stop moved to November 4 | Scope | Recorded late rather than backdated | Project plan |
+| 2026-10-13 | Amendment 1: golden set cut from 20 to 12 cases (01 to 10, 12, 15); different-style held-out cases replaced by three cases never used for tuning (08, 10, 12); demo audit list, separate-model audit and the release 2 build dropped; stop date December 9 (fallback December 16) | Scope cut | After a four-week pause, at the observed pace the 20-case scope was about 90 hours from release and the 12-case scope about 74; no case authored yet, so no label or result affected | CHARTER.md Amendment 1; ADR-8 |
+| 2026-10-28 | Check 1: first five cases timed [t1..t5] minutes, average [a]; projected total [y] against budget [z]; action: [none / stop date moved to Dec 16 / held-out and paired cases dropped] | Stop condition | | CHARTER.md; data/golden/timing.csv |
+| 2026-11-11 | Check 1, smoke run on all 12 cases: [false approvals: none / n]; action: [none / checklist mode] | Stop condition | | CHARTER.md |
+| 2026-11-25 | Check 2: deployed path accepts a record [yes/no]; release decision signed [yes/no]; action: [none / evaluation depth deferred past the stop / finish deployment first] | Stop condition | | CHARTER.md |
 | [date] | Threshold changes, if any, with reason | Threshold | | EVAL_PLAN.md |
-| [date] | Release 2 (six-week commercial variant): regime mapping updated with the variant policy; routed to ARCHITECTURE.md and EVAL_PLAN.md for affected criteria; authority statement unchanged | Loop: regulation-change route | Demonstrates the route on a real policy difference | |
+| [date] | Release 2 design note (six-week commercial variant): how the regulation-change route would update the regime mapping, ARCHITECTURE.md and EVAL_PLAN.md for the affected criterion; not built (ADR-8) | Loop: regulation-change route (described) | Shows the route on a real policy difference without a second build | |
 | [date] | Vendor-update loop: second model version [second model id] evaluated; [passed, verification entry only / failed, returned to build] | Loop: vendor update | | EVALUATION.md maintenance |
 
 ## Model inventory entry

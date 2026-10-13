@@ -20,7 +20,7 @@ Code, prompts, and tests in this repository were produced with AI assistance und
 |---|---|---|---|---|---|
 | [date] | 1.0 | First deployment: agent-[x], golden set 1.0, demo surface | RELEASE_DECISION.md signed [date] | none (first release) | Runbook and monitoring thresholds in place before first demo |
 | [date] | 1.0.1 | [hotfix, if any: scope limited to the fix; re-evaluated on affected cases] | | 1.0 | |
-| [date] | 2.0 | Commercial six-week variant added via the regulation-change route | New release decision record | 1.0 | See GOVERNANCE.md decision log |
+| not planned | 2.0 | Commercial six-week variant: written up as a design note instead of built (ADR-8); a build would need its own release decision record | n/a | 1.0 | See GOVERNANCE.md decision log |
 
 ## Verification entries (loops that did not require a release)
 
@@ -33,8 +33,8 @@ Code, prompts, and tests in this repository were produced with AI assistance und
 
 ### 1.0, [date]
 
-First release. Three outputs, no deny. Evaluated on 20 cases; results in the README. Known limitations in EVALUATION.md.
+First release. Three outputs, no deny. Evaluated on 12 cases; results in the README. Known limitations in EVALUATION.md.
 
-### 2.0, [date]
+### 2.0 (not planned)
 
-Commercial variant (six weeks of conservative therapy) added as a second policy via the regulation-change route. Policy-divergence cases: [n] cases approvable under L34220 and not under the commercial variant; results: [routing and citation results on those cases].
+Not built in this version. The commercial variant (six weeks of conservative therapy) is written up as a design note showing how the regulation-change route would handle it; see ADR-8.

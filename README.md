@@ -14,14 +14,14 @@ The evaluation below tests the agent as a whole, not the underlying language mod
 
 ## Results
 
-Golden set of 20 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs at pinned version and temperature; range shown where it matters.
+Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs at pinned version and temperature; range shown where it matters.
 
 | Measure | Result | Release threshold |
 |---|---|---|
-| False approvals on the 12 cases adjudicated not approvable | [0 of 12] | 0 |
+| False approvals on the 8 cases adjudicated not approvable | [0 of 8] | 0 |
 | Citation faithfulness (cited criterion appears verbatim in the policy) | [xx%] | 95% |
 | Per-criterion agreement with adjudication | [xx%] | 85% |
-| Routing agreement (approve / request / route) | [x of 20, xx%] | 80% |
+| Routing agreement (approve / request / route) | [x of 12, xx%] | 80% |
 | Missing-documentation recall | [xx%] | 80% |
 | Abstention when adjudication was "route" | [xx%] | 90% |
 | Pend rate (non-approve outputs) | [xx%] | reported, not gated |
@@ -47,7 +47,7 @@ Intended use: first-pass review of lumbar MRI prior authorization requests at a 
 
 It may never: deny a request; issue an approval that is not fully supported by cited criteria; stop or extend a regulatory decision clock; be used for any procedure or policy other than the one it was evaluated against.
 
-Cautioned out-of-scope uses: pediatric cases, requests under policies other than L34220 and the documented commercial variant, any use on real patient data without a data agreement and a fresh evaluation.
+Cautioned out-of-scope uses: pediatric cases, requests under any policy other than L34220 (the commercial variant is described in a design note but not built or evaluated), any use on real patient data without a data agreement and a fresh evaluation.
 
 How well it performed, in plain language: [two sentences from the evaluation, written after the numbers exist].
 
@@ -63,7 +63,7 @@ This build follows a seven-phase AI delivery operating model, EDOM ([link to the
 | 4 Build | Agent specification, prompts, retrieval, structured outputs; every version logged | `agent/`, [docs/CHANGELOG.md](docs/CHANGELOG.md) |
 | 5 Review, validation, evaluation | Results, error analysis, model card, the release decision | [docs/EVALUATION.md](docs/EVALUATION.md), [docs/RELEASE_DECISION.md](docs/RELEASE_DECISION.md) |
 | 6 Embedded release | Deploy, roll back, kill switch, monitoring thresholds | [docs/RUNBOOK.md](docs/RUNBOOK.md) |
-| 7 Monitor and drift | Vendor model update re-evaluation; the policy-change loop (release 2) | [docs/CHANGELOG.md](docs/CHANGELOG.md), [docs/GOVERNANCE.md](docs/GOVERNANCE.md) |
+| 7 Monitor and drift | Vendor model update re-evaluation; the policy-change loop, written up as a design note for the commercial variant | [docs/CHANGELOG.md](docs/CHANGELOG.md), [docs/GOVERNANCE.md](docs/GOVERNANCE.md) |
 | Governance spine | Risk register, decision log, regime mapping, model inventory | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) |
 
 ## Regulatory posture in one paragraph
@@ -72,7 +72,7 @@ Federal and state rules on AI in utilization review attach to denials, delays, a
 
 ## Limits
 
-Synthetic records are tidier than real charts. The golden set was authored and adjudicated by one person with a time-separated second pass; agreement is recorded in the datasheet, and it is self-agreement. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
+Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. The golden set was authored and adjudicated by one person with a time-separated second pass; agreement is recorded in the datasheet, and it is self-agreement. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
 
 ## License and data
 

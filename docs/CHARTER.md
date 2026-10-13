@@ -2,7 +2,7 @@
 
 EDOM Phase 1 commitment. Written before design. Signed by the product owner, Enlai Weng, who holds every role on this build. Amended, not rewritten, if the workflow or the rules change.
 
-Committed on: 2026-09-12.
+Committed on: 2026-09-12. Amended 2026-10-13 (Amendment 1, at the end of this file).
 
 ## Purpose
 
@@ -32,15 +32,15 @@ Who owns each output. Approve is issued by the system without pre-review; the UM
 
 ## Scope
 
-In: one policy (Noridian LCD L34220, Lumbar MRI, revision effective October 23, 2025); synthetic patients (Synthea demographics plus authored episodes as FHIR R4 bundles with one clinical note each); a golden set of 20 adjudicated cases; an orchestration build with Python for data generation, FHIR authoring and validation, and the evaluation harness; end-to-end deployment on synthetic data; the documents listed in the README's phase table.
+In: one policy (Noridian LCD L34220, Lumbar MRI, revision effective October 23, 2025); synthetic patients (Synthea demographics plus authored episodes as FHIR R4 bundles with one clinical note each); a golden set of 12 adjudicated cases (20 in the original charter; Amendment 1); an orchestration build with Python for data generation, FHIR authoring and validation, and the evaluation harness; end-to-end deployment on synthetic data; the documents listed in the README's phase table.
 
 Out: a deny output; real patient data; any second procedure; a custom Synthea disease module; Da Vinci PAS conformance beyond a PAS-shaped intake bundle; a user study.
 
-Release 2, after deployment: a commercial-payer variant requiring six weeks of conservative therapy, built as a demonstration of the regulation-change route (see GOVERNANCE.md, decision log).
+Release 2, after deployment: a commercial-payer variant requiring six weeks of conservative therapy, written up as a design note that shows how the regulation-change route would handle it, rather than built (Amendment 1; see GOVERNANCE.md, decision log).
 
 ## Constraints
 
-Clock: hard stop October 7, 2026, about four weeks from charter signature; may move to October 14 under the week-two rule below. Hours: 10 per week, dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4) gives a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope is a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
+Clock: hard stop December 9, 2026 (Amendment 1; originally October 7); may move to December 16 under check 1 below. Hours: 10 per week, dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4) gives a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope is a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
 
 ## Success measures
 
@@ -48,9 +48,9 @@ Deployed end to end so that a record can be submitted and a routed, cited decisi
 
 ## Stop conditions
 
-The golden set is fixed at 20 cases and does not shrink; the week-two rule acts on the clock and on evaluation depth, not on the case count.
+The golden set is fixed at 12 cases (Amendment 1; 20 in the original charter) and does not shrink further; check 1 acts on the clock and on evaluation depth, not on the case count.
 
-Week two, September 23, 2026: if authoring is running above 90 minutes per case after the first five cases, or the projected total exceeds the remaining budget, move the stop date to October 14. If the stop date cannot move, drop the held-out note-style cases and the paired fairness checks before touching the 20, and record the cut in the decision log. Also by week two: if any false approval survives two prompt iterations on the first fifteen adjudicated cases, or citation faithfulness cannot be pushed above 90 percent, disable the approve output and ship in checklist mode (RUNBOOK.md), under the release rule for that mode in EVAL_PLAN.md. Week three, September 30: if the deployed path does not yet accept a record and return a decision, stop adding evaluation depth and finish deployment.
+Check 1, October 28, 2026 (formerly week two): if authoring is running above 90 minutes per case after the first five cases, or the projected total exceeds the remaining budget, move the stop date to December 16. If the stop date cannot move, drop the held-out cases and the paired fairness checks before touching the 12, and record the cut in the decision log. At the smoke run that completes check 1, November 11: if any false approval survives two prompt iterations on the adjudicated cases, or citation faithfulness cannot be pushed above 90 percent, disable the approve output and ship in checklist mode (RUNBOOK.md), under the release rule for that mode in EVAL_PLAN.md. Check 2, November 25 (formerly week three): if the deployed path does not yet accept a record and return a decision, stop adding evaluation depth and finish deployment.
 
 ## Risk tier and regimes
 
@@ -76,4 +76,8 @@ UM nurse's worklist  <-- decision point; agent output appears here
 
 Intended use, users, population, and out-of-scope uses as stated above. Completed in EVALUATION.md after evaluation.
 
-Signed: Enlai Weng, 2026-09-12.
+## Amendments
+
+Amendment 1, 2026-10-13. The golden set goes from 20 cases to 12 (cases 01 to 10, 12, and 15 from the original allocation). The three held-out cases written in a different note style are replaced by three ordinary cases that are never used for prompt tuning. The demo viewer's audit list, the separate-model output audit, and the release 2 build are dropped; release 2 becomes a design note. The stop date moves to December 9, 2026, with December 16 as the fallback, and the stop-condition checks move to October 28, November 11, and November 25. Reason: the committed budget is 10 hours per week against a plan written for 20, and after a four-week pause the 20-case scope was about 90 hours from release at the observed pace, against about 74 for 12 cases. No case had been authored, so no label or result is affected. The twelve still cover every outcome, a documentation gap for each of C2, C3, and C4, five adversarial cases including two instruction-bearing notes, and both paired fairness checks. Recorded in GOVERNANCE.md (decision log, 2026-10-13) and ARCHITECTURE.md (ADR-8).
+
+Signed: Enlai Weng, 2026-09-12. Amendment 1 signed: Enlai Weng, 2026-10-13.

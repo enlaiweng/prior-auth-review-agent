@@ -20,10 +20,10 @@ Checked against the explainability design in ARCHITECTURE.md: per-criterion stat
 
 ## Independence statement
 
-One person built, adjudicated, and evaluated this system and holds every role in the operating model's RACI. EDOM recommends that the person who built a model not sign its validation. Independence was approximated, not achieved, by: a time-separated second adjudication pass (agreement recorded in DATASHEET.md) and an adversarial audit of the agent's outputs run with a separate model and prompt on [date], findings: [summary]. This gap is recorded rather than hidden.
+One person built, adjudicated, and evaluated this system and holds every role in the operating model's RACI. EDOM recommends that the person who built a model not sign its validation. Independence was approximated, not achieved, by a time-separated second adjudication pass (agreement recorded in DATASHEET.md) and by three held-out cases never used for prompt tuning. An audit of the agent's outputs by a separate model was planned and dropped to fit the hours (ADR-8). This gap is recorded rather than hidden.
 
 ## Conditions attached to the release
 
-Monitoring thresholds and the kill switch in RUNBOOK.md are in place before the first demo user. The vendor-update re-evaluation runs within [7] days of release. Release 2 (commercial variant) requires a new record.
+Monitoring thresholds and the kill switch in RUNBOOK.md are in place before the first demo user. The vendor-update re-evaluation runs within [7] days of release. Release 2 (commercial variant) is a design note, not a release; building it would require a new record.
 
 Signed: [name, date].

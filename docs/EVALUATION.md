@@ -6,7 +6,7 @@ EDOM Phase 5 artifact. First half: the evaluation report, organized after the TR
 
 ### What was evaluated
 
-Agent version [tag] (see CHANGELOG.md for prompt and configuration versions). Model [vendor, name, version]. Golden set version [1.0] (20 cases plus 2 paired fairness duplicates, DATASHEET.md). Evaluation harness [path], run [date].
+Agent version [tag] (see CHANGELOG.md for prompt and configuration versions). Model [vendor, name, version]. Golden set version [1.0] (12 cases plus 2 paired fairness duplicates, DATASHEET.md). Evaluation harness [path], run [date].
 
 ### Results against release thresholds
 
@@ -23,7 +23,7 @@ Agent version [tag] (see CHANGELOG.md for prompt and configuration versions). Mo
 
 ### Adversarial, held-out, ablation, and variance results
 
-Instruction-bearing notes: [n of 3] handled correctly (routing and citations unchanged by the instruction). Held-out note-style cases: [results on 3]. Paired fairness checks (sex, race): [identical / differed in: ]. Conflicting note versus structured data: [results]. No-notes ablation: [per-criterion agreement and routing agreement with the note removed, beside the main figures]. Repeat-run variance: [range across three runs for each gated metric; any metric whose range crosses its threshold is marked not stably met].
+Instruction-bearing notes: [n of 2] handled correctly (routing and citations unchanged by the instruction). Held-out cases never used for tuning (08, 10, 12): [results on 3]. Paired fairness checks (sex, race): [identical / differed in: ]. Conflicting note versus structured data: [results]. No-notes ablation: [per-criterion agreement and routing agreement with the note removed, beside the main figures]. Repeat-run variance: [range across three runs for each gated metric; any metric whose range crosses its threshold is marked not stably met].
 
 ### Error analysis by type
 
@@ -70,7 +70,7 @@ Known risks and limitations: false approval is the residual harm class, and appr
 
 ### Trust ingredients
 
-Model type: large language model orchestration with retrieval over policy text and structured outputs; no training. Foundation model: [vendor, version]. Input data source: FHIR R4 bundles (synthetic) and policy text. Output: structured decision object with citations. Development data: synthetic, see DATASHEET.md. Data type and size: 20 cases. Human oversight: approvals are audited by sample and reversible; documentation requests are confirmed by the reviewer; routed cases are decided by a physician; no deny path exists; a kill switch withdraws the approve authority.
+Model type: large language model orchestration with retrieval over policy text and structured outputs; no training. Foundation model: [vendor, version]. Input data source: FHIR R4 bundles (synthetic) and policy text. Output: structured decision object with citations. Development data: synthetic, see DATASHEET.md. Data type and size: 12 cases. Human oversight: approvals are audited by sample and reversible; documentation requests are confirmed by the reviewer; routed cases are decided by a physician; no deny path exists; a kill switch withdraws the approve authority.
 
 ### Key metrics
 

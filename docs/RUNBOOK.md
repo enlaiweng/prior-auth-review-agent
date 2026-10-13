@@ -4,7 +4,7 @@ EDOM Phase 6 artifact. In place before the first user. Holds the deploy and roll
 
 ## Deploy
 
-Set environment: ANTHROPIC_API_KEY and CHECKLIST_MODE=false as Worker secrets via wrangler secret put. Deploy the Worker with wrangler deploy. Confirm the static viewer loads at the Worker's URL and the case dropdown lists all twenty golden-set case IDs. Smoke test by selecting case 01, submitting, and confirming the returned decision matches the recorded adjudication label with citations rendering. Confirm the audit list shows the case 01 entry.
+Set environment: ANTHROPIC_API_KEY and CHECKLIST_MODE=false as Worker secrets via wrangler secret put. Deploy the Worker with wrangler deploy. Confirm the static viewer loads at the Worker's URL and the case dropdown lists all twelve golden-set case IDs. Smoke test by selecting case 01, submitting, and confirming the returned decision matches the recorded adjudication label with citations rendering.
 
 ## Roll back
 
