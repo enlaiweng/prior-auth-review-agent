@@ -70,7 +70,7 @@ def main(case_dir):
     cid = spec["case_id"].replace("_", "")  # FHIR ids allow only letters, digits, hyphen, dot
     baseline = json.load(open(spec["patient_baseline"]))
     patient = next(r for r in baseline if r["resourceType"] == "Patient")
-    pref = {"reference": f"Patient/{patient['id']}"}
+    pref = {"reference": f"urn:uuid:{patient['id']}"}  # matches the Patient entry's fullUrl exactly
     ep = spec["episode"]
     req_date = str(spec["request_date"])
     ids, resources = [], []
@@ -176,8 +176,10 @@ def main(case_dir):
                                  "title": "note.md"}}],
     ))
 
-    entries = [BundleEntry(fullUrl=f"urn:uuid:{r['id']}" if r["resourceType"] == "Patient" else f"{r['resourceType']}/{r['id']}", resource=r)
-               for r in baseline + resources]
+    # Baseline resources keep Synthea's urn:uuid addresses (their own references use them).
+    # Authored resources get an absolute address, as FHIR requires; labels still cite them as Type/id.
+    entries = [BundleEntry(fullUrl=f"urn:uuid:{r['id']}", resource=r) for r in baseline] + \
+              [BundleEntry(fullUrl=f"http://example.org/fhir/{r['resourceType']}/{r['id']}", resource=r) for r in resources]
     bundle = Bundle(id=f"{cid}-bundle", type="collection", timestamp=f"{req_date}T12:00:00+00:00", entry=entries)
     out = os.path.join(case_dir, "bundle.json")
     with open(out, "w") as f:
