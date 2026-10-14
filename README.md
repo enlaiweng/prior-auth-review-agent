@@ -72,7 +72,7 @@ Federal and state rules on AI in utilization review attach to denials, delays, a
 
 ## Limits
 
-Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. The golden set was authored and adjudicated by one person with a time-separated second pass; agreement is recorded in the datasheet, and it is self-agreement. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
+Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. Where the policy's wording allows two readings (whether radiating leg pain alone is a red flag), the reading used and the evidence for it are in the datasheet, and every case was checked so its expected routing is the same under both. The golden set was authored and adjudicated by one person with a time-separated second pass; agreement is recorded in the datasheet, and it is self-agreement. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
 
 ## License and data
 
