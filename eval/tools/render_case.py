@@ -35,16 +35,21 @@ INDEX_CODES = {
     "radiculopathy": ("M54.16", "Radiculopathy, lumbar region"),
     "sciatica": ("M54.30", "Sciatica, unspecified side"),
 }
+# SNOMED CT codes below were checked on 2026-10-14 against public SNOMED CT browsers and the VSAC "MRI Low Back"
+# value set (241648005), except 229065009 (Exercise therapy), which no case in version 1.0 uses.
 THERAPY_KIND = {
     "physical therapy": ("91251008", "Physical therapy procedure"),
-    "chiropractic": ("44868003", "Chiropractic manipulation"),
+    "chiropractic": ("46947000", "Chiropractic manipulation"),
     "home exercise": ("229065009", "Exercise therapy"),
 }
 IMAGING_KIND = {
-    "lumbar mri": ("241645004", "MRI of lumbar spine"),
-    "lumbar ct": ("241593005", "CT of lumbar spine"),
-    "lumbar x-ray": ("241093004", "Plain X-ray of lumbar spine"),
+    "lumbar mri": ("241648005", "MRI of lumbar spine"),
+    "lumbar ct": ("241580002", "CT of lumbar spine"),
+    "lumbar x-ray": ("90805008", "Diagnostic radiography of lumbar spine"),
 }
+# Official SNOMED CT terms for codes a case spec may name as the requested procedure.
+# The spec's own text (for example "MRI lumbar spine without contrast") goes in .text, not in the coding's display.
+SNOMED_DISPLAY = {code: disp for code, disp in IMAGING_KIND.values()}
 MED_KIND = {
     "nsaid": ("Ibuprofen 600 MG Oral Tablet",),
     "naproxen": ("Naproxen 500 MG Oral Tablet",),
@@ -88,7 +93,10 @@ def main(case_dir):
         provider={"display": "Ordering provider (synthetic)"},
         priority=cc("http://terminology.hl7.org/CodeSystem/processpriority", "normal", "Normal"),
         insurance=[{"sequence": 1, "focal": True, "coverage": {"display": "Medicare Advantage plan (synthetic)"}}],
-        item=[ClaimItem(sequence=1, productOrService=cc(SNOMED, str(proc["snomed"]), proc["text"]))],
+        item=[ClaimItem(sequence=1, productOrService={
+            "coding": [{"system": SNOMED, "code": str(proc["snomed"]),
+                        "display": SNOMED_DISPLAY.get(str(proc["snomed"]), proc["text"])}],
+            "text": proc["text"]})],
     )
     add(claim)
 
@@ -143,7 +151,7 @@ def main(case_dir):
     img_n = 0
     for im in ep.get("prior_imaging", []) or []:
         img_n += 1
-        scode, sdisp = pick(IMAGING_KIND, im["kind"], ("241645004", "MRI of lumbar spine"))
+        scode, sdisp = pick(IMAGING_KIND, im["kind"], ("241648005", "MRI of lumbar spine"))
         add(Procedure(
             id=f"{cid}-img-{img_n:02d}", status="completed", code=cc(SNOMED, scode, sdisp),
             subject=pref, performedDateTime=str(im["date"]),

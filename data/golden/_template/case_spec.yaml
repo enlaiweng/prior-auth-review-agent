@@ -3,7 +3,7 @@ patient_baseline: data/golden/baselines/<synthea-id>.json
 request_date: 2026-08-15
 requested_procedure:
   text: MRI lumbar spine without contrast
-  snomed: "241645004"
+  snomed: "241648005"
 scenario: one line in plain language
 episode:
   index_condition:
