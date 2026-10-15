@@ -1,10 +1,9 @@
 case_id: case_00
-patient_baseline: data/golden/baselines/<synthea-id>.json
+patient_baseline: data/golden/baselines/dbe64123-b9a6-24b7-0afc-76297ae85d33.json
 request_date: 2026-08-15
 requested_procedure:
   text: MRI lumbar spine without contrast
   snomed: "241648005"
-scenario: one line in plain language
 episode:
   index_condition:
     code_text: Low back pain with radiculopathy
@@ -24,10 +23,7 @@ episode:
     - kind: NSAID
       start: 2026-05-23
       end: 2026-08-01
-  red_flags: []
   prior_imaging: []
   observations: []
-  management_decision: surgical referral pending imaging
 note:
-  style: standard
   file: note.md
