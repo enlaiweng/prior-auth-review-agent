@@ -80,7 +80,8 @@ def case_view(case_dir):
         (f"Condition/{r['id']}", d10(r.get("onsetDateTime")),
          f"{text_of(r.get('code'))}" + "".join(f" (ICD-10-CM {c['code']})" for c in r.get("code", {}).get("coding", [])
                                               if "icd-10" in c.get("system", ""))
-         + f"; clinical status: {text_of(r.get('clinicalStatus'))}; onset {d10(r.get('onsetDateTime'))}")
+         + f"; clinical status: {r.get('clinicalStatus', {}).get('coding', [{}])[0].get('code', '')}; onset {d10(r.get('onsetDateTime'))}"
+         + (f"; resolved {d10(r['abatementDateTime'])}" if r.get("abatementDateTime") else ""))
         for r in by.get("Condition", [])])
     section("Visits", [
         (f"Encounter/{r['id']}", d10(r["period"]["start"]),

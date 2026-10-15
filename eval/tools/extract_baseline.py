@@ -5,8 +5,8 @@ Keeps: the Patient resource; up to three Condition resources from an allowlist o
 stable chronic conditions; up to two MedicationRequest resources that treat them.
 Drops everything else, and in particular anything that could touch a lumbar MRI
 criterion (spine, back, radiculopathy, malignancy, infection, fracture, osteoporosis,
-opioids, corticosteroids, any Procedure). Drops prediabetes when a diabetes condition is kept,
-so the problem list does not carry both. Strips meta.profile, any reference to a resource not
+opioids, corticosteroids, any Procedure). Drops prediabetes when a diabetes condition is among
+the conditions kept, so the problem list does not carry both; it never adds a condition in its place. Strips meta.profile, any reference to a resource not
 kept, and Synthea's disability- and quality-adjusted life year extensions on the Patient (they
 summarize the patient's whole simulated history, including what was dropped), so the result
 validates against base FHIR R4 with no IG and reveals nothing beyond what it keeps.
@@ -81,7 +81,18 @@ def strip(resource, kept_refs):
                     del obj[i]
                 else:
                     walk(item)
+
+    def prune(obj):  # FHIR does not allow empty lists or objects, so remove any a deleted reference left behind
+        if isinstance(obj, dict):
+            for k in list(obj):
+                prune(obj[k])
+                if obj[k] in ([], {}):
+                    del obj[k]
+        elif isinstance(obj, list):
+            for item in obj:
+                prune(item)
     walk(resource)
+    prune(resource)
     return resource
 
 
@@ -101,9 +112,9 @@ def extract(path):
         t = text_of(c)
         if t not in seen:
             seen.add(t); uniq.append(c)
-    if any(re.search(r"diabetes", text_of(c)) and not re.search(r"prediabetes", text_of(c)) for c in uniq):
-        uniq = [c for c in uniq if not re.search(r"prediabetes", text_of(c))]
     conditions = uniq[:3]
+    if any(re.search(r"diabetes", text_of(c)) and not re.search(r"prediabetes", text_of(c)) for c in conditions):
+        conditions = [c for c in conditions if not re.search(r"prediabetes", text_of(c))]
     meds = [r for r in resources if r["resourceType"] == "MedicationRequest"
             and matches(text_of(r), ALLOW_MEDS)
             and not matches(text_of(r), BLOCK_MEDS)

@@ -196,6 +196,52 @@
  },
  {
   "resourceType": "Condition",
+  "id": "d17a831a-279f-aae8-a429-88818de06932",
+  "clinicalStatus": {
+   "coding": [
+    {
+     "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+     "code": "active"
+    }
+   ]
+  },
+  "verificationStatus": {
+   "coding": [
+    {
+     "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+     "code": "confirmed"
+    }
+   ]
+  },
+  "category": [
+   {
+    "coding": [
+     {
+      "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+      "code": "encounter-diagnosis",
+      "display": "Encounter Diagnosis"
+     }
+    ]
+   }
+  ],
+  "code": {
+   "coding": [
+    {
+     "system": "http://snomed.info/sct",
+     "code": "714628002",
+     "display": "Prediabetes (finding)"
+    }
+   ],
+   "text": "Prediabetes (finding)"
+  },
+  "subject": {
+   "reference": "urn:uuid:d17a831a-279f-aae8-25d5-9801509dcc38"
+  },
+  "onsetDateTime": "1987-08-13T06:08:29-07:00",
+  "recordedDate": "1987-08-13T06:08:29-07:00"
+ },
+ {
+  "resourceType": "Condition",
   "id": "d17a831a-279f-aae8-3bf1-b67620799481",
   "clinicalStatus": {
    "coding": [
@@ -285,52 +331,6 @@
   },
   "onsetDateTime": "2004-10-09T06:08:29-07:00",
   "recordedDate": "2004-10-09T06:08:29-07:00"
- },
- {
-  "resourceType": "Condition",
-  "id": "d17a831a-279f-aae8-5ad5-177acfc8c09c",
-  "clinicalStatus": {
-   "coding": [
-    {
-     "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-     "code": "active"
-    }
-   ]
-  },
-  "verificationStatus": {
-   "coding": [
-    {
-     "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
-     "code": "confirmed"
-    }
-   ]
-  },
-  "category": [
-   {
-    "coding": [
-     {
-      "system": "http://terminology.hl7.org/CodeSystem/condition-category",
-      "code": "encounter-diagnosis",
-      "display": "Encounter Diagnosis"
-     }
-    ]
-   }
-  ],
-  "code": {
-   "coding": [
-    {
-     "system": "http://snomed.info/sct",
-     "code": "127013003",
-     "display": "Disorder of kidney due to diabetes mellitus (disorder)"
-    }
-   ],
-   "text": "Disorder of kidney due to diabetes mellitus (disorder)"
-  },
-  "subject": {
-   "reference": "urn:uuid:d17a831a-279f-aae8-25d5-9801509dcc38"
-  },
-  "onsetDateTime": "2020-12-03T05:08:29-08:00",
-  "recordedDate": "2020-12-03T05:08:29-08:00"
  },
  {
   "resourceType": "MedicationRequest",

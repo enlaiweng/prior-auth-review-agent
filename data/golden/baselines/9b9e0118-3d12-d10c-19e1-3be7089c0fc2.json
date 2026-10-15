@@ -304,52 +304,6 @@
   "recordedDate": "2017-02-26T15:33:06-08:00"
  },
  {
-  "resourceType": "Condition",
-  "id": "9b9e0118-3d12-d10c-8f13-fda338c45047",
-  "clinicalStatus": {
-   "coding": [
-    {
-     "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-     "code": "active"
-    }
-   ]
-  },
-  "verificationStatus": {
-   "coding": [
-    {
-     "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
-     "code": "confirmed"
-    }
-   ]
-  },
-  "category": [
-   {
-    "coding": [
-     {
-      "system": "http://terminology.hl7.org/CodeSystem/condition-category",
-      "code": "encounter-diagnosis",
-      "display": "Encounter Diagnosis"
-     }
-    ]
-   }
-  ],
-  "code": {
-   "coding": [
-    {
-     "system": "http://snomed.info/sct",
-     "code": "90781000119102",
-     "display": "Microalbuminuria due to type 2 diabetes mellitus (disorder)"
-    }
-   ],
-   "text": "Microalbuminuria due to type 2 diabetes mellitus (disorder)"
-  },
-  "subject": {
-   "reference": "urn:uuid:9b9e0118-3d12-d10c-19e1-3be7089c0fc2"
-  },
-  "onsetDateTime": "2021-03-14T16:33:06-07:00",
-  "recordedDate": "2021-03-14T16:33:06-07:00"
- },
- {
   "resourceType": "MedicationRequest",
   "id": "9b9e0118-3d12-d10c-7106-c91fab373465",
   "status": "active",
@@ -379,8 +333,7 @@
   "subject": {
    "reference": "urn:uuid:9b9e0118-3d12-d10c-19e1-3be7089c0fc2"
   },
-  "authoredOn": "2026-07-26T16:33:06-07:00",
-  "reasonReference": []
+  "authoredOn": "2026-07-26T16:33:06-07:00"
  },
  {
   "resourceType": "MedicationRequest",

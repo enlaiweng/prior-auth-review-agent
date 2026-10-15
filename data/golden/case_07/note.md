@@ -6,4 +6,4 @@ Exam: lumbar paraspinal tenderness, with flexion limited by pain. Straight leg r
 
 Assessment: low back pain for three months without lasting improvement on therapy.
 
-Plan: MRI of the lumbar spine without contrast. Continue home exercises and acetaminophen. Next steps will be decided after the MRI.
+Plan: MRI of the lumbar spine without contrast. Continue home exercises and acetaminophen.

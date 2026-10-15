@@ -327,8 +327,7 @@
   "subject": {
    "reference": "urn:uuid:b298bf74-1043-5a61-f025-1d5d5c6aa4ef"
   },
-  "authoredOn": "2026-04-28T21:19:43-07:00",
-  "reasonReference": []
+  "authoredOn": "2026-04-28T21:19:43-07:00"
  },
  {
   "resourceType": "MedicationRequest",
