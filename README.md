@@ -14,7 +14,7 @@ The evaluation below tests the agent as a whole, not the underlying language mod
 
 ## Results
 
-Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs at pinned version and temperature; range shown where it matters.
+Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], one headline run on all 12 cases and two more on the 9 not held out, at the pinned model version; range shown where it matters.
 
 | Measure | Result | Release threshold |
 |---|---|---|
@@ -39,7 +39,7 @@ Errors by type, the adversarial and instruction-bearing cases, the no-notes abla
 [three to six commands: install, generate the golden set from seed, run the agent on one case, run the evaluation]
 ```
 
-The golden set regenerates bit for bit from a documented seed and protocol. Evaluation results reproduce within [n] cases at the pinned model version and temperature; language model output is not deterministic, so exact equality is not claimed.
+The golden set regenerates bit for bit from a documented seed and protocol. Evaluation results reproduce within [n] cases at the pinned model version; language model output is not deterministic, so exact equality is not claimed.
 
 ## What it is for and what it may not decide
 
@@ -72,7 +72,7 @@ Federal and state rules on AI in utilization review attach to denials, delays, a
 
 ## Limits
 
-Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. Where the policy's wording allows two readings (whether radiating leg pain alone is a red flag), the reading used and the evidence for it are in the datasheet, and every case was checked so its expected routing is the same under both. The golden set was authored and adjudicated by one person with a time-separated second pass; agreement is recorded in the datasheet, and it is self-agreement. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
+Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. Where the policy's wording allows two readings (whether radiating leg pain alone is a red flag), the reading used and the evidence for it are in the datasheet, and every case was checked so its expected routing is the same under both. The cases were written by Claude and labeled by one person, who knew each case's designed outcome; a reader from another company and the locked intended answers cross-check the labels, and agreement is in the datasheet. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
 
 ## License and data
 

@@ -4,7 +4,7 @@ Three registers in one file, kept from the first build onward: the version log f
 
 ## Provenance convention
 
-Code, prompts, and tests in this repository were produced with AI assistance under human direction. Commits that contain AI-generated code or prompt text carry the trailer `AI-assisted: yes`; the evaluation harness and its tests were reviewed line by line by the author before the first release. This is the Phase 4 provenance tag for a one-person build, where commits stand in for pull requests.
+Code, prompts, tests, cases, and notes in this repository are written by Claude, an AI engineering agent, under Enlai Weng's direction (Amendment 2). Every change reaches the main branch through a pull request Enlai approves; he reviews changes by their intent and their results, not by line-by-line code review. Claude's commits carry the trailer `AI-assisted: yes`. Pull requests and their approvals are the Phase 4 review record.
 
 ## Version log (prompts, retrieval, model)
 
