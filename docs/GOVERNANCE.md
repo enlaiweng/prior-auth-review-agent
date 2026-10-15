@@ -42,6 +42,7 @@ Seeded from the NIST AI 600-1 generative AI risk categories that apply. Owner is
 | R11 | Build reads as AI output without human judgment | Credibility | Every change approved by the owner through a pull request; blind human labels; owner-signed gates; README section on how it was built | Open | |
 | R12 | Public demo spends API credits or is abused | Financial; information security | Stored decisions shown publicly; live runs behind a passcode, rate-limited, on a separate demo key with a low spend limit | Open | |
 | R13 | The engineering agent that tunes the prompt also wrote the cases | Information integrity | Held-out cases locked before the agent existed; experiments limited to cases 01 to 05 and listed in each agent pull request; every prompt change cites a failure on cases 01 to 05 | Open | |
+| R14 | Claude's session works through the owner's GitHub account, so GitHub cannot tell its actions from the owner's by permission alone | Information integrity | Session refused on secrets, environments, and Actions settings (checked 2026-10-14); ruleset blocks direct pushes to main for everyone; GitHub marks the session's actions as done through the Claude app, so merges, release-run approvals, and tags must show no such mark, and anyone can check this in the public record; Claude's rule never to merge, approve a run, or create a tag | Open | |
 
 ## Decision log
 

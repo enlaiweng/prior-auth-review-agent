@@ -4,7 +4,7 @@ Three registers in one file, kept from the first build onward: the version log f
 
 ## Provenance convention
 
-Code, prompts, tests, cases, and notes in this repository are written by Claude, an AI engineering agent, under Enlai Weng's direction (Amendment 2). Every change reaches the main branch through a pull request Enlai approves; he reviews changes by their intent and their results, not by line-by-line code review. Claude's commits carry the trailer `AI-assisted: yes`. Pull requests and their approvals are the Phase 4 review record.
+Code, prompts, tests, cases, and notes in this repository are written by Claude, an AI engineering agent, under Enlai Weng's direction (Amendment 2). Every change reaches the main branch through a pull request Enlai reviews and merges; he reviews changes by their intent and their results, not by line-by-line code review. Claude's commits carry the trailer `AI-assisted: yes`, and GitHub marks Claude's pull requests as made through the Claude app, while Enlai's merges carry no such mark (ADR-9). Pull requests, review comments, and merges are the Phase 4 review record.
 
 ## Version log (prompts, retrieval, model)
 
