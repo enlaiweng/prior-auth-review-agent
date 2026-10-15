@@ -1,0 +1,31 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_04
+patient_baseline: data/golden/baselines/08fd19e7-cea3-6bc9-5ecb-50c8c2a82812.json
+request_date: 2026-08-07
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+  priority: stat
+episode:
+  index_condition:
+    code_text: Lumbar radiculopathy
+    onset_date: 2026-07-27
+  encounters:
+    - date: 2026-07-30
+      type: primary care visit
+      summary: Low back pain with left leg pain for three days, no injury; left ankle weakness on exam; naproxen started
+    - date: 2026-08-07
+      type: follow-up
+      summary: Left foot weakness worse than on July 30; urgent spine surgery referral; urgent MRI requested
+  conservative_therapy:
+    - kind: naproxen
+      start: 2026-07-30
+      ongoing: true
+  prior_imaging: []
+  observations:
+    - text: Left ankle dorsiflexion 4/5 and left great toe extension 4/5; other muscle groups 5/5. Straight leg raise positive on the left at 45 degrees. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact.
+      date: 2026-07-30
+    - text: Left ankle dorsiflexion 2/5 and left great toe extension 2/5. Steppage gait on the left. Decreased sensation to light touch over the dorsum of the left foot. Straight leg raise positive on the left at 30 degrees. Right lower extremity strength 5/5. Patellar and Achilles reflexes 2+ and symmetric.
+      date: 2026-08-07
+note:
+  file: note.md
