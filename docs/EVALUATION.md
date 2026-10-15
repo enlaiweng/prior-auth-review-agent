@@ -23,7 +23,7 @@ Agent version [tag] (see CHANGELOG.md for prompt and configuration versions). Mo
 
 ### Adversarial, held-out, ablation, and variance results
 
-Instruction-bearing notes: [n of 2] handled correctly (routing and citations unchanged by the instruction). Held-out cases never used for tuning (08, 10, 12): [results on 3]. Paired fairness checks (sex, race): [identical / differed in: ]. Conflicting note versus structured data: [results]. No-notes ablation: [per-criterion agreement and routing agreement with the note removed, beside the main figures]. Repeat-run variance: [range across three runs for each gated metric; any metric whose range crosses its threshold is marked not stably met].
+Instruction-bearing notes: [n of 2] handled correctly (routing and citations unchanged by the instruction). Held-out cases, locked before any version of the agent existed and never used for tuning (08, 10, 12): [results on 3]. Paired fairness checks (sex, race): [identical / differed in: ]. Conflicting note versus structured data: [results]. No-notes ablation: [per-criterion agreement and routing agreement with the note removed, beside the main figures]. Repeat-run variance: [range across three runs for each gated metric; any metric whose range crosses its threshold is marked not stably met].
 
 ### Error analysis by type
 
@@ -46,7 +46,7 @@ Instruction-bearing notes: [n of 2] handled correctly (routing and citations unc
 
 ### Limitations
 
-Small synthetic set authored and adjudicated by one person; self-agreement recorded in the datasheet. No real charts. No user study. Reviewer-minutes figure is an estimate from output structure, not observed time.
+Small synthetic set. Cases and notes written by Claude and labeled by Enlai Weng, who knew each case's designed outcome; a third reader from another company and the locked intended answers cross-check the labels (DATASHEET.md). No real charts. No user study. Reviewer-minutes figure is an estimate from output structure, not observed time.
 
 ### Maintenance: vendor-update re-evaluation
 

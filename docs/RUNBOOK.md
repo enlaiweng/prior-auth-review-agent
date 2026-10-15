@@ -4,11 +4,11 @@ EDOM Phase 6 artifact. In place before the first user. Holds the deploy and roll
 
 ## Deploy
 
-Set environment: ANTHROPIC_API_KEY and CHECKLIST_MODE=false as Worker secrets via wrangler secret put. Deploy the Worker with wrangler deploy. Confirm the static viewer loads at the Worker's URL and the case dropdown lists all twelve golden-set case IDs. Smoke test by selecting case 01, submitting, and confirming the returned decision matches the recorded adjudication label with citations rendering.
+Deployment runs as a GitHub workflow that the owner approves (ADR-9). The workflow takes the Cloudflare token, account id, and demo key from the "release" environment, sets the Worker secrets (the demo key and CHECKLIST_MODE), deploys the Worker, and confirms the viewer loads with all twelve case ids. The first deployment runs with CHECKLIST_MODE=true; the approve output is enabled only after the release decision is signed. Smoke test: select case 01 and confirm the returned decision matches its final label, with citations rendering. The public viewer shows stored decisions; live runs need the demo passcode and are rate-limited.
 
 ## Roll back
 
-Set CHECKLIST_MODE=true via wrangler secret put for an immediate disable, or redeploy the previous Worker version if the rollback is code-level rather than a flag flip. Confirm case 01 now returns per-criterion status only, with no approve field. If it's a code rollback, restore the previous agent version tag from CHANGELOG.md and re-run the case 01 smoke test.
+Run the off-switch workflow (the owner approves it) to set CHECKLIST_MODE=true for an immediate disable, or run the deploy workflow on the previous release tag if the rollback is code-level rather than a flag flip. Confirm case 01 now returns per-criterion status only, with no approve field. For a code rollback, the previous agent version is the previous release tag in CHANGELOG.md; re-run the case 01 smoke test.
 
 ## Kill switch
 

@@ -179,7 +179,7 @@ def main(case_dir):
     add(DocumentReference(
         id=f"{cid}-note-01", status="current",
         type=cc(LOINC, "11506-3", "Progress note"), subject=pref, date=f"{last_enc}T12:00:00+00:00",
-        description=f"Visit note ({spec['note'].get('style', 'standard')} style)",
+        description="Visit note",  # no style marker, so held-out cases cannot be told apart (Amendment 2)
         content=[{"attachment": {"contentType": "text/plain", "data": base64.b64encode(note_text.encode()).decode(),
                                  "title": "note.md"}}],
     ))
