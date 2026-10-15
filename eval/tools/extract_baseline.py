@@ -5,8 +5,11 @@ Keeps: the Patient resource; up to three Condition resources from an allowlist o
 stable chronic conditions; up to two MedicationRequest resources that treat them.
 Drops everything else, and in particular anything that could touch a lumbar MRI
 criterion (spine, back, radiculopathy, malignancy, infection, fracture, osteoporosis,
-opioids, corticosteroids, any Procedure). Strips meta.profile and any reference to a
-resource not kept, so the result validates against base FHIR R4 with no IG.
+opioids, corticosteroids, any Procedure). Drops prediabetes when a diabetes condition is kept,
+so the problem list does not carry both. Strips meta.profile, any reference to a resource not
+kept, and Synthea's disability- and quality-adjusted life year extensions on the Patient (they
+summarize the patient's whole simulated history, including what was dropped), so the result
+validates against base FHIR R4 with no IG and reveals nothing beyond what it keeps.
 
 Usage:
   python3 eval/tools/extract_baseline.py <synthea bundle.json> [more bundles...]
@@ -49,8 +52,14 @@ def matches(text, patterns):
     return any(re.search(p, text) for p in patterns)
 
 
+HIDDEN_HISTORY_EXTENSIONS = ("disability-adjusted-life-years", "quality-adjusted-life-years")
+
+
 def strip(resource, kept_refs):
     resource = json.loads(json.dumps(resource))
+    if resource.get("extension"):
+        resource["extension"] = [e for e in resource["extension"]
+                                 if not any(h in e.get("url", "") for h in HIDDEN_HISTORY_EXTENSIONS)]
     if "meta" in resource:
         resource["meta"].pop("profile", None)
         if not resource["meta"]:
@@ -92,6 +101,8 @@ def extract(path):
         t = text_of(c)
         if t not in seen:
             seen.add(t); uniq.append(c)
+    if any(re.search(r"diabetes", text_of(c)) and not re.search(r"prediabetes", text_of(c)) for c in uniq):
+        uniq = [c for c in uniq if not re.search(r"prediabetes", text_of(c))]
     conditions = uniq[:3]
     meds = [r for r in resources if r["resourceType"] == "MedicationRequest"
             and matches(text_of(r), ALLOW_MEDS)

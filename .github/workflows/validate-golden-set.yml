@@ -1,0 +1,122 @@
+# Checks the golden set on GitHub's computers.
+# What it uses: the repository's files only. No secrets, no environment, read-only permission.
+# When it runs: on pushes to main or a claude/ branch, and on pull requests, that change the golden set,
+# the tools that build it, or the documents whose text the case pages and prompts quote; also by hand.
+# Two checks:
+#   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, and prompts from the committed
+#      specs, notes, and baselines changes nothing, and every note is plain text.
+#   2. Valid: every bundle reports "Success: 0 errors" from the pinned HL7 validator (DATASHEET.md).
+name: Validate golden set
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "data/golden/**"
+      - "data/smoke/**"
+      - "data/policy/**"
+      - "eval/tools/**"
+      - "eval/fhir-defs/**"
+      - "eval/labeling/**"
+      - "eval/third_reader/**"
+      - "docs/EVAL_PLAN.md"
+      - "docs/CHARTER.md"
+      - ".github/workflows/validate-golden-set.yml"
+  pull_request:
+    paths:
+      - "data/golden/**"
+      - "data/smoke/**"
+      - "data/policy/**"
+      - "eval/tools/**"
+      - "eval/fhir-defs/**"
+      - "eval/labeling/**"
+      - "eval/third_reader/**"
+      - "docs/EVAL_PLAN.md"
+      - "docs/CHARTER.md"
+      - ".github/workflows/validate-golden-set.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  up-to-date:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Python packages
+        run: python -m pip install "fhir.resources==8.3.0" "pydantic==2.13.5" "pyyaml==6.0.3"
+      - name: Rebuild and compare with what is committed
+        run: |
+          bash eval/tools/rebuild_golden.sh
+          git status --porcelain
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error title=Out of date::Rebuilt files differ from the committed ones. Run bash eval/tools/rebuild_golden.sh and commit the result."
+            git diff --stat
+            exit 1
+          fi
+          echo "Rebuilt files match the committed ones." >> "$GITHUB_STEP_SUMMARY"
+
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      VALIDATOR_VERSION: "7.0.2"
+      VALIDATOR_SHA256: "e3e50f06b806437821b7aef8189a1b790415cb96c5036e0812ed62981452b377"
+      EXPECTED_BUNDLES: "15"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+
+      - name: Download the pinned HL7 validator and check its fingerprint
+        run: |
+          mkdir -p tools
+          curl -sSL -o tools/validator_cli.jar "https://github.com/hapifhir/org.hl7.fhir.core/releases/download/${VALIDATOR_VERSION}/validator_cli.jar"
+          echo "${VALIDATOR_SHA256}  tools/validator_cli.jar" | sha256sum --check
+
+      - name: Validate each bundle, one at a time
+        run: |
+          export JAVA_HOME="$JAVA_HOME_21_X64" PATH="$JAVA_HOME_21_X64/bin:$PATH"
+          export _JAVA_OPTIONS="-Xmx4g"
+          java -version
+          status=0; seen=0; results=""; details=$(mktemp)
+          {
+            echo "Validator ${VALIDATOR_VERSION}, base FHIR R4, structure only (see eval/tools/validate.sh)."
+            echo
+            echo "| Case | Result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for dir in data/smoke/case_00 data/golden/case_*; do
+            if [ ! -f "$dir/bundle.json" ]; then
+              echo "::error title=Missing bundle::$dir has no bundle.json"; status=1; continue
+            fi
+            seen=$((seen + 1))
+            log=$(mktemp)
+            bash eval/tools/validate.sh "$dir" > "$log" 2>&1 || true
+            result=$(tail -1 "$log")
+            name=$(basename "$dir")
+            echo "$name: $result"
+            results="${results}${name}: ${result} | "
+            echo "| ${name} | ${result} |" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "<details><summary>${name}: messages</summary>"
+              echo
+              echo '```'
+              grep -E '^\s*Load |^\s*(Error|Fatal|Warning|Information) @' "$log" | sed -E 's/^\s+//' || true
+              echo '```'
+              echo "</details>"
+            } >> "$details"
+            if ! echo "$result" | grep -q '^Success: 0 errors'; then
+              status=1
+              grep -E '^\s*(Error|Fatal) @' "$log" || tail -40 "$log"
+            fi
+          done
+          if [ "$seen" -ne "$EXPECTED_BUNDLES" ]; then
+            echo "::error title=Bundle count::validated $seen bundles, expected $EXPECTED_BUNDLES"; status=1
+          fi
+          echo "::notice title=Validator results::${results}"
+          { echo; echo "Messages per case:"; echo; cat "$details"; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
