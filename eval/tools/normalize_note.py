@@ -10,7 +10,9 @@ markers. If the three restyled notes kept them, the held-out cases could be told
 rather than by their writing style. This tool changes typography only, never words:
   curly quotes to straight quotes; long and short dashes to a hyphen; non-breaking and other odd spaces to a space;
   an ellipsis character to three dots; bullet characters to a hyphen; markdown bold, italic, and heading markers
-  removed; trailing spaces removed; paragraphs separated by exactly one blank line; one final newline.
+  removed; trailing spaces removed; a labeled section line ("HPI:", "Exam:", "Plan:", up to four words before the
+  colon) starts its own paragraph, so a template-style note keeps citable paragraphs; paragraphs separated by
+  exactly one blank line; one final newline.
 Anything else outside plain ASCII is reported and the tool stops, so a person decides what it should be.
 --check fails if any golden note would change or holds a character outside plain ASCII.
 """
@@ -34,6 +36,7 @@ def normalize(text):
     text = re.sub(r"(?<!\w)\*(\S.*?\S|\S)\*(?!\w)", r"\1", text)  # italic
     text = re.sub(r"(?m)^\s*[*]\s+", "- ", text)         # star bullets
     text = re.sub(r"[ \t]+$", "", text, flags=re.M)      # trailing spaces
+    text = re.sub(r"(?m)(?<=\S)\n(?=[A-Z][A-Za-z/&]*(?: [A-Za-z/&]+){0,3}:\s)", "\n\n", text)  # sections
     text = re.sub(r"\n{3,}", "\n\n", text.strip()) + "\n"
     return text
 
