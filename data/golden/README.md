@@ -7,7 +7,7 @@ Twelve cases (01 to 10, 12, and 15) and two paired fairness duplicates. What eac
 | File | What it is | Made by |
 |---|---|---|
 | `case_spec.yaml` | The case's facts: dates, visits, therapy, imaging, exam findings, past history, the requested MRI | Written by Claude |
-| `note.md` | The last visit note | Written by Claude; the notes of cases 08, 10 and 12 are to be restyled by Enlai Weng in the Gemini app before labeling |
+| `note.md` | The last visit note | Written by Claude; the notes of cases 08, 10 and 12 were restyled by Enlai Weng in the Gemini app on 2026-10-15, then normalized and fact-checked (docs/DATASHEET.md) |
 | `bundle.json` | The FHIR R4 record the agent reads | `eval/tools/render_case.py`, from the spec, the note, and the patient's baseline |
 | `case_page.md` | The record as a readable page, with the ids labels cite | `eval/tools/build_case_pages.py`, from the bundle |
 | `labels_blind.yaml` | Enlai Weng's blind labels (added at labeling) | The labeling page, `eval/labeling/labeling.html` |

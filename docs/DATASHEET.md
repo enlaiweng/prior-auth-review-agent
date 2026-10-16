@@ -4,7 +4,7 @@ EDOM Phase 3 artifact, kept with the golden set. Shape follows Gebru et al., Dat
 
 ## Motivation
 
-Created to evaluate a prior authorization review agent against Medicare LCD L34220 (Lumbar MRI) when no public prior authorization case data exists. Cases and notes written by Claude, an AI engineering agent, under Enlai Weng's review; answer key by Enlai Weng (Amendment 2). Patients generated and cases written 2026-10-15; the three held-out notes restyled by Enlai Weng in the Gemini app on [date].
+Created to evaluate a prior authorization review agent against Medicare LCD L34220 (Lumbar MRI) when no public prior authorization case data exists. Cases and notes written by Claude, an AI engineering agent, under Enlai Weng's review; answer key by Enlai Weng (Amendment 2). Patients generated and cases written 2026-10-15; the three held-out notes restyled by Enlai Weng in the Gemini app on 2026-10-15, Pacific time (the commit messages say 2026-10-16, the date in the guide's example), with the model setting "Auto" on the free tier, so the exact Gemini model is not recorded. Each restyled note was then normalized for typography only (`eval/tools/normalize_note.py`) and checked fact by fact against the note before restyling; the one fact lost, the visit type "Follow-up" in notes 08 and 10, was put back in the note's own style, in a separate commit.
 
 ## Composition
 
@@ -34,7 +34,7 @@ Redistributed in this repository under [license]. Synthea output is synthetic an
 
 ## Known limitations
 
-Synthetic records are cleaner and more internally consistent than real charts. Cases and notes were written by Claude, and the agent under test is a Claude model; nine of the twelve notes are in Claude's writing style, and the three held-out notes were restyled in another model's style to test this. The adjudicator knew each case's designed outcome. Two of the three readers are AI models; only the nurse check, if done, adds a qualified human who did not know the design. The set is small; a single case moves a percentage by about eight points.
+Synthetic records are cleaner and more internally consistent than real charts. Cases and notes were written by Claude, and the agent under test is a Claude model; nine of the twelve notes are in Claude's writing style, and the three held-out notes were restyled in another model's style to test this. The restyled notes are template-style, with capitalized headings and short phrases, so a reader can tell those three apart from the rest; that tells a reader which cases are held out, not how they should be labeled. The adjudicator knew each case's designed outcome. Two of the three readers are AI models; only the nurse check, if done, adds a qualified human who did not know the design. The set is small; a single case moves a percentage by about eight points.
 
 ## Maintenance
 
