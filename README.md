@@ -6,6 +6,8 @@ It has three outputs: approve, request specific missing documentation, or route 
 
 Built on synthetic patients only. No real patient data anywhere in this repository.
 
+**Status, 2026-10-15:** the golden set and the locked intended answers are done, and labeling is under way. The agent, the scoring, and the demo are being built. The results below are filled in at release.
+
 ## What's under evaluation
 
 The evaluation below tests the agent as a whole, not the underlying language model by itself. The agent is a pipeline of four parts (the prompt, the retrieval step, the model, and the output-structuring logic) that turns a FHIR record plus the retrieved policy text into a single structured decision object; the model is the one piece swapped out for the vendor-update re-evaluation in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The diagram shows that full path, from input to the metrics below.
@@ -14,11 +16,12 @@ The evaluation below tests the agent as a whole, not the underlying language mod
 
 ## Results
 
-Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], one headline run on all 12 cases and two more on the 9 not held out, at the pinned model version; range shown where it matters.
+Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs on all 12 cases at the pinned model version and settings, the first reported as the headline; range shown where it matters.
 
 | Measure | Result | Release threshold |
 |---|---|---|
-| False approvals on the 8 cases adjudicated not approvable | [0 of 8] | 0 |
+| False approvals on the 8 cases adjudicated not approvable | [x of 8] | 0, in every run |
+| Evidence validity (every cited record and note paragraph exists in the case) | [xx%] | 100%, in every run |
 | Citation faithfulness (cited criterion appears verbatim in the policy) | [xx%] | 95% |
 | Per-criterion agreement with adjudication | [xx%] | 85% |
 | Routing agreement (approve / request / route) | [x of 12, xx%] | 80% |
@@ -39,7 +42,7 @@ Errors by type, the adversarial and instruction-bearing cases, the no-notes abla
 [three to six commands: install, generate the golden set from seed, run the agent on one case, run the evaluation]
 ```
 
-The golden set regenerates bit for bit from a documented seed and protocol. Evaluation results reproduce within [n] cases at the pinned model version; language model output is not deterministic, so exact equality is not claimed.
+The golden set rebuilds bit for bit from a documented seed and its committed case files; the three restyled notes are kept as files, since they were rewritten by hand in the Gemini app. Evaluation results reproduce within [n] cases at the pinned model version; language model output is not deterministic, so exact equality is not claimed.
 
 ## What it is for and what it may not decide
 
@@ -72,8 +75,8 @@ Federal and state rules on AI in utilization review attach to denials, delays, a
 
 ## Limits
 
-Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. Where the policy's wording allows two readings (whether radiating leg pain alone is a red flag), the reading used and the evidence for it are in the datasheet, and every case was checked so its expected routing is the same under both. The cases were written by Claude and labeled by one person, who knew each case's designed outcome; a reader from another company and the locked intended answers cross-check the labels, and agreement is in the datasheet. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
+Synthetic records are tidier than real charts. Twelve cases is a small set, cut from a planned twenty before any case was written (decision log, 2026-10-13); one case moves a percentage by about eight points. Where the policy's wording allows two readings (whether radiating leg pain alone is a red flag), the reading used and the evidence for it are in the datasheet, and every case was checked so its expected routing is the same under both. Automatic approval asks for a second source in the record beyond the visit note, which is stricter than the policy's own wording (EVAL_PLAN.md, Criterion inventory). The cases were written by Claude and are labeled by one person, who knows each case's designed outcome; a reader from another company and the locked intended answers cross-check the labels, and agreement will be in the datasheet. Independence of validation was approximated, not achieved; see the release decision. Nothing here has touched a real payer workflow.
 
 ## License and data
 
-Code: [license]. Golden set and authored notes: [license]; generated from Synthea (Apache 2.0) plus authored episodes. Policy text is quoted with attribution from the CMS Medicare Coverage Database; CPT, CDT, and UB-04 code tables are not redistributed here.
+Code: MIT ([LICENSE](LICENSE)). Golden set and authored notes: MIT, the same license; generated from Synthea (Apache 2.0) plus authored episodes. Policy text is quoted with attribution from the CMS Medicare Coverage Database; CPT, CDT, and UB-04 code tables are not redistributed here.

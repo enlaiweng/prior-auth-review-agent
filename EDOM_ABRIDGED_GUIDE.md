@@ -1,5 +1,7 @@
 # EDOM Abridged: Minimum Viable Documentation for the Prior Auth Review Agent
 
+Note, 2026-10-15: this guide describes the plan as of September 2026. Charter Amendments 1 and 2 (docs/CHARTER.md) replace its case count, split, dates, and seven-day relabel step; where they differ, the charter and docs/EVAL_PLAN.md govern.
+
 Prepared 2026-09-10. This is EDOM v3.1 cut down to what one person needs to deliver this project and what a hiring manager needs to see that the method was run. It is derived from the paper's solo bundle (Appendix D) and the load test (Section 2.14, Test 3), then customized: every template in this folder is pre-filled with what has already been decided, and brackets mark what the build will supply.
 
 ## The set: nine documents and a README
