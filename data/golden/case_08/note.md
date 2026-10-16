@@ -1,5 +1,7 @@
 DATE OF SERVICE: 2026-08-11
 
+VISIT TYPE: Follow-up
+
 DEMOGRAPHICS: 64-year-old man
 
 CHIEF COMPLAINT: Low back pain
