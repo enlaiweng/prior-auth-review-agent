@@ -190,6 +190,8 @@ def verify():
             entry = json.load(open(record_path, encoding="utf-8"))["cases"][case_id]
             if entry.get("response_sha256") != sha256(raw):
                 out.append(f"{path}: the saved reply does not match the fingerprint in {record_path}")
+            if entry.get("labels_sha256") != sha256(text):
+                out.append(f"{path}: does not match the labels fingerprint in {record_path}")
         except (OSError, KeyError, ValueError):
             out.append(f"{path}: no entry for {case_id} in {record_path}")
         resp = json.loads(raw)
@@ -304,14 +306,18 @@ def main(argv=None):
 
     failed = [c for c, e in record["cases"].items() if e["outcome"] == "failed"]
     if args.summary:
-        rows = ["| Case | Outcome | Model version | Tokens in / out | Note |", "|---|---|---|---|---|"]
+        rows = ["| Case | Outcome | Model version | Tokens in / out | Reply sha256 | Labels sha256 | Note |",
+                "|---|---|---|---|---|---|---|"]
         for c, e in record["cases"].items():
             u = e.get("usage") or {}
             tok = f"{u.get('promptTokenCount', '')} / {u.get('candidatesTokenCount', '')}"
             note = e.get("parse_note", "") if e["outcome"] == "labeled" else "; ".join(e["problems"])
-            rows.append(f"| {c} | {e['outcome']} | {e.get('model_version')} | {tok} | {note} |")
+            rows.append(f"| {c} | {e['outcome']} | {e.get('model_version')} | {tok} | {e.get('response_sha256', '')} | "
+                        f"{e.get('labels_sha256', '')} | {note} |")
         open(args.summary, "w", encoding="utf-8").write(
-            f"Model requested: `{MODEL}`. Version Gemini reported: {', '.join(versions)}.\n\n" + "\n".join(rows) + "\n")
+            f"Model requested: `{MODEL}`. Version Gemini reported: {', '.join(versions)}.\n\n" + "\n".join(rows) + "\n\n"
+            "The fingerprints are also in this run's summary on the Actions page, which a later commit can't change; "
+            "`run_third_reader.py --verify` checks the files in the pull request against them.\n")
     labeled = [c for c, e in record["cases"].items() if e["outcome"] == "labeled"]
     print(f"done: {len(labeled)} labeled, {len(failed)} not labeled" + (f" ({', '.join(failed)})" if failed else ""))
     return 3 if failed else 0

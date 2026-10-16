@@ -25,7 +25,11 @@ The workflow also refuses to start while a `third-reader/` branch from an earlie
 
 ## How a hand edit would be caught
 
-`run_third_reader.py --verify` rebuilds every `labels_gemini.yaml` from the reply saved in its run folder, checks that reply against the fingerprint in that run's `run_record.json`, and fails if anything differs. The Checks workflow runs it on every pull request, so Gemini's labels can't be changed by anyone, Claude included, without the check going red.
+`run_third_reader.py --verify` rebuilds every `labels_gemini.yaml` from the reply saved in its run folder, checks the reply and the labels file against the fingerprints in that run's `run_record.json`, and fails if anything differs. The Checks workflow runs it on every pull request, so Gemini's labels can't be changed by anyone, Claude included, without the check going red. Someone changing the reply, the record, and the labels together would get past that check, so the same fingerprints are also printed in the workflow run's summary on the Actions page, which no commit can change; the reveal compares the two.
+
+Two GitHub details:
+- The workflow opens its pull request with GitHub's own token, which needs the repository setting **Allow GitHub Actions to create and approve pull requests** (Settings, Actions, General; ticked in week 1).
+- A pull request opened with that token doesn't start other workflows, so the Checks workflow first runs on it when Claude adds the reveal. If nothing is added, closing and reopening the pull request starts the checks.
 
 ## Settings
 
