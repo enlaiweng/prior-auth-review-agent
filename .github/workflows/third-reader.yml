@@ -2,8 +2,8 @@
 # (docs/EVAL_PLAN.md, How the answer key is made).
 # How it starts: by hand, from the Actions page, on main only. It uses the "release" environment, which holds
 # GEMINI_API_KEY, so GitHub waits for the owner to approve the run before it can begin.
-# What it refuses to do: start before every golden case has complete blind labels on main, or send a prompt that differs
-# from its fingerprint in eval/third_reader/prompts/prompts.sha256.
+# What it refuses to do: start before every golden case has complete blind labels on main, start while an earlier run's
+# third-reader/ branch still exists, or send a prompt that differs from its fingerprint in prompts.sha256.
 # What it delivers: a pull request with data/golden/case_NN/labels_gemini.yaml for each case Gemini labeled, and the run's
 # folder eval/third_reader/runs/RUN/ holding every reply as Gemini sent it and run_record.json (the model version Gemini
 # reported, fingerprints, token counts, and what happened to each case). This workflow merges nothing.
@@ -45,6 +45,10 @@ jobs:
 
       - name: Check that the blind labels are all in and the prompts are the fixed ones
         run: |
+          if [ -n "$(git ls-remote --heads origin 'refs/heads/third-reader/*')" ]; then
+            echo "::error title=Earlier run not merged::A third-reader branch from an earlier run still exists. Merge or close its pull request, delete its branch, then start this again."
+            exit 1
+          fi
           python3 eval/tools/check_labels.py --require-blind
           (cd eval/third_reader/prompts && sha256sum --check --strict prompts.sha256)
           python3 eval/tools/build_case_pages.py > /dev/null

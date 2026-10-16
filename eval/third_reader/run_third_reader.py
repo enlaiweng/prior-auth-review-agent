@@ -20,6 +20,11 @@ reply fingerprints, token counts, and the outcome of each case. A case that alre
 again: those labels are never edited, and every run's replies stay in their own folder.
 Exit code: 0 when every case passed, 3 when some did not (the files for the cases that passed are still written), 1 on a
 setup problem such as a missing key or a changed prompt.
+
+  python3 eval/third_reader/run_third_reader.py --verify
+checks, with no key and no network, that every labels_gemini.yaml is exactly what this script writes from the reply
+saved in its run folder, and that the reply is the one the run record fingerprinted. The Checks workflow runs it on
+every pull request, so a Gemini label file cannot be edited by hand without the check failing.
 """
 import argparse, datetime, glob, hashlib, json, os, re, sys, time, urllib.error, urllib.request
 
@@ -154,13 +159,67 @@ def labels_yaml(data, case_id, labeled_on, model_requested, model_version, promp
     return "\n".join(lines) + "\n"
 
 
+HEADER = re.compile(r"^# Written by eval/third_reader/run_third_reader.py from the reply saved in (\S+)\.\n"
+                    r"# Model requested: (\S+)\. Model version Gemini reported: (.+)\. Prompt sha256: ([0-9a-f]{64})\.$", re.M)
+
+
+def verify():
+    """Rebuild every labels_gemini.yaml from its saved reply and compare. Returns a list of problems (empty when all match)."""
+    out = []
+    sums = {}
+    for line in open(os.path.join(PROMPTS, "prompts.sha256"), encoding="utf-8"):
+        if line.strip():
+            digest, name = line.split()
+            sums[name.replace(".txt", "")] = digest
+    for path in sorted(glob.glob("data/golden/case_*/labels_gemini.yaml")):
+        case_id = path.split("/")[2]
+        text = open(path, encoding="utf-8").read()
+        m = HEADER.search(text)
+        if not m:
+            out.append(f"{path}: the header naming its reply, model, and prompt is missing or changed")
+            continue
+        response_file, model_requested, model_version, prompt_sha = m.groups()
+        if prompt_sha != sums.get(case_id):
+            out.append(f"{path}: its prompt fingerprint does not match prompts.sha256")
+        if not os.path.exists(response_file):
+            out.append(f"{path}: the reply it names, {response_file}, is not in the repository")
+            continue
+        raw = open(response_file, encoding="utf-8").read()
+        record_path = os.path.join(os.path.dirname(response_file), "run_record.json")
+        try:
+            entry = json.load(open(record_path, encoding="utf-8"))["cases"][case_id]
+            if entry.get("response_sha256") != sha256(raw):
+                out.append(f"{path}: the saved reply does not match the fingerprint in {record_path}")
+        except (OSError, KeyError, ValueError):
+            out.append(f"{path}: no entry for {case_id} in {record_path}")
+        resp = json.loads(raw)
+        try:
+            data, _ = parse_reply(reply_text(resp))
+        except ValueError as e:
+            out.append(f"{path}: its saved reply cannot be read ({e})")
+            continue
+        labeled_on = (yaml.safe_load(text) or {}).get("labeled_on")
+        rebuilt = labels_yaml(data, case_id, labeled_on, model_requested, resp.get("modelVersion"), prompt_sha, response_file)
+        if rebuilt != text:
+            out.append(f"{path}: differs from what the script writes from its saved reply")
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--cases", default="all", help="all, or case numbers separated by commas, for example 01,05")
     ap.add_argument("--summary", help="also write a short markdown summary to this file (for the pull request)")
     ap.add_argument("--pause", type=float, default=5.0, help="seconds to wait between cases (free-tier rate limits)")
+    ap.add_argument("--verify", action="store_true", help="check every labels_gemini.yaml against its saved reply, then stop")
     ap.add_argument("--test-base-url", help=argparse.SUPPRESS)  # tests only: a local fake server
     args = ap.parse_args(argv)
+    if args.verify:
+        found = verify()
+        for f in found:
+            print("FAIL " + f)
+        n = len(glob.glob("data/golden/case_*/labels_gemini.yaml"))
+        print(f"{n} Gemini label file(s) checked against their saved replies: " + ("all match" if not found else f"{len(found)} problem(s)"))
+        return 1 if found else 0
 
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
@@ -232,9 +291,9 @@ def main(argv=None):
                 entry.update(outcome="failed", problems=found)
             else:
                 out = os.path.join("data/golden", case_id, "labels_gemini.yaml")
-                open(out, "w", encoding="utf-8").write(labels_yaml(
-                    data, case_id, today, MODEL, entry.get("model_version"), prompt_sha, response_file))
-                entry.update(outcome="labeled", labels_file=out)
+                written = labels_yaml(data, case_id, today, MODEL, entry.get("model_version"), prompt_sha, response_file)
+                open(out, "w", encoding="utf-8").write(written)
+                entry.update(outcome="labeled", labels_file=out, labels_sha256=sha256(written))
         record["cases"][case_id] = entry
         print(f"{case_id}: {entry['outcome']}" + ("" if entry["outcome"] == "labeled" else ": " + "; ".join(entry["problems"])))
 

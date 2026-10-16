@@ -21,6 +21,12 @@ A model from another company labels the same twelve case pages the owner labels,
 4. For each reply it saves the whole reply, reads the YAML in it, and checks its form with `eval/tools/check_labels.py`. A reply that passes becomes `labels_gemini.yaml`. A reply that does not is kept and listed as failed, and no labels file is made from it.
 5. The results arrive as a pull request. Claude adds the reveal and the disagreement report to that pull request before the owner merges it.
 
+The workflow also refuses to start while a `third-reader/` branch from an earlier run still exists, so two runs can't label the same cases.
+
+## How a hand edit would be caught
+
+`run_third_reader.py --verify` rebuilds every `labels_gemini.yaml` from the reply saved in its run folder, checks that reply against the fingerprint in that run's `run_record.json`, and fails if anything differs. The Checks workflow runs it on every pull request, so Gemini's labels can't be changed by anyone, Claude included, without the check going red.
+
 ## Settings
 
 | Setting | Value | Why |
@@ -36,4 +42,4 @@ Google's free tier may use what is sent through it to improve its products. Ever
 
 ## Tests
 
-`eval/tests/test_third_reader.py` runs the script against a fake Gemini server on the test computer and checks the retries, the fence handling, the form check, that the key goes in a header and never in the address, and that existing labels are never overwritten. The Checks workflow runs it on every pull request.
+`eval/tests/test_third_reader.py` runs the script against a fake Gemini server on the test computer and checks the retries, the fence handling, the form check, that the key goes in a header and never in the address, that existing labels are never overwritten, and that `--verify` catches an edited label file. The Checks workflow runs it on every pull request.

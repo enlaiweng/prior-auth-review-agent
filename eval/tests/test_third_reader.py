@@ -125,6 +125,28 @@ class ThirdReaderTest(unittest.TestCase):
             s = f.read()
         self.assertIn("| case_03 | failed |", s)
 
+    def test_verify_passes_then_catches_an_edit(self):
+        import run_third_reader
+        self.assertEqual(run_third_reader.verify(), [])
+        path = "data/golden/case_02/labels_gemini.yaml"
+        original = open(path).read()
+        try:
+            with open(path, "w") as f:
+                f.write(original.replace("expected_routing: route", "expected_routing: request"))
+            found = run_third_reader.verify()
+            self.assertEqual(len(found), 1)
+            self.assertIn("differs from what the script writes", found[0])
+        finally:
+            with open(path, "w") as f:
+                f.write(original)
+        self.assertEqual(run_third_reader.main(["--verify"]), 0)
+
+    def test_record_fingerprints_the_labels_file(self):
+        import hashlib
+        e = self.record["cases"]["case_01"]
+        with open("data/golden/case_01/labels_gemini.yaml", "rb") as f:
+            self.assertEqual(e["labels_sha256"], hashlib.sha256(f.read()).hexdigest())
+
     def test_existing_labels_never_overwritten(self):
         import run_third_reader
         before = open("data/golden/case_01/labels_gemini.yaml").read()
