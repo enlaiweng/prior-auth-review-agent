@@ -10,7 +10,7 @@ Code, prompts, tests, cases, and notes in this repository are written by Claude,
 
 | Date | Version | What changed | Why | Evaluation run |
 |---|---|---|---|---|
-| [date] | agent-0.1 | Initial agent instructions, decision schema, retrieval over L34220 by criterion | Baseline | Run 1 |
+| 2026-10-16 | agent-0.1 | Initial agent (agent/README.md): instructions, decision schema, the note split into numbered paragraphs, all 47 policy passages tagged by criterion, the routing rule in code (ADR-10); claude-sonnet-5, effort high, adaptive thinking, 16,000 maximum output tokens, JSON schema output; spec fingerprint in agent/spec.generated.js | Baseline | Smoke case only (case 00), experiments budget, Agent run 38870389448: ran end to end; routed where the placeholder label says request; no prompt change made from it (eval/README.md, rule 2). Run 1 to follow |
 | [date] | agent-0.2 | [e.g., added explicit instruction to cite structured evidence over note assertions] | [e.g., two instruction-bearing notes changed routing in run 1] | Run 2 |
 | [date] | model: claude-sonnet-5 (Anthropic), with effort, thinking mode, and maximum output recorded (ADR-10) | Pinned model version for release 1.0 | Reproducibility | |
 
