@@ -113,6 +113,13 @@ class ScoreTest(unittest.TestCase):
         self.assertFalse(s["meets_threshold"]["checklist_all_supported"])  # all four supported; the label's C3 is not
         self.assertIn("checklist mode", self.score.markdown(s))
 
+    def test_a_run_of_failed_decisions_fails_the_gates(self):
+        s = self.run_with({"case_id": "case_00", "routing": "route", "error": "HTTP 500", "named_gap": None,
+                           "criteria": None, "contradictions": None})
+        self.assertFalse(s["meets_threshold"]["citation_faithfulness"])
+        self.assertFalse(s["meets_threshold"]["evidence_validity"])
+        self.assertEqual(s["errors"], ["case_00"])
+
     def test_status_disagreement(self):
         s = self.run_with(decision(c1="undeterminable"))
         self.assertEqual(s["metrics"]["per_criterion_agreement"], 0.75)

@@ -12,14 +12,14 @@ This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10):
 |---|---|
 | Checklist mode is on (the kill switch) | route |
 | Any cited id is not in the case | route |
-| A red flag rests on the visit note alone, or the record contradicts itself on C1 | route |
+| A red flag rests on the visit note alone, is reported without an entry the rule accepts, or is contradicted | route |
 | C3 and C4 are met, and C1 or C2 is met with a record entry other than the visit note | approve |
 | One criterion other than C1 is undeterminable for want of one named document, nothing is contradicted, and that document would make the case approvable | request, naming the criterion and the document |
 | Anything else | route |
 
 "Met" means: status supported, at least one valid policy passage cited, and no contradiction reported on that criterion. For C1, the entry behind it must be a Condition, Observation, Procedure, imaging report (DiagnosticReport), or medication order. For C2, it must be a therapy Procedure or a medication order that started within the year before the request date. C3 must cite at least one id. C4 may cite nothing, since "no prior lumbar imaging" rests on an absence.
 
-A red flag "rests on the visit note alone" when the model calls C1 supported or undeterminable, cites the note, and cites none of the entries that count for C1.
+The red-flag step routes when the model reports a contradiction on C1, calls C1 supported without one of the entries that count for C1, or calls C1 undeterminable while citing the note.
 
 Every decision carries plain-language reasons naming the step that decided it.
 
@@ -29,10 +29,14 @@ ADR-10 and EVAL_PLAN.md state the rule in a few sentences. Writing it as code ne
 
 1. **A policy citation for every applicable criterion.** The charter says the system may never "issue an approval without a citation for every applicable criterion". So C3, C4, and the criterion the approval rests on each need a valid policy passage.
 2. **C3 needs a cited id.** A supported C3 says something the record contains, so it must point to it.
-3. **What can stand behind C1:** a Condition, Observation, Procedure, DiagnosticReport, or MedicationRequest. The request itself (Claim), the Patient, the visits (Encounter), and the note can't, because none of them records a clinical finding. Whether a visit's recorded reason should count is a question for after labeling.
+3. **What can stand behind C1:** a Condition, Observation, Procedure, DiagnosticReport, or MedicationRequest. The request itself (Claim), the Patient, the visits (Encounter), and the note can't, because none of them records a clinical finding. A visit's recorded reason doesn't count either; this can be revisited before run 1 if you want it to.
 4. **What can stand behind C2:** a Procedure or a medication order that started on or before the request date and within the 365 days before it. Code can't tell a therapy Procedure from another Procedure, so any dated Procedure in that window counts; the window keeps an old order for an unrelated condition from counting.
-5. **A note-only or contradicted red flag routes the whole case**, as EVAL_PLAN.md's C1 says ("is labeled undeterminable, and the case routes"), even if C2 would otherwise approve. A contradiction on C2, C3, or C4 blocks approval on that criterion and blocks any request.
+5. **A note-only, unbacked, or contradicted red flag routes the whole case**, as EVAL_PLAN.md's C1 says ("is labeled undeterminable, and the case routes"), even if C2 would otherwise approve. The code reads it from the report in three ways (the red-flag step above), so a report that is inconsistent, for example C1 supported with nothing behind it, routes rather than approves. A contradiction on C2, C3, or C4 blocks approval on that criterion and blocks any request.
 6. **Invalid ids route, whatever else holds.** ADR-10 requires valid ids for an approval; the code also routes rather than requests when an id is invalid.
+
+## Known limit
+
+The code checks the form of the evidence, not its meaning. For C2 it checks that a Procedure or medication order from the year before the request is cited; it can't tell physical therapy for back pain from an unrelated recent order, such as a blood pressure pill, in the patient's background history. Whether the cited entry really is conservative care for this episode is the model's judgment, and it is measured, not assumed: on the golden set, per-criterion agreement checks it, and the false-approval gate (zero, in every release run) catches any approval it causes. A list of therapy types written into the code would close more of this gap, but it would be a new clinical rule this project hasn't adopted. That choice is open for you before run 1.
 
 ## Settings (pinned, recorded with every run)
 

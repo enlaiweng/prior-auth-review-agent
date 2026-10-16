@@ -66,14 +66,20 @@ function approvalBasis(report, ctx, assumed) {
 }
 
 // A red flag that rests on the note alone, or that the record contradicts, routes the case (EVAL_PLAN.md, C1: such a red
-// flag "is labeled undeterminable, and the case routes"; ADR-10). A red flag rests on the note alone when the model calls
-// C1 supported or undeterminable, cites the note, and cites no entry that can document a red flag.
+// flag "is labeled undeterminable, and the case routes"; ADR-10). Three ways the report can show one:
+//   - a contradiction reported on C1;
+//   - C1 called supported without an entry that can document a red flag (the claim then rests on the note, or on
+//     nothing the rule accepts);
+//   - C1 called undeterminable while citing the note (the red-flag question is open because of what the note says).
+// C1 unsupported, or undeterminable without citing the note, does not route by itself.
 function redFlagRoutes(report, ctx) {
   const c = report.criteria[CRITERIA.C1];
   if (contradicted("C1", report)) return "the record contradicts itself on C1 (a red flag)";
-  const noteOnly = (c.status === "supported" || c.status === "undeterminable") &&
-    c.evidence.some(id => isNote(id, ctx)) && !hasStructuredEvidence("C1", c, ctx);
-  return noteOnly ? "a red flag rests on the visit note alone" : null;
+  if (c.status === "supported" && !hasStructuredEvidence("C1", c, ctx))
+    return "a red flag is reported without a Condition, Observation, Procedure, imaging report, or medication order behind it";
+  if (c.status === "undeterminable" && c.evidence.some(id => isNote(id, ctx)))
+    return "the red-flag question is left open by what the visit note says";
+  return null;
 }
 
 export function citedIds(report) {

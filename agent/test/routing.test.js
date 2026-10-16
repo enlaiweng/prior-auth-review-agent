@@ -10,7 +10,7 @@ const ctx = (over = {}) => ({
                      "Observation/o", "Condition/c", "Encounter/e", "DocumentReference/n", "note:p1", "note:p2", "note:p3"]),
   noteIds: new Set(["DocumentReference/n", "note:p1", "note:p2", "note:p3"]),
   passageIds: new Set(["L34220-15", "L34220-36", "L34220-39", "L34220-41"]),
-  entryStart: new Map([["Procedure/pt", "2026-06-01"], ["MedicationRequest/m", "2026-05-20"], ["MedicationRequest/old", "1982-01-01"]]),
+  entryStart: new Map([["Procedure/pt", "2026-06-04"], ["MedicationRequest/m", "2026-05-20"], ["MedicationRequest/old", "1982-01-01"]]),
   requestDate: "2026-08-15",
   approveEnabled: true, ...over,
 });
@@ -68,8 +68,25 @@ test("a red flag resting on the note alone routes, even when C2 would approve", 
   for (const status of ["supported", "undeterminable"]) {
     const v = decideRouting(report({ criteria: { C1_red_flag: crit(status, ["note:p1", "Patient/p"], ["L34220-15"]) } }), ctx());
     assert.equal(v.routing, "route", status);
-    assert.match(v.reasons.join(" "), /visit note alone/);
+    assert.match(v.reasons.join(" "), /visit note|without a Condition/);
   }
+});
+
+test("a red flag reported as supported with nothing the rule accepts behind it routes", () => {
+  for (const ev of [[], ["Encounter/e"], ["Claim/r", "Patient/p"]]) {
+    const v = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ev, ["L34220-15"]) } }), ctx());
+    assert.equal(v.routing, "route", ev.join(","));
+  }
+});
+
+test("C1 left undeterminable by the note routes, even with a structured entry cited and no contradiction listed", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]) } }), ctx());
+  assert.equal(v.routing, "route");
+  assert.match(v.reasons.join(" "), /visit note/);
+});
+
+test("C1 undeterminable without the note cited does not stop an approval on C2", () => {
+  assert.equal(decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", [], ["L34220-15"]) } }), ctx()).routing, "approve");
 });
 
 test("a note that rules red flags out does not stop an approval on C2", () => {

@@ -75,7 +75,13 @@ async function callModel(body, { apiKey, fetchImpl, apiUrl, sleep }) {
       if (attempt < MAX_ATTEMPTS) { await sleep(Math.min(5000 * 2 ** (attempt - 1), 60000)); continue; }
       return { ...last, attempts: attempt };
     }
-    const text = await res.text();
+    let text;
+    try { text = await res.text(); } catch (e) {
+      // The reply stopped arriving (for example the call's timeout fired while it was being read): try again.
+      last = { status: 0, error: String(e) };
+      if (attempt < MAX_ATTEMPTS) { await sleep(Math.min(5000 * 2 ** (attempt - 1), 60000)); continue; }
+      return { ...last, attempts: attempt };
+    }
     let json = null;
     try { json = JSON.parse(text); } catch { /* not JSON */ }
     if (res.ok) return { status: res.status, json, requestId: res.headers.get("request-id"), attempts: attempt };

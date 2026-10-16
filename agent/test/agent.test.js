@@ -111,6 +111,21 @@ test("a reply that is not JSON routes instead of stopping the run", async () => 
   assert.match(d.error, /not JSON/);
 });
 
+test("a reply that stops arriving while being read is tried again", async () => {
+  let first = true;
+  const f = async (url, init) => {
+    if (first) {
+      first = false;
+      return { ok: true, status: 200, headers: { get: () => null },
+               text: async () => { throw Object.assign(new Error("aborted due to timeout"), { name: "TimeoutError" }); } };
+    }
+    return fakeFetch([okReply(smokeReport)])(url, init);
+  };
+  const d = await reviewCase(smoke, { apiKey: "k", fetchImpl: f, sleep: noSleep });
+  assert.equal(d.attempts, 2);
+  assert.equal(d.routing, "request");
+});
+
 test("each call carries a timeout, and a timed-out call is tried again", async () => {
   const seen = [];
   let first = true;

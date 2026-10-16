@@ -181,6 +181,8 @@ def score(run_dir):
         gates[m] = None if v is None or n == 0 else (v <= t if kind == "count" else v >= t - 1e-12)
     if n and metrics["evidence_validity"] is None:
         gates["evidence_validity"] = False  # a hard gate with nothing to show is not met
+    if n and metrics["citation_faithfulness"] is None:
+        gates["citation_faithfulness"] = False  # no usable report at all: nothing was cited faithfully
     if checklist:
         gates["false_approvals"] = None     # vacuous: nothing can be approved
         gates["checklist_all_supported"] = (c["all_supported_mismatch"] == 0) if n else None
