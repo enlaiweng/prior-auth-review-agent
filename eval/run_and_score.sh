@@ -13,6 +13,14 @@ case "$cases" in smoke|dev|nine|all12) ;; *) echo "unknown case set: $cases"; ex
 case "$runs" in 1|2|3) ;; *) echo "runs must be 1, 2, or 3"; exit 1 ;; esac
 case "$checklist" in true|false) ;; *) echo "checklist must be true or false"; exit 1 ;; esac
 
+# On the experiments budget, the files that say which cases may run must be the ones on main, so a branch cannot widen
+# them for itself (eval/README.md, rules 1 and 5).
+if [ "$budget" = "experiments" ]; then
+  for f in eval/dev_subset.txt docs/EVAL_PLAN.md; do
+    if ! git diff --quiet origin/main -- "$f"; then echo "stopped: $f differs from main; experiments run only with main's case lists"; exit 1; fi
+  done
+fi
+
 version=$(node -e 'import("./agent/agent.js").then(m => console.log(m.AGENT_VERSION))')
 stamp=$(date -u +%Y-%m-%d)
 base="${stamp}_${version}_${cases}_${budget}_run-${GITHUB_RUN_ID:-local}"

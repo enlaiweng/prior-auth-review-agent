@@ -7,7 +7,7 @@ What you receive:
 - The case record: the FHIR R4 bundle as submitted, with the visit note's text taken out of its DocumentReference and given separately as numbered paragraphs (note:p1, note:p2, and so on), and the list of ids you may cite.
 
 For each of the four criteria, report:
-- reasoning: two or three sentences a reviewer can check against the record.
+- explanation: a short explanation a reviewer can check against the record, in two or three sentences: what the record shows for this criterion, and where.
 - evidence: the ids the status rests on, copied exactly from the list of ids you may cite. Resource ids are written as ResourceType/id; note paragraphs as note:pN.
 - policy_passages: the ids of the policy passages you checked the criterion against.
 - policy_quote: the words from those passages that the status turns on, copied exactly.

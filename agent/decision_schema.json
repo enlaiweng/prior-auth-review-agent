@@ -48,13 +48,13 @@
     "criterion": {
       "type": "object",
       "properties": {
-        "reasoning": {"type": "string"},
+        "explanation": {"type": "string"},
         "evidence": {"type": "array", "items": {"type": "string"}},
         "policy_passages": {"type": "array", "items": {"type": "string"}},
         "policy_quote": {"type": "string"},
         "status": {"type": "string", "enum": ["supported", "unsupported", "undeterminable"]}
       },
-      "required": ["reasoning", "evidence", "policy_passages", "policy_quote", "status"],
+      "required": ["explanation", "evidence", "policy_passages", "policy_quote", "status"],
       "additionalProperties": false
     }
   }

@@ -5,11 +5,12 @@
 //   node eval/run_agent.mjs --cases smoke|dev|nine|all12|case_01,case_03 --budget experiments|release --out DIR [--checklist]
 //
 // Case sets: smoke is the throwaway test case data/smoke/case_00; dev is eval/dev_subset.txt; nine is the twelve golden
-// cases minus the held-out ones (eval/held_out.txt); all12 is every golden case.
+// cases minus the held-out ones (HELD_OUT below, checked against docs/EVAL_PLAN.md on every run); all12 is every
+// golden case.
 // Budget rules (eval/README.md): the experiments budget runs only the smoke case and the cases in eval/dev_subset.txt,
 // so it can never touch a held-out case. The release budget runs anything, but held-out cases only as part of all12.
-// Blind-labeling rule: no golden case runs before its blind labels (labels_blind.yaml) are on the branch, so the owner
-// cannot see the agent's view of a case before he labels it.
+// Labels-first rule: no golden case runs before its final labels (labels.yaml) are merged on main, so the agent's view of
+// a case can never reach the owner before he has labeled it and settled its labels.
 // Writes DIR/<case>.json (the decision) and DIR/run.json (settings, agent version, fingerprints, tokens, cost estimate).
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
@@ -19,7 +20,28 @@ import { SPEC_SHA256 } from "../agent/spec.generated.js";
 
 // Published prices for claude-sonnet-5, US dollars per million tokens (platform.claude.com/docs/en/about-claude/pricing,
 // checked 2026-10-16). Used only for the cost estimate in run.json.
-const PRICES = { "claude-sonnet-5": { input: 2, output: 10, cache_write_5m: 2.5, cache_read: 0.2 } };
+const PRICES = {
+  "claude-sonnet-5": { input: 2, output: 10, cache_write_5m: 2.5, cache_read: 0.2 },
+  "claude-sonnet-5-5": { input: 2, output: 10, cache_write_5m: 2.5, cache_read: 0.1 },
+};
+
+// The held-out cases (docs/EVAL_PLAN.md, Golden set composition). Written here rather than read from a file a branch could
+// change, and checked against the plan's own sentence before every run.
+export const HELD_OUT = ["case_08", "case_10", "case_12"];
+const PLAN_SENTENCE = "Held-out cases, 3 of the 12: cases 08, 10, and 12.";
+
+export function checkHeldOutMatchesPlan() {
+  const plan = readFileSync("docs/EVAL_PLAN.md", "utf8");
+  const expected = PLAN_SENTENCE.match(/cases (\d\d), (\d\d), and (\d\d)/).slice(1).map(n => `case_${n}`);
+  if (!plan.includes(PLAN_SENTENCE) || JSON.stringify(expected) !== JSON.stringify(HELD_OUT)) {
+    throw new Error("the held-out list in eval/run_agent.mjs does not match docs/EVAL_PLAN.md; nothing was run");
+  }
+}
+
+// Whether a file is on main (the remote branch), not just on the branch being run.
+function onMain(path) {
+  try { execSync(`git cat-file -e origin/main:${path}`, { stdio: "ignore" }); return true; } catch { return false; }
+}
 
 function lines(path) {
   return readFileSync(path, "utf8").split("\n").map(s => s.trim()).filter(s => s && !s.startsWith("#"));
@@ -30,7 +52,7 @@ export function goldenCases() {
 }
 
 export function resolveCases(spec) {
-  const held = new Set(lines("eval/held_out.txt"));
+  const held = new Set(HELD_OUT);
   const golden = goldenCases();
   let ids;
   if (spec === "smoke") ids = ["case_00"];
@@ -54,8 +76,8 @@ export function checkBudget(cases, budget, spec) {
     throw new Error(`unknown budget ${budget}; use experiments or release`);
   }
   for (const c of cases) if (!existsSync(`${c.dir}/bundle.json`)) throw new Error(`no bundle for ${c.id} at ${c.dir}`);
-  const unlabeled = cases.filter(c => c.id !== "case_00" && !existsSync(`${c.dir}/labels_blind.yaml`));
-  if (unlabeled.length) throw new Error(`no golden case runs before its blind labels are in; missing for: ${unlabeled.map(c => c.id).join(", ")}`);
+  const unlabeled = cases.filter(c => c.id !== "case_00" && !onMain(`${c.dir}/labels.yaml`));
+  if (unlabeled.length) throw new Error(`no golden case runs before its final labels are merged on main; missing for: ${unlabeled.map(c => c.id).join(", ")}`);
 }
 
 export function costUsd(model, usage) {
@@ -86,6 +108,7 @@ function args(argv) {
 
 async function main() {
   const a = args(process.argv.slice(2));
+  checkHeldOutMatchesPlan();
   const cases = resolveCases(a.cases);
   checkBudget(cases, a.budget, a.cases);
   const apiKey = process.env.ANTHROPIC_API_KEY;

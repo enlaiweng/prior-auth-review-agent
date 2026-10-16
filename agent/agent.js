@@ -22,6 +22,7 @@ export const SETTINGS = Object.freeze({
 const API_URL = "https://api.anthropic.com/v1/messages";
 const RETRY_STATUSES = new Set([429, 500, 502, 503, 504, 529]);
 const MAX_ATTEMPTS = 5;
+const CALL_TIMEOUT_MS = 280000; // one call; a slower one is abandoned and tried again
 const STATUSES = new Set(["supported", "unsupported", "undeterminable"]);
 const SHORTS = new Set(["C1", "C2", "C3", "C4"]);
 
@@ -49,7 +50,7 @@ export function reportProblems(r) {
     if (!isStrList(c.evidence)) p.push(`${k} evidence invalid`);
     if (!isStrList(c.policy_passages)) p.push(`${k} policy_passages invalid`);
     if (typeof c.policy_quote !== "string") p.push(`${k} policy_quote invalid`);
-    if (typeof c.reasoning !== "string") p.push(`${k} reasoning invalid`);
+    if (typeof c.explanation !== "string") p.push(`${k} explanation invalid`);
   }
   if (!Array.isArray(r.contradictions) || !r.contradictions.every(x => x && SHORTS.has(x.criterion) && isStrList(x.evidence)))
     p.push("contradictions invalid");
@@ -67,6 +68,7 @@ async function callModel(body, { apiKey, fetchImpl, apiUrl, sleep }) {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
       });
     } catch (e) {
       last = { status: 0, error: String(e) };
@@ -131,6 +133,7 @@ export async function reviewCase(bundle, {
     return decision;
   };
   if (call.status !== 200) return fail(`API returned HTTP ${call.status}: ${call.error}`);
+  if (!call.json || typeof call.json !== "object") return fail("the API's reply was not JSON");
   if (call.json.stop_reason !== "end_turn") return fail(`the reply stopped early (stop_reason ${call.json.stop_reason})`);
   const textBlock = (call.json.content || []).find(b => b.type === "text");
   if (!textBlock) return fail("the reply has no text block");
@@ -141,6 +144,7 @@ export async function reviewCase(bundle, {
 
   const verdict = decideRouting(report, {
     validIds: new Set(rc.citableIds), noteIds: rc.noteIds, passageIds: new Set(PASSAGE_IDS), approveEnabled,
+    entryStart: rc.entryStart, requestDate: rc.requestDate,
   });
   return Object.assign(decision, {
     routing: verdict.routing,

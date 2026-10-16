@@ -11,7 +11,7 @@ for (const f of readdirSync(dir).filter(f => /^case_.*\.json$/.test(f)).sort()) 
   const brief = {
     routing: d.routing, named_gap: d.named_gap, basis: d.basis, error: d.error, reasons: d.routing_reasons,
     criteria: d.criteria && Object.fromEntries(Object.entries(d.criteria).map(([k, c]) =>
-      [k, { status: c.status, evidence: c.evidence, passages: c.policy_passages, quote: c.policy_quote, reasoning: c.reasoning }])),
+      [k, { status: c.status, evidence: c.evidence, passages: c.policy_passages, quote: c.policy_quote, explanation: c.explanation }])),
     contradictions: d.contradictions, missing_document_suggested: d.missing_document_suggested, confidence: d.confidence,
     invalid_evidence: d.invalid_evidence, model_returned: d.model.returned, stop_reason: d.stop_reason, usage: d.usage,
     cost_usd_estimate: run.cases[d.case_id]?.cost_usd_estimate, seconds: d.seconds,

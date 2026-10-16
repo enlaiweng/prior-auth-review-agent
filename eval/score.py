@@ -9,14 +9,17 @@ Writes RUN/score.json and RUN/score.md. Exit code 0, whatever the scores; it onl
 
 How each metric is counted (EVAL_PLAN.md; choices the plan leaves open are marked "reading"):
 - False approvals: decisions of approve on a case whose label is request or route. Hard gate: 0.
-- Citation faithfulness: of the criteria with a policy quote, the share whose quote appears word for word in one of
-  the policy passages that criterion cites (data/policy/passages.json, made from data/policy/L34220.md), comparing
-  with runs of spaces and line breaks treated as one space. Readings: a criterion with no quote is not a cited
-  criterion (how many had none is reported beside it); a quote must sit in a passage the criterion cites, so a right
-  quote under a wrong passage id counts as mismatched; and a quote of fewer than three words counts only when it is a
-  whole passage (some passages are one word, such as "Fever"), so a fragment like "the" cannot pass.
+- Citation faithfulness: of every criterion in a usable report, the share whose policy quote appears word for word in
+  one of the policy passages that criterion cites (data/policy/passages.json, made from data/policy/L34220.md),
+  comparing with runs of spaces and line breaks treated as one space. Readings: a criterion with an empty quote counts
+  as not faithful, so leaving quotes out cannot raise the score; a quote must sit in a passage the criterion cites, so
+  a right quote under a wrong passage id counts as mismatched; and a quote of fewer than three words counts only when
+  it is a whole passage (some passages are one word, such as "Fever"), so a fragment like "the" cannot pass.
 - Evidence validity: of every id cited (criteria and contradictions), the share that exists in the case: a resource
-  in the bundle, or a note paragraph note:pN as eval/tools/build_case_pages.py numbers them. Hard gate: 100%.
+  in the bundle, or a note paragraph note:pN as eval/tools/build_case_pages.py numbers them. Hard gate: 100%. A run
+  that cites no id at all cannot show this, so the gate counts as not met.
+- Checklist mode (run.json says checklist_mode): the false-approval gate is vacuous, so it is replaced by the plan's
+  check that no case has all four criteria supported when its labels do not (EVAL_PLAN.md, Go/no-go rule), at zero.
 - Per-criterion agreement: of the four statuses per case, the share equal to the label's.
 - Routing agreement: the share of cases whose routing equals the label's.
 - Missing-documentation recall: of the cases labeled with a named gap, the share the agent routes to request with a
@@ -114,12 +117,12 @@ def score(run_dir):
         for k in KEYS:
             x = crit.get(k) or {}
             q = (x.get("policy_quote") or "").strip()
-            if q:
+            if crit:
                 c["quotes"] += 1
-                if quote_faithful(q, x.get("policy_passages") or [], passages):
+                if not q:
+                    c["no_quote"] += 1
+                elif quote_faithful(q, x.get("policy_passages") or [], passages):
                     c["quotes_ok"] += 1
-            elif crit:
-                c["no_quote"] += 1
             cited += x.get("evidence") or []
         for con in d.get("contradictions") or []:
             cited += con.get("evidence") or []
@@ -170,11 +173,18 @@ def score(run_dir):
         "baseline_minutes_per_case_estimate": ratio(c["baseline"], n),
         "cases_all_supported_but_label_not": c["all_supported_mismatch"],
     }
+    run_json = os.path.join(run_dir, "run.json")
+    checklist = os.path.exists(run_json) and bool(load(run_json).get("checklist_mode"))
     gates = {}
     for m, (kind, t) in THRESHOLDS.items():
         v = metrics[m]
         gates[m] = None if v is None or n == 0 else (v <= t if kind == "count" else v >= t - 1e-12)
-    return {"run": run_dir, "scored_cases": scored, "unscored_cases": unscored,
+    if n and metrics["evidence_validity"] is None:
+        gates["evidence_validity"] = False  # a hard gate with nothing to show is not met
+    if checklist:
+        gates["false_approvals"] = None     # vacuous: nothing can be approved
+        gates["checklist_all_supported"] = (c["all_supported_mismatch"] == 0) if n else None
+    return {"run": run_dir, "checklist_mode": checklist, "scored_cases": scored, "unscored_cases": unscored,
             "errors": [cid for cid, d in decisions.items() if d.get("error")], "metrics": metrics, "meets_threshold": gates,
             "cases": rows}
 
@@ -188,9 +198,11 @@ def markdown(s):
            + (f" Not scored (no final labels yet): {', '.join(s['unscored_cases'])}." if s["unscored_cases"] else "")
            + (f" Failed decisions, counted as route: {', '.join(s['errors'])}." if s["errors"] else ""), "",
            "| Metric | Result | Threshold | |", "|---|---|---|---|",
-           f"| False approvals | {m['false_approvals']} of {m['not_approvable_cases']} | 0 (hard gate) | {mark('false_approvals')} |",
-           f"| Citation faithfulness | {pct(m['citation_faithfulness'])} ({m['criteria_without_quote']} criteria without a quote) | 95% | {mark('citation_faithfulness')} |",
-           f"| Evidence validity | {pct(m['evidence_validity'])} of {m['ids_cited']} ids | 100% (hard gate) | {mark('evidence_validity')} |",
+           (f"| All four supported where the labels are not (checklist mode) | {m['cases_all_supported_but_label_not']} | 0 (hard gate) | {mark('checklist_all_supported')} |"
+            if s.get("checklist_mode") else
+            f"| False approvals | {m['false_approvals']} of {m['not_approvable_cases']} | 0 (hard gate) | {mark('false_approvals')} |"),
+           f"| Citation faithfulness | {pct(m['citation_faithfulness'])} ({m['criteria_without_quote']} criteria with no quote, counted as not faithful) | 95% | {mark('citation_faithfulness')} |",
+           f"| Evidence validity | {pct(m['evidence_validity']) if m['evidence_validity'] is not None else 'no ids cited'} of {m['ids_cited']} ids | 100% (hard gate) | {mark('evidence_validity')} |",
            f"| Per-criterion agreement | {pct(m['per_criterion_agreement'])} | 85% | {mark('per_criterion_agreement')} |",
            f"| Routing agreement | {pct(m['routing_agreement'])} | 80% | {mark('routing_agreement')} |",
            f"| Missing-documentation recall | {pct(m['missing_documentation_recall'])} of {m['labeled_gaps']} gaps | 80% | {mark('missing_documentation_recall')} |",

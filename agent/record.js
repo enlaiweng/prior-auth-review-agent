@@ -28,6 +28,11 @@ export function readCase(bundle) {
   const paragraphs = noteParagraphs(noteText).map((text, i) => ({ id: `note:p${i + 1}`, text }));
   const noteDocId = `DocumentReference/${doc.id}`;
   const resourceIds = resources.map(r => `${r.resourceType}/${r.id}`);
+  const entryStart = new Map();
+  for (const r of resources) {
+    const start = startDate(r);
+    if (start) entryStart.set(`${r.resourceType}/${r.id}`, start);
+  }
   return {
     claimId: `Claim/${claim.id}`,
     requestDate: String(claim.created || "").slice(0, 10),
@@ -37,8 +42,24 @@ export function readCase(bundle) {
     paragraphs,
     citableIds: [...resourceIds, ...paragraphs.map(p => p.id)],
     noteIds: new Set([noteDocId, ...paragraphs.map(p => p.id)]),
+    entryStart,
     bundleForModel: withoutNoteText(bundle, doc.id, paragraphs.length),
   };
+}
+
+// When a Procedure or a medication order started (YYYY-MM-DD), for the rule's check that C2's therapy belongs to this
+// episode. A Procedure's performed period or date; an order's dosage period, else the date it was written.
+export function startDate(r) {
+  const d10 = s => (s ? String(s).slice(0, 10) : null);
+  if (r.resourceType === "Procedure") return d10(r.performedPeriod?.start || r.performedDateTime);
+  if (r.resourceType === "MedicationRequest") {
+    for (const di of r.dosageInstruction || []) {
+      const bp = di.timing?.repeat?.boundsPeriod;
+      if (bp?.start) return d10(bp.start);
+    }
+    return d10(r.authoredOn);
+  }
+  return null;
 }
 
 // A copy of the bundle with the note's encoded text replaced by a pointer to the numbered paragraphs.

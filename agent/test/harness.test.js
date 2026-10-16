@@ -5,12 +5,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // The fake model always returns the same report: made-up test values that fit the smoke case.
-const crit = (status, evidence, passages, quote) => ({ reasoning: "r", evidence, policy_passages: passages, policy_quote: quote, status });
+const crit = (status, evidence, passages, quote) => ({ explanation: "e", evidence, policy_passages: passages, policy_quote: quote, status });
 const report = {
   criteria: {
     C1_red_flag: crit("unsupported", [], ["L34220-17"], "\"Red flags\" include:"),
@@ -82,12 +82,20 @@ test("the experiments budget refuses cases outside the smoke case and the develo
   }
 });
 
-test("no golden case runs before its blind labels are in", () => {
+test("no golden case runs before its final labels are merged on main", () => {
   const r = run(["--cases", "dev", "--budget", "experiments", "--out", join(tmpdir(), "never")], { ANTHROPIC_API_KEY: "x" });
-  if (!readdirSync("data/golden/case_01").includes("labels_blind.yaml")) {
+  const onMain = spawnSync("git", ["cat-file", "-e", "origin/main:data/golden/case_01/labels.yaml"]).status === 0;
+  if (!onMain) {
     assert.equal(r.status, 1);
-    assert.match(r.stderr, /blind labels/);
+    assert.match(r.stderr, /final labels are merged on main/);
   }
+});
+
+test("the held-out list matches the eval plan, and a held-out case never runs on the experiments budget", async () => {
+  const m = await import("../../eval/run_agent.mjs");
+  m.checkHeldOutMatchesPlan();
+  assert.deepEqual(m.HELD_OUT, ["case_08", "case_10", "case_12"]);
+  for (const id of m.HELD_OUT) assert.throws(() => m.checkBudget(m.resolveCases(id), "experiments", id), /not allowed/);
 });
 
 test("the release budget refuses held-out cases outside all12", () => {

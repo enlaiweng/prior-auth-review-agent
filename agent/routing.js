@@ -10,18 +10,35 @@ export const CRITERIA = {
   C4: "C4_no_duplicate_imaging",
 };
 const KEYS = Object.values(CRITERIA);
-const SHORT = Object.fromEntries(Object.entries(CRITERIA).map(([s, k]) => [k, s]));
+
+// The record entries that can document a red flag (EVAL_PLAN.md, C1: "a Condition, Observation, Procedure,
+// DiagnosticReport, or other discrete entry"). The request itself (Claim), the Patient, the visits (Encounter), and the
+// note (DocumentReference) do not count: none of them records a clinical finding.
+const C1_TYPES = ["Condition/", "Observation/", "Procedure/", "DiagnosticReport/", "MedicationRequest/"];
+// The record entries that can document conservative care (EVAL_PLAN.md, C2: "a therapy Procedure or a medication order").
+const C2_TYPES = ["Procedure/", "MedicationRequest/"];
+// A therapy entry counts for C2 only if it starts on or before the request date and no more than this many days before
+// it, so a decades-old order for an unrelated condition cannot stand in for this episode's care.
+export const C2_WINDOW_DAYS = 365;
 
 // ctx: { validIds: Set of citable ids in this case, noteIds: Set of the note's own ids (its DocumentReference and its
-//        paragraphs), passageIds: Set of policy passage ids, approveEnabled: false in checklist mode }
+//        paragraphs), passageIds: Set of policy passage ids, entryStart: Map of id to start date (YYYY-MM-DD) for
+//        Procedures and medication orders, requestDate: YYYY-MM-DD, approveEnabled: false in checklist mode }
 
 function isNote(id, ctx) { return ctx.noteIds.has(id) || id.startsWith("note:p"); }
 
-// What counts as the record entry behind C1 or C2 (EVAL_PLAN.md, C1, C2, and "Why C1 and C2 ask for more than the note").
-// C1: any entry in the record other than the visit note. C2: a therapy Procedure or a medication order.
+function daysBetween(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
+
+function inEpisode(id, ctx) {
+  const start = ctx.entryStart?.get(id);
+  if (!start || !ctx.requestDate) return false;
+  const d = daysBetween(start, ctx.requestDate);
+  return d >= 0 && d <= C2_WINDOW_DAYS;
+}
+
 function hasStructuredEvidence(shortName, c, ctx) {
-  if (shortName === "C1") return c.evidence.some(id => !isNote(id, ctx));
-  if (shortName === "C2") return c.evidence.some(id => id.startsWith("Procedure/") || id.startsWith("MedicationRequest/"));
+  if (shortName === "C1") return c.evidence.some(id => C1_TYPES.some(t => id.startsWith(t)));
+  if (shortName === "C2") return c.evidence.some(id => C2_TYPES.some(t => id.startsWith(t)) && inEpisode(id, ctx));
   return true;
 }
 
@@ -48,6 +65,17 @@ function approvalBasis(report, ctx, assumed) {
   return null;
 }
 
+// A red flag that rests on the note alone, or that the record contradicts, routes the case (EVAL_PLAN.md, C1: such a red
+// flag "is labeled undeterminable, and the case routes"; ADR-10). A red flag rests on the note alone when the model calls
+// C1 supported or undeterminable, cites the note, and cites no entry that can document a red flag.
+function redFlagRoutes(report, ctx) {
+  const c = report.criteria[CRITERIA.C1];
+  if (contradicted("C1", report)) return "the record contradicts itself on C1 (a red flag)";
+  const noteOnly = (c.status === "supported" || c.status === "undeterminable") &&
+    c.evidence.some(id => isNote(id, ctx)) && !hasStructuredEvidence("C1", c, ctx);
+  return noteOnly ? "a red flag rests on the visit note alone" : null;
+}
+
 export function citedIds(report) {
   const ids = [];
   for (const k of KEYS) ids.push(...report.criteria[k].evidence);
@@ -71,6 +99,11 @@ export function decideRouting(report, ctx) {
     reasons.push(`Cited ids not found in this case: ${invalid.join(", ")}. A decision cannot rest on them, so the case is routed.`);
     return out("route");
   }
+  const redFlag = redFlagRoutes(report, ctx);
+  if (redFlag) {
+    reasons.push(`Routed because ${redFlag}; such a case goes to a physician whatever else the record shows (EVAL_PLAN.md, C1).`);
+    return out("route");
+  }
   const basis = approvalBasis(report, ctx, null);
   if (basis) {
     reasons.push(`C3 and C4 are supported, and ${basis} is supported with a record entry other than the visit note; every applicable criterion cites the policy and every cited id exists in the case.`);
@@ -84,7 +117,7 @@ export function decideRouting(report, ctx) {
     return out("route");
   }
   if (md.criterion === "C1") {
-    reasons.push("The named gap is on C1; a red flag that rests on the note alone, or is contradicted, routes.");
+    reasons.push("The named gap is on C1; a gap on the red-flag criterion routes.");
     return out("route");
   }
   if (report.contradictions.length) {
@@ -119,9 +152,7 @@ function why(s, report, ctx) {
   if (contradicted(s, report)) return "contradicted in the record";
   if (!hasPolicyCitation(c, ctx)) return "no policy passage cited";
   if (s === "C3" && c.evidence.length === 0) return "no record entry cited";
-  if (s === "C1") return "supported by the visit note only";
-  if (s === "C2") return "no therapy Procedure or medication order cited";
+  if (s === "C1") return "no Condition, Observation, Procedure, imaging report, or medication order cited";
+  if (s === "C2") return `no therapy Procedure or medication order from the ${C2_WINDOW_DAYS} days before the request cited`;
   return "not met";
 }
-
-export { SHORT };

@@ -1,9 +1,10 @@
 # Runs the agent on a set of cases and scores the result (eval/run_and_score.sh). Two ways in:
 #   1. Experiments, automatically: every push to a claude/ branch that changes the agent runs the case set named in
 #      eval/experiment_cases.txt on the "experiments" environment's key (a separate workspace with a low limit).
-#      eval/run_agent.mjs allows only the smoke case and eval/dev_subset.txt there, so a held-out case can never run.
+#      eval/run_agent.mjs allows only the smoke case and eval/dev_subset.txt there, so a held-out case can never run,
+#      and the case lists must match main's.
 #      Results stay in the run's summary, its notices (one per case), and its downloadable artifact; each agent pull
-#      request lists these runs. No golden case runs before its blind labels are in (eval/run_agent.mjs).
+#      request lists these runs. No golden case runs before its final labels are merged on main (eval/run_agent.mjs).
 #   2. By hand, from the Actions page: choose the cases, the budget, and how many runs. On the "release" budget the job
 #      uses the "release" environment, so it runs only from main and only after the owner approves it, and it delivers
 #      the results as a pull request into eval/runs/. Nothing is merged by this workflow.
@@ -61,6 +62,8 @@ jobs:
     environment: experiments
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 0   # so the run can check what is on main
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
           node-version: "22"
@@ -94,13 +97,15 @@ jobs:
   release:
     if: github.event_name == 'workflow_dispatch' && inputs.budget == 'release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 300
     environment: release
     permissions:
       contents: write        # to push the branch that carries the results
       pull-requests: write   # to open the pull request
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 0   # so the run can check what is on main
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
           node-version: "22"

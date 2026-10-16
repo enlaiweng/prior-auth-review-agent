@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(ROOT, "eval"))
 
 def decision(routing="request", gap=("C3", "the decision the MRI informs"), c1="unsupported", quote=None, extra_ids=()):
     q = quote or "When a lumbar MRI is ordered, Medicare expects that the information gained from the test will be used for medical decision-making."
-    crit = lambda status, ev: {"status": status, "evidence": list(ev), "policy_passages": ["L34220-39"], "policy_quote": q, "reasoning": "r"}
+    crit = lambda status, ev: {"status": status, "evidence": list(ev), "policy_passages": ["L34220-39"], "policy_quote": q, "explanation": "e"}
     return {
         "case_id": "case_00", "routing": routing, "error": None,
         "named_gap": {"criterion": gap[0], "missing": gap[1]} if gap else None,
@@ -88,6 +88,30 @@ class ScoreTest(unittest.TestCase):
         d["criteria"]["C1_red_flag"].update(policy_passages=["L34220-21"], policy_quote="Fever")
         m = self.run_with(d)["metrics"]
         self.assertEqual(m["citation_faithfulness"], 1.0)
+
+    def test_empty_quotes_count_against_faithfulness(self):
+        s = self.run_with(decision(quote=" "))
+        self.assertEqual(s["metrics"]["citation_faithfulness"], 0.0)
+        self.assertEqual(s["metrics"]["criteria_without_quote"], 4)
+        self.assertFalse(s["meets_threshold"]["citation_faithfulness"])
+
+    def test_no_ids_cited_fails_the_evidence_gate(self):
+        d = decision()
+        for c in d["criteria"].values():
+            c["evidence"] = []
+        s = self.run_with(d)
+        self.assertIsNone(s["metrics"]["evidence_validity"])
+        self.assertFalse(s["meets_threshold"]["evidence_validity"])
+
+    def test_checklist_mode_uses_the_all_supported_gate(self):
+        with open(os.path.join(self.dir, "run.json"), "w") as f:
+            json.dump({"checklist_mode": True}, f)
+        d = decision(routing="route", gap=None, c1="supported")
+        d["criteria"]["C3_informs_management"]["status"] = "supported"
+        s = self.run_with(d)
+        self.assertIsNone(s["meets_threshold"]["false_approvals"])
+        self.assertFalse(s["meets_threshold"]["checklist_all_supported"])  # all four supported; the label's C3 is not
+        self.assertIn("checklist mode", self.score.markdown(s))
 
     def test_status_disagreement(self):
         s = self.run_with(decision(c1="undeterminable"))

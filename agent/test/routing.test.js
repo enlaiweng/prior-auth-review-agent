@@ -6,14 +6,16 @@ import assert from "node:assert/strict";
 import { decideRouting } from "../routing.js";
 
 const ctx = (over = {}) => ({
-  validIds: new Set(["Claim/r", "Patient/p", "Procedure/pt", "MedicationRequest/m", "Observation/o", "Condition/c",
-                     "Encounter/e", "DocumentReference/n", "note:p1", "note:p2", "note:p3"]),
+  validIds: new Set(["Claim/r", "Patient/p", "Procedure/pt", "MedicationRequest/m", "MedicationRequest/old", "Procedure/nodate",
+                     "Observation/o", "Condition/c", "Encounter/e", "DocumentReference/n", "note:p1", "note:p2", "note:p3"]),
   noteIds: new Set(["DocumentReference/n", "note:p1", "note:p2", "note:p3"]),
   passageIds: new Set(["L34220-15", "L34220-36", "L34220-39", "L34220-41"]),
+  entryStart: new Map([["Procedure/pt", "2026-06-01"], ["MedicationRequest/m", "2026-05-20"], ["MedicationRequest/old", "1982-01-01"]]),
+  requestDate: "2026-08-15",
   approveEnabled: true, ...over,
 });
 const crit = (status, evidence = [], passages = ["L34220-39"]) =>
-  ({ status, evidence, policy_passages: passages, policy_quote: "q", reasoning: "r" });
+  ({ status, evidence, policy_passages: passages, policy_quote: "q", explanation: "e" });
 
 // An approvable report on C2: therapy Procedure cited; C3 supported from the note; C4 supported with empty evidence.
 function report(over = {}) {
@@ -53,11 +55,43 @@ test("does not approve on C1 when only the note supports it", () => {
   }
 });
 
+test("the request, the patient, or a visit cannot stand behind a red flag", () => {
+  for (const ev of [["note:p1", "Patient/p"], ["note:p1", "Claim/r"], ["note:p1", "Encounter/e"], ["Encounter/e"], ["Patient/p"]]) {
+    const v = decideRouting(report({ criteria: {
+      C1_red_flag: crit("supported", ev, ["L34220-15"]),
+      C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) } }), ctx());
+    assert.equal(v.routing, "route", ev.join(","));
+  }
+});
+
+test("a red flag resting on the note alone routes, even when C2 would approve", () => {
+  for (const status of ["supported", "undeterminable"]) {
+    const v = decideRouting(report({ criteria: { C1_red_flag: crit(status, ["note:p1", "Patient/p"], ["L34220-15"]) } }), ctx());
+    assert.equal(v.routing, "route", status);
+    assert.match(v.reasons.join(" "), /visit note alone/);
+  }
+});
+
+test("a note that rules red flags out does not stop an approval on C2", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("unsupported", ["note:p1"], ["L34220-15"]) } }), ctx());
+  assert.equal(v.routing, "approve");
+});
+
 test("does not approve on C2 without a therapy Procedure or medication order", () => {
   for (const ev of [["note:p1"], ["Encounter/e"], ["Condition/c", "note:p2"]]) {
     const v = decideRouting(report({ criteria: { C2_conservative_4wk: crit("supported", ev, ["L34220-36"]) } }), ctx());
     assert.notEqual(v.routing, "approve", ev.join(","));
   }
+});
+
+test("C2's therapy must start within the year before the request, and have a date", () => {
+  for (const ev of [["MedicationRequest/old"], ["Procedure/nodate"], ["MedicationRequest/old", "note:p1"]]) {
+    const v = decideRouting(report({ criteria: { C2_conservative_4wk: crit("supported", ev, ["L34220-36"]) } }), ctx());
+    assert.notEqual(v.routing, "approve", ev.join(","));
+  }
+  const after = ctx({ entryStart: new Map([["Procedure/pt", "2026-09-01"]]) });
+  assert.notEqual(decideRouting(report({ criteria: { C2_conservative_4wk: crit("supported", ["Procedure/pt"], ["L34220-36"]) } }), after).routing, "approve");
+  assert.equal(decideRouting(report({ criteria: { C2_conservative_4wk: crit("supported", ["MedicationRequest/old", "Procedure/pt"], ["L34220-36"]) } }), ctx()).routing, "approve");
 });
 
 test("an id that is not in the case routes, even when the rest would approve", () => {
@@ -87,11 +121,11 @@ test("a contradiction on an applicable criterion blocks approval", () => {
   assert.equal(v.routing, "route");
 });
 
-test("a contradiction on the criterion the approval does not rest on does not block it", () => {
-  const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1"], ["L34220-15"]) },
+test("a red flag the record contradicts routes, even when C2 would approve", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]) },
                                    contradictions: [{ criterion: "C1", description: "d", evidence: ["Condition/c", "note:p1"] }] }), ctx());
-  assert.equal(v.routing, "approve");
-  assert.equal(v.basis, "C2");
+  assert.equal(v.routing, "route");
+  assert.match(v.reasons.join(" "), /contradicts itself on C1/);
 });
 
 test("requests when one criterion is undeterminable for want of one named document", () => {
@@ -139,11 +173,11 @@ test("routes when no document is named", () => {
   assert.equal(v.routing, "route");
 });
 
-test("a note-only red flag and a C2 gap: the literal rule requests (flagged for the owner in the pull request)", () => {
+test("a red flag resting on the note alone routes instead of requesting a C2 document", () => {
   const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1"], ["L34220-15"]),
                                                C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
-                                   missing_document: { criterion: "C2", missing: "therapy records" } }), ctx());
-  assert.equal(v.routing, "request");
+                                   missing_document: { criterion: "C2", missing: "a named record" } }), ctx());
+  assert.equal(v.routing, "route");
 });
 
 test("checklist mode routes everything, approvals and requests included", () => {

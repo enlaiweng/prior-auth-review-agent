@@ -8,7 +8,7 @@ import { reviewCase, requestBody, SETTINGS, AGENT_VERSION } from "../agent.js";
 import { SPEC_SHA256, SCHEMA, SYSTEM_PROMPT } from "../spec.generated.js";
 
 const smoke = JSON.parse(readFileSync("data/smoke/case_00/bundle.json", "utf8"));
-const crit = (status, evidence, passages) => ({ reasoning: "r", evidence, policy_passages: passages, policy_quote: "q", status });
+const crit = (status, evidence, passages) => ({ explanation: "e", evidence, policy_passages: passages, policy_quote: "q", status });
 const smokeReport = {
   criteria: {
     C1_red_flag: crit("unsupported", [], ["L34220-17"]),
@@ -102,6 +102,32 @@ test("any unusable reply routes, with the reason recorded", async () => {
     assert.equal(d.routing, "route");
     assert.match(d.error, why);
   }
+});
+
+test("a reply that is not JSON routes instead of stopping the run", async () => {
+  const notJson = async () => ({ ok: true, status: 200, headers: { get: () => null }, text: async () => "<html>gateway</html>" });
+  const d = await reviewCase(smoke, { apiKey: "k", fetchImpl: notJson, sleep: noSleep });
+  assert.equal(d.routing, "route");
+  assert.match(d.error, /not JSON/);
+});
+
+test("each call carries a timeout, and a timed-out call is tried again", async () => {
+  const seen = [];
+  let first = true;
+  const f = async (url, init) => {
+    seen.push(init.signal);
+    if (first) { first = false; throw Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" }); }
+    return fakeFetch([okReply(smokeReport)])(url, init);
+  };
+  const d = await reviewCase(smoke, { apiKey: "k", fetchImpl: f, sleep: noSleep });
+  assert.ok(seen.every(s => s instanceof AbortSignal));
+  assert.equal(d.attempts, 2);
+  assert.equal(d.routing, "request");
+});
+
+test("no field asks the model to write out its reasoning (the API declines such requests on some models)", () => {
+  assert.ok(!JSON.stringify(SCHEMA).includes("reasoning"));
+  assert.ok(!/\breasoning\b|\bthinking\b|scratchpad/i.test(SYSTEM_PROMPT.split("=== CRITERIA")[0]));
 });
 
 test("a missing key is refused before anything is sent", async () => {
