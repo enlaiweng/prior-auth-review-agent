@@ -133,9 +133,9 @@ class ThirdReaderTest(unittest.TestCase):
         try:
             with open(path, "w") as f:
                 f.write(original.replace("expected_routing: route", "expected_routing: request"))
-            found = run_third_reader.verify()
-            self.assertEqual(len(found), 1)
-            self.assertIn("differs from what the script writes", found[0])
+            found = " | ".join(run_third_reader.verify())
+            self.assertIn("differs from what the script writes", found)
+            self.assertIn("does not match the labels fingerprint", found)
         finally:
             with open(path, "w") as f:
                 f.write(original)
