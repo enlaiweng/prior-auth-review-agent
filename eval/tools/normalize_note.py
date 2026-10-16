@@ -11,8 +11,9 @@ rather than by their writing style. This tool changes typography only, never wor
   curly quotes to straight quotes; long and short dashes to a hyphen; non-breaking and other odd spaces to a space;
   an ellipsis character to three dots; bullet characters to a hyphen; markdown bold, italic, and heading markers
   removed; trailing spaces removed; a labeled section line ("HPI:", "Exam:", "Plan:", up to four words before the
-  colon) starts its own paragraph, so a template-style note keeps citable paragraphs; paragraphs separated by
-  exactly one blank line; one final newline.
+  colon) starts its own paragraph, so a template-style note keeps citable paragraphs; a heading alone on its line
+  in capitals ("PLAN", "HISTORY OF PRESENT ILLNESS:") stays in one paragraph with the lines under it, so no
+  paragraph is a bare heading; paragraphs separated by exactly one blank line; one final newline.
 Anything else outside plain ASCII is reported and the tool stops, so a person decides what it should be.
 --check fails if any golden note would change or holds a character outside plain ASCII.
 """
@@ -37,6 +38,7 @@ def normalize(text):
     text = re.sub(r"(?m)^\s*[*]\s+", "- ", text)         # star bullets
     text = re.sub(r"[ \t]+$", "", text, flags=re.M)      # trailing spaces
     text = re.sub(r"(?m)(?<=\S)\n(?=[A-Z][A-Za-z/&]*(?: [A-Za-z/&]+){0,3}:\s)", "\n\n", text)  # sections
+    text = re.sub(r"(?m)^([A-Z][A-Z /&-]{2,}:?)\n\n+(?=\S)", r"\1\n", text)  # a heading keeps its text
     text = re.sub(r"\n{3,}", "\n\n", text.strip()) + "\n"
     return text
 

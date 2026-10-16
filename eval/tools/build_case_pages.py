@@ -141,8 +141,16 @@ def page_md(v):
         out.append("")
     out += [f"## Visit note", "", f"[{v['note']['id']}], dated {v['note']['date']}. Paragraphs are numbered for citation.", ""]
     for p in v["note"]["paragraphs"]:
-        out += [f"**[{p['id']}]** {p['text']}", ""]
+        out += [f"**[{p['id']}]** {md_breaks(p['text'])}", ""]
     return "\n".join(out)
+
+
+def md_breaks(text):
+    """Keep a paragraph's own line breaks when the page is shown as markdown (a heading and the lines under it).
+    A line that starts a list ("- ") breaks by itself; any other line gets markdown's two-space line break."""
+    lines = text.split("\n")
+    return "".join(l + ("" if i == len(lines) - 1 else "\n" if lines[i + 1].startswith("- ") else "  \n")
+                   for i, l in enumerate(lines))
 
 
 def policy_text():
@@ -210,7 +218,7 @@ main{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-colu
 h2{font-size:18px;margin:0 0 8px}h3{font-size:14px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 ul.items{list-style:none;padding:0;margin:0}ul.items li{padding:5px 0;border-top:1px solid var(--line)}ul.items li:first-child{border-top:0}
 code.id{font-size:12px;color:var(--accent);background:var(--accent-weak);padding:1px 5px;border-radius:4px;white-space:nowrap}
-.para{margin:8px 0}
+.para{margin:8px 0;white-space:pre-line}
 .crit{border-top:1px solid var(--line);padding:10px 0}
 .crit:first-of-type{border-top:0}
 .crit .name{font-weight:600}
