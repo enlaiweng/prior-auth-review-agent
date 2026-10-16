@@ -1,0 +1,38 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_10
+patient_baseline: data/golden/baselines/133b45ac-34ec-8c9f-589d-d5bc4d69ffcb.json
+request_date: 2026-08-13
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-04-13
+  encounters:
+    - date: 2026-04-15
+      type: emergency department visit
+      class: emergency
+      summary: Low back pain for two days, no fall or injury, no leg symptoms; discharged home
+    - date: 2026-04-28
+      type: primary care visit
+      summary: Low back pain after emergency department visit; acetaminophen and physical therapy referral
+    - date: 2026-08-06
+      type: follow-up
+      summary: Low back pain persists; lumbar facet joint injection discussed; MRI requested before the injection
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-05-05
+      end: 2026-06-26
+      sessions: 14
+    - kind: acetaminophen
+      start: 2026-04-28
+      ongoing: true
+  prior_imaging:
+    - kind: lumbar CT
+      date: 2026-04-15
+  observations:
+    - text: Tenderness over the lower lumbar facet joints; pain on extension. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-06
+note:
+  file: note.md

@@ -1,0 +1,32 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_08
+patient_baseline: data/golden/baselines/9780a98c-e431-dc2c-7317-c12be5a683c7.json
+request_date: 2026-08-14
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-05-11
+  encounters:
+    - date: 2026-07-27
+      type: primary care visit
+      summary: Low back pain since mid-May, no injury, no leg symptoms; ibuprofen started and physical therapy referral placed
+    - date: 2026-08-11
+      type: follow-up
+      summary: Low back pain persists; lumbar facet joint injection discussed; MRI requested before the injection
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-07-29
+      end: 2026-08-07
+      sessions: 3
+    - kind: ibuprofen
+      start: 2026-07-27
+      end: 2026-08-06
+  prior_imaging: []
+  observations:
+    - text: Tenderness over the lower lumbar facet joints; pain on extension and rotation. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-11
+note:
+  file: note.md

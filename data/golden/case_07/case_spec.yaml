@@ -1,0 +1,38 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_07
+patient_baseline: data/golden/baselines/f3f3c75a-cc82-ac26-9ae7-13edfe1055c3.json
+request_date: 2026-08-13
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-05-04
+  encounters:
+    - date: 2026-05-06
+      type: primary care visit
+      summary: Low back pain for two days after a long drive, no injury, no leg symptoms; naproxen and physical therapy referral
+    - date: 2026-06-17
+      type: follow-up
+      summary: Small improvement; physical therapy continued; naproxen changed to acetaminophen
+    - date: 2026-08-06
+      type: follow-up
+      summary: Low back pain persists; MRI ordered
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-05-13
+      end: 2026-07-08
+      sessions: 14
+    - kind: naproxen
+      start: 2026-05-06
+      end: 2026-06-17
+    - kind: acetaminophen
+      start: 2026-06-17
+      ongoing: true
+  prior_imaging: []
+  observations:
+    - text: Lumbar paraspinal tenderness; range of motion limited by pain in flexion. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-06
+note:
+  file: note.md

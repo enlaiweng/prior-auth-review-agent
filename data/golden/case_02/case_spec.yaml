@@ -1,0 +1,32 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_02
+patient_baseline: data/golden/baselines/eaa2965b-1037-7ac2-22e8-a5d380fc1f81.json
+request_date: 2026-08-13
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-07-18
+  encounters:
+    - date: 2026-07-20
+      type: primary care visit
+      summary: Low back pain for two days, gradual onset, no fall or injury, no leg symptoms; naproxen started and physical therapy referral placed
+    - date: 2026-08-10
+      type: follow-up
+      summary: Low back pain unchanged at three weeks; physical therapy in progress; patient asks for an MRI
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-07-27
+      ongoing: true
+      sessions: 4
+    - kind: naproxen
+      start: 2026-07-20
+      ongoing: true
+  prior_imaging: []
+  observations:
+    - text: Lumbar paraspinal muscle tenderness without midline tenderness. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-10
+note:
+  file: note.md

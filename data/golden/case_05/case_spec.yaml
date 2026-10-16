@@ -1,0 +1,43 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_05
+patient_baseline: data/golden/baselines/24b99052-66f2-d379-0f84-4666e99a4f2b.json
+request_date: 2026-08-14
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-01-26
+  encounters:
+    - date: 2026-02-02
+      type: primary care visit
+      summary: Low back pain for one week, no injury, no leg symptoms; acetaminophen and physical therapy referral
+    - date: 2026-04-02
+      type: follow-up
+      summary: Low back pain persists after physical therapy; MRI ordered
+    - date: 2026-04-20
+      type: follow-up
+      summary: MRI results reviewed; home exercise program continued
+    - date: 2026-08-06
+      type: follow-up
+      summary: Low back pain unchanged since April; lumbar medial branch block discussed; MRI requested before the procedure
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-02-09
+      end: 2026-03-27
+      sessions: 12
+    - kind: acetaminophen
+      start: 2026-02-02
+      ongoing: true
+  prior_imaging:
+    - kind: lumbar MRI
+      date: 2026-04-09
+      report: Multilevel degenerative disc disease from L3-L4 through L5-S1, with moderate facet arthropathy at L4-L5 and L5-S1. No spinal canal stenosis. No neural foraminal stenosis. No nerve root compression. No fracture or marrow lesion.
+  observations:
+    - text: Tenderness over the lower lumbar facet joints; pain on extension. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-04-02
+    - text: Tenderness over the lower lumbar facet joints; pain on extension. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-06
+note:
+  file: note.md

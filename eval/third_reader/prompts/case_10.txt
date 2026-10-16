@@ -1,0 +1,199 @@
+You are reviewing one prior authorization request for a lumbar spine MRI at a Medicare Advantage plan. The plan applies Medicare Local Coverage Determination L34220. Below are the policy text, the criteria to check (including how C1 is read), the three possible outcomes, and the case record.
+
+For each of the four criteria, give a status and the evidence. supported: the record shows the criterion is met. unsupported: the record shows the criterion is not met. undeterminable: the record does not allow a decision either way. Evidence: the ids on the case page; leave it empty when the status rests on something the record does not contain, for example no prior lumbar imaging.
+
+Then choose the outcome: approve, request, or route, as the outcomes section defines them. For request, name the criterion and what is missing, for example named_gap: {criterion: C2, missing: dates of the physical therapy}. Otherwise named_gap is null.
+
+Use only the policy text, the criteria, the outcome definitions, and the case record below.
+
+Reply with YAML only, nothing before or after it, in exactly this shape:
+
+case_id: case_10
+criteria:
+  C1_red_flag:             {status: , evidence: []}
+  C2_conservative_4wk:     {status: , evidence: []}
+  C3_informs_management:   {status: , evidence: []}
+  C4_no_duplicate_imaging: {status: , evidence: []}
+expected_routing:
+named_gap: null
+
+=== POLICY TEXT (LCD L34220, from data/policy/L34220.md) ===
+
+# LCD L34220, Lumbar MRI
+Contractor: Noridian Healthcare Solutions, LLC
+Revision effective date: 2025-10-23
+Source: https://www.cms.gov/medicare-coverage-database/view/lcd.aspx?lcdid=34220
+Retrieved: 2026-09-10 (automated fetch; verified against the live page on 2026-09-14 by EW)
+Quoted with attribution from the CMS Medicare Coverage Database; code tables not included.
+
+---
+
+## Coverage Indications, Limitations, and/or Medical Necessity
+
+Magnetic Resonance Imaging (MRI) is a noninvasive method of imaging body structures based on the distribution of fixed water and other hydrogen-rich molecules in the human body. MRI uses a powerful magnet to align hydrogen atoms within the patient's soft tissues. As the nuclei return from excitation to equilibrium, the MRI receiver coil receives radio frequency wave signals that are transformed by the computer into diagnostic images. MRI produces cross sectional and 3-D images of soft tissues. Because bone contains little water (hydrogen nuclei), bone is relatively invisible to MRI. Blood is also relatively invisible because the hydrogen nuclei are moving in the blood stream.
+
+MRI contrast agents can improve the sensitivity and/or specificity of an image, by altering inherent tissue response to magnetic fields. The contrast agent most commonly used is gadolinium.
+
+MRI has proven useful in diagnosing cerebral infarctions, tumors, abscesses, edema, hemorrhage, nerve fiber demyelination (as in multiple sclerosis), and other disorders that increase fluid content of the affected tissues.
+
+MRI of the spinal canal has the advantage of noninvasive visualization of the spinal cord.
+
+MRI can:
+
+* Differentiate solid from cystic tumors,
+* Diagnose and localize spinal cord compression;
+* Diagnose syringomyelia (progressive, chronic sensory disturbance, atrophy and spasticity of the spinal cord), disc disease, and any altered relationship between vertebral bodies, discs, spinal cord and nerve roots;
+* Detect congenital spinal dysraphism (failure of fusion of parts along the dorsal midline of the spinal cord);
+* Provide early detection of osteomyelitis, and
+* Detect spinal cord abnormalities associated with osteomyelitis.
+
+Coverage is limited to MRI units that have received FDA pre-market approval. Such units must be operated within the parameters specified by the approval.
+
+Contrast is indicated for studying the central nervous system for metastatic disease, inflammatory disease, recurrent tumor versus scar, differentiation of microvascular from macrovascular infarction, and selected cases of complex vascular disease. Within the study of the spine, contrast also is indicated to differentiate recurrent disc versus scar or granulation tissue, spinal cord neoplasm, any case of myelopathy, and inflammatory cord disease.
+
+History and clinical findings are critical factors to determine when a lumbar MRI is needed in order to efficiently manage low back pain and related disorders.
+
+Lumbar MRI may be indicated for a patient with a "red-flag" condition, such as a suspected tumor, infection, herniated intervertebral disc with nerve compression, or a major neurological problem. The MRI test result may be needed to evaluate these conditions to determine the need for surgery or other aggressive therapy, such as a work-up for metastatic cancer.
+
+"Red flags" are identified through an appropriate history plus a physical examination that typically includes evaluating muscle strength, limb circumference, reflexes, sensation, straight leg raise, and sitting knee extension tests.
+
+"Red flags" include:
+
+* Major trauma
+* Minor trauma in a potentially osteoporotic patient
+* History of cancer
+* Fever
+* Chills
+* Unexplained weight loss
+* Recent bacterial infection
+* IV drug abuse
+* Immune suppression
+* Pain that worsens when supine or at night
+* Saddle anesthesia
+* Recent onset of bladder dysfunction
+* Clinically significant or progressive neurologic deficit in the lower extremity
+* Unexpected laxity of the anal sphincter
+* Perianal or perineal sensory loss,
+* Clinically significant motor weakness, or
+* Other nerve root compromise
+
+Eighty (80) to ninety (90) percent of patients with low back pain improve one month after symptom onset even without treatment. Therefore, spinal imaging tests are not generally necessary during the first month of symptoms except when a "red flag" (suggesting a medically emergent condition) is noted on the medical history and physical examination. For a "non-red flag" condition, the MRI may be appropriate after 1 month of symptoms.
+
+For example, for a patient with low back pain syndrome where there is no known injury, history of cancer, or septic disorder and there are no symptoms or signs suggesting nerve root disorder or spinal cord dysfunction (i.e. no "red flags"), MRI will be covered only if the patient has not responded to a reasonable trial of conservative management lasting at least four weeks.
+
+If a patient's limitations due to low back symptoms do not improve within four weeks, findings on reassessment may reveal an indication for a MRI. However, since MRI changes are common in asymptomatic patients, MRI abnormalities alone do not retrospectively validate the need for the test without other supporting clinical rationale.
+
+A lumbar MRI used to evaluate uncomplicated degenerative disc disease or herniated nucleus pulposus is not considered medically necessary when a surgical intervention or other aggressive treatment (e.g. intervertebral joint injection) is not under consideration.
+
+When a lumbar MRI is ordered, Medicare expects that the information gained from the test will be used for medical decision-making. When the findings will not affect the treatment choices, the test is not reasonable or necessary.
+
+Certain uses of lumbar MRI are considered investigational and are therefore not covered by Medicare. These include the measurement of blood flow, spectroscopy, imaging of cortical bone and calcifications, and for procedures involving spatial resolution of bone or calcifications.
+
+A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary. A lumbar MRI, however, could be complementary to a lumbar CT if there are inconclusive findings on a CT scan. Conversely, a lumbar CT may be warranted following an MRI study if the MRI study is found to be inconclusive. Documentation should support the medical necessity for the need for both studies.
+
+The payment for a single lumbar MRI procedure includes two (2) and three (3) sequences.
+
+Contraindications and limitations of lumbar MRI testing include:
+
+* Patients with an allergy to contrast media,
+* The effects upon a fetus are unknown at this time; therefore, pregnancy is to be handled at the discretion of the primary doctor,
+* When the technical component is performed without the professional component.
+
+(Payment paragraphs on multiple professional components and multi-position MRI omitted; they do not bear on coverage criteria.)
+
+=== CRITERIA (from docs/EVAL_PLAN.md, Criterion inventory) ===
+
+The criteria the agent checks, from L34220 (revision effective October 23, 2025).
+
+C1. A red-flag indication is present. The LCD's list: major trauma; minor trauma in a potentially osteoporotic patient; history of cancer; fever; chills; unexplained weight loss; recent bacterial infection; IV drug abuse; immune suppression; pain that worsens when supine or at night; saddle anesthesia; recent onset of bladder dysfunction; clinically significant or progressive neurologic deficit in the lower extremity; unexpected laxity of the anal sphincter; perianal or perineal sensory loss; clinically significant motor weakness; other nerve root compromise. A red flag counts as supported when a structured element of the record documents it (a Condition, Observation, Procedure, DiagnosticReport, or other discrete entry), with or without the note. A red flag stated only in the note, with nothing structured behind it, or one the structured record contradicts, is labeled undeterminable, and the case routes.
+
+Reading of the neurologic items in C1 (adopted 2026-10-14, before any case was authored; reasons and sources in DATASHEET.md). The LCD describes red flags as findings that suggest a medically emergent condition and qualifies its neurologic items as clinically significant or progressive, and the American College of Radiology and American College of Physicians imaging guidance treat uncomplicated radiculopathy separately from red flags. So C1 is supported by objective nerve root or spinal cord compromise in the record: clinically significant or progressive weakness, a reduced or absent reflex, sensory loss in a nerve root pattern, new bladder or bowel dysfunction, or saddle or perianal sensory loss. Radiating leg pain or a positive straight leg raise on its own does not support C1, and such a case is assessed under C2.
+C2. For a non-red-flag condition, the patient "has not responded to a reasonable trial of conservative management lasting at least four weeks," and the MRI is being considered after at least one month of symptoms. As for C1, conservative care stated only in the note, with nothing structured behind it (no therapy Procedure or medication order), or contradicted by the structured record, is labeled undeterminable.
+C3. The study will inform medical decision-making: a surgical intervention or other aggressive treatment (for example intervertebral joint injection) is under consideration, and the findings would affect treatment choices.
+C4. The study is not a duplication of other imaging (such as a spinal CT) unless documentation supports the need for both, for example inconclusive findings on the prior study.
+
+A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence. The criteria that apply to an approval are C3, C4, and whichever of C1 or C2 it rests on; the other is still labeled with its status.
+
+When a case is not approvable: request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said. A status that rests on something the record does not contain (for example, no prior lumbar imaging for C4) is labeled with empty evidence.
+
+=== OUTCOMES (from docs/CHARTER.md, authority statement) ===
+
+The system may output exactly one of three results for a request:
+
+1. Approve, when every applicable criterion is supported by cited evidence in the record.
+2. Request specific missing documentation, naming the criterion the gap belongs to and the record element that would close it.
+3. Route to physician review, with a neutral summary of which criteria are met, unmet, or undeterminable, and the citations for each.
+
+=== CASE RECORD (from data/golden/case_10/case_page.md) ===
+
+# Case 10
+
+Generated by `eval/tools/build_case_pages.py` from `bundle.json`. Ids in brackets are what labels cite as evidence.
+
+**Request** [Claim/case10-claim]: MRI lumbar spine without contrast (SNOMED CT 241648005 MRI of lumbar spine); use: preauthorization; priority: Normal. Requested on 2026-08-13.
+
+**Patient** [Patient/133b45ac-34ec-8c9f-589d-d5bc4d69ffcb]: 86 years old on the request date; sex: male.
+
+## Conditions
+
+- [Condition/case10-cond-01] Low back pain (ICD-10-CM M54.50); clinical status: active; onset 2026-04-13
+
+## Visits
+
+- [Encounter/case10-enc-01] 2026-04-15 emergency department visit (emergency): Low back pain for two days, no fall or injury, no leg symptoms; discharged home
+- [Encounter/case10-enc-02] 2026-04-28 primary care visit (ambulatory): Low back pain after emergency department visit; acetaminophen and physical therapy referral
+- [Encounter/case10-enc-03] 2026-08-06 follow-up (ambulatory): Low back pain persists; lumbar facet joint injection discussed; MRI requested before the injection
+
+## Procedures
+
+- [Procedure/case10-img-01] CT of lumbar spine; 2026-04-15; status: completed
+- [Procedure/case10-pt-01] Physical therapy procedure; 2026-05-05 to 2026-06-26; status: completed; 14 sessions
+
+## Medications
+
+- [MedicationRequest/133b45ac-34ec-8c9f-35b0-9087264e8660] 24 HR metoprolol succinate 100 MG Extended Release Oral Tablet; ordered 1998-07-13; status: active
+- [MedicationRequest/133b45ac-34ec-8c9f-6250-594800d3d828] rosuvastatin calcium 10 MG Oral Tablet [Crestor]; ordered 1998-07-13; status: active
+- [MedicationRequest/case10-med-01] Acetaminophen 500 MG Oral Tablet; ordered 2026-04-28; dosage period from 2026-04-28; status: active
+
+## Observations
+
+- [Observation/case10-obs-01] 2026-08-06 Physical findings Narrative: Tenderness over the lower lumbar facet joints; pain on extension. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+
+## Visit note
+
+[DocumentReference/case10-note-01], dated 2026-08-06. Paragraphs are numbered for citation.
+
+**[note:p1]** DATE OF SERVICE: 2026-08-06
+
+**[note:p2]** VISIT TYPE: Follow-up
+
+**[note:p3]** PATIENT DEMOGRAPHICS: 86-year-old man
+
+**[note:p4]** CHIEF COMPLAINT / HISTORY OF PRESENT ILLNESS:
+- Low back pain since mid-April
+- No fall or injury
+- Emergency department visit on April 15, sent home
+- Location: low back
+- Severity: 6/10
+- Exacerbating factors: worse with standing
+- Associated symptoms: no leg symptoms
+- Systemic symptoms: no fevers, no weight loss
+- Bowel/bladder: normal bladder and bowel function
+- Prior treatments: physical therapy from May 5 to June 26, 14 sessions; home exercises since; acetaminophen since April 28
+- Course: little change over the last two months
+
+**[note:p5]** PHYSICAL EXAMINATION:
+- Lumbar spine: tenderness over the lower lumbar facet joints, pain on extension
+- Straight leg raise: negative bilaterally
+- Lower extremity strength: 5/5 in both legs
+- Reflexes: 2+ and symmetric
+- Sensation: intact
+
+**[note:p6]** ASSESSMENT:
+- Chronic axial low back pain with a facet pattern
+- Neurologically intact
+
+**[note:p7]** PLAN:
+- Lumbar facet joint injection
+- Referral to pain management
+- MRI of the lumbar spine without contrast before the injection

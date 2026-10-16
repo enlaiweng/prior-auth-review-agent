@@ -1,3 +1,4 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
 case_id: case_01
 patient_baseline: data/golden/baselines/<synthea-id>.json
 request_date: 2026-08-15
@@ -23,10 +24,7 @@ episode:
     - kind: NSAID
       start: 2026-05-23
       end: 2026-08-01
-  red_flags: []
   prior_imaging: []
   observations: []
-  management_decision: surgical referral pending imaging
 note:
-  style: standard
   file: note.md

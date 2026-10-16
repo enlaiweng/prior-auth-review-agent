@@ -1,0 +1,36 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_06
+patient_baseline: data/golden/baselines/16edbc58-2940-21ec-b665-3f5661143045.json
+request_date: 2026-08-12
+requested_procedure:
+  text: MRI lumbar spine without and with contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-07-27
+  past_history:
+    - kind: condition
+      text: Benign neoplasm of left breast
+      icd10: D24.2
+      icd10_display: Benign neoplasm of left breast
+      date: 2016-02-10
+      status: resolved
+      resolved: 2016-03-22
+    - kind: procedure
+      text: Excision of lesion of left breast
+      date: 2016-03-22
+  encounters:
+    - date: 2026-08-11
+      type: primary care visit
+      summary: Low back pain for two weeks, no injury, no leg symptoms; naproxen started; MRI requested
+  conservative_therapy:
+    - kind: naproxen
+      start: 2026-08-11
+      ongoing: true
+  prior_imaging: []
+  observations:
+    - text: Mild tenderness over the lower lumbar paraspinal muscles. No midline spinous process tenderness. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-11
+note:
+  file: note.md

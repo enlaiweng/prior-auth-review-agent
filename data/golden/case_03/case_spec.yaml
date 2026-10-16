@@ -1,0 +1,25 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_03
+patient_baseline: data/golden/baselines/3726fa5c-a1de-20ce-8a39-f0985c2d3fa7.json
+request_date: 2026-08-12
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-05-08
+  encounters:
+    - date: 2026-05-08
+      type: primary care visit
+      summary: Low back pain, no injury, no leg symptoms; return if not improving
+    - date: 2026-08-07
+      type: follow-up
+      summary: Low back pain persists at three months; lumbar facet joint injection discussed; MRI requested before the injection
+  conservative_therapy: []
+  prior_imaging: []
+  observations:
+    - text: Tenderness over the lower lumbar facet joints; pain on extension. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-07
+note:
+  file: note.md

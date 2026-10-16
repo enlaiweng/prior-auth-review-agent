@@ -1,0 +1,38 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_09
+patient_baseline: data/golden/baselines/81ef15ee-8010-ab87-93cd-692a90ddf2ab.json
+request_date: 2026-08-14
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-05-04
+  encounters:
+    - date: 2026-05-06
+      type: primary care visit
+      summary: Low back pain for two days, no injury, no leg symptoms; acetaminophen and home exercises
+    - date: 2026-06-29
+      type: follow-up
+      summary: Low back pain persists at eight weeks; physical therapy referral
+    - date: 2026-07-20
+      type: follow-up
+      summary: Pain worse despite physical therapy; therapy continued
+    - date: 2026-08-10
+      type: follow-up
+      summary: Low back pain worse after five weeks of physical therapy; lumbar medial branch block planned; MRI requested before the procedure
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-07-01
+      end: 2026-08-07
+      sessions: 11
+    - kind: acetaminophen
+      start: 2026-05-06
+      ongoing: true
+  prior_imaging: []
+  observations:
+    - text: Tenderness over the L4-L5 and L5-S1 facet joints bilaterally; pain on extension and rotation. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-10
+note:
+  file: note.md

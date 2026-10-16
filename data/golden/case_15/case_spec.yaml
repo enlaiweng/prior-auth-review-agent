@@ -1,0 +1,25 @@
+# Facts only. What each fact means for the policy is decided by the labels, not written here.
+case_id: case_15
+patient_baseline: data/golden/baselines/d17a831a-279f-aae8-25d5-9801509dcc38.json
+request_date: 2026-08-14
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-06-01
+  encounters:
+    - date: 2026-06-03
+      type: primary care visit
+      summary: Low back pain for two days, no injury, no leg symptoms
+    - date: 2026-08-10
+      type: follow-up
+      summary: Low back pain persists; MRI requested
+  conservative_therapy: []
+  prior_imaging: []
+  observations:
+    - text: Lumbar paraspinal tenderness. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs.
+      date: 2026-08-10
+note:
+  file: note.md
