@@ -1,9 +1,41 @@
-Follow-up, 2026-08-11. 64-year-old man with low back pain since mid-May, with no injury. The pain is in the low back, 6/10, worse with standing and twisting. No radiation into the legs, no numbness or weakness. No fever or weight loss; bladder and bowel normal.
+DATE OF SERVICE: 2026-08-11
 
-He has completed six weeks of physical therapy and anti-inflammatory medication without improvement.
+DEMOGRAPHICS: 64-year-old man
 
-Exam: tenderness over the lower lumbar facet joints, with pain on extension and rotation. Straight leg raise negative bilaterally. Strength 5/5 in both legs. Reflexes 2+ and symmetric. Sensation intact.
+CHIEF COMPLAINT: Low back pain
 
-Assessment: persistent low back pain with facet features, neurologically intact.
+HISTORY OF PRESENT ILLNESS:
 
-Plan: lumbar facet joint injection, with referral to pain management. MRI of the lumbar spine before the injection.
+* Onset: Mid-May
+* Injury: None
+* Location: Low back
+* Severity: 6/10
+* Aggravating factors: Standing, twisting
+* Radiation: No radiation into legs
+* Associated symptoms: No numbness, no weakness
+* Systemic symptoms: No fever, no weight loss
+* Bowel/Bladder: Normal
+
+PAST CONSERVATIVE MANAGEMENT:
+
+* Physical therapy: Completed 6 weeks, no improvement
+* Anti-inflammatory medication: Completed 6 weeks, no improvement
+
+PHYSICAL EXAMINATION:
+
+* Lumbar spine: Tenderness over lower lumbar facet joints, pain on extension and rotation
+* Straight leg raise: Negative bilaterally
+* Strength: 5/5 in both legs
+* Reflexes: 2+ and symmetric
+* Sensation: Intact
+
+ASSESSMENT:
+
+* Persistent low back pain with facet features
+* Neurologically intact
+
+PLAN:
+
+* Lumbar facet joint injection
+* Referral to pain management
+* MRI of lumbar spine before injection
