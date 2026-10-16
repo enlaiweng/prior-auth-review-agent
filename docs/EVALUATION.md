@@ -71,7 +71,7 @@ Known risks and limitations: false approval is the residual harm class, and appr
 
 ### Trust ingredients
 
-Model type: large language model orchestration with retrieval over policy text and structured outputs; no training. Foundation model: [vendor, version]. Input data source: FHIR R4 bundles (synthetic) and policy text. Output: structured decision object with citations. Development data: synthetic, see DATASHEET.md. Data type and size: 12 cases. Human oversight: approvals are audited by sample and reversible; documentation requests are confirmed by the reviewer; routed cases are decided by a physician; no deny path exists; a kill switch withdraws the approve authority.
+Model type: large language model orchestration with retrieval over policy text and structured outputs; no training. Foundation model: Anthropic, claude-sonnet-5. Input data source: FHIR R4 bundles (synthetic) and policy text. Output: structured decision object with citations. Development data: synthetic, see DATASHEET.md. Data type and size: 12 cases. Human oversight: approvals are audited by sample and reversible; documentation requests are confirmed by the reviewer; routed cases are decided by a physician; no deny path exists; a kill switch withdraws the approve authority.
 
 ### Key metrics
 
