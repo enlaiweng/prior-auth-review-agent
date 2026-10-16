@@ -1,0 +1,154 @@
+# Runs the agent on a set of cases and scores the result (eval/run_and_score.sh). Two ways in:
+#   1. Experiments, automatically: every push to a claude/ branch that changes the agent runs the case set named in
+#      eval/experiment_cases.txt on the "experiments" environment's key (a separate workspace with a low limit).
+#      eval/run_agent.mjs allows only the smoke case and eval/dev_subset.txt there, so a held-out case can never run.
+#      Results stay in the run's summary, its notices (one per case), and its downloadable artifact; each agent pull
+#      request lists these runs. No golden case runs before its blind labels are in (eval/run_agent.mjs).
+#   2. By hand, from the Actions page: choose the cases, the budget, and how many runs. On the "release" budget the job
+#      uses the "release" environment, so it runs only from main and only after the owner approves it, and it delivers
+#      the results as a pull request into eval/runs/. Nothing is merged by this workflow.
+# Keys: none is printed. The agent sends the key only in a request header to api.anthropic.com.
+name: Agent run
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "agent/**"
+      - "eval/run_agent.mjs"
+      - "eval/run_and_score.sh"
+      - "eval/print_notices.mjs"
+      - "eval/score.py"
+      - "eval/experiment_cases.txt"
+      - ".github/workflows/agent-run.yml"
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Cases: smoke (the test case), dev (cases 01 to 05), nine (all but the held-out cases), all12"
+        type: choice
+        options: ["smoke", "dev", "nine", "all12"]
+        default: "smoke"
+        required: true
+      budget:
+        description: "Budget: experiments (automatic, low limit) or release (waits for the owner's approval)"
+        type: choice
+        options: ["experiments", "release"]
+        default: "experiments"
+        required: true
+      runs:
+        description: "How many runs in a row (3 for the release evaluation)"
+        type: choice
+        options: ["1", "2", "3"]
+        default: "1"
+        required: true
+      checklist:
+        description: "Checklist mode: the approve output off"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-run-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    if: github.event_name == 'push' || inputs.budget == 'experiments'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: experiments
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Python package
+        run: python -m pip install "pyyaml==6.0.3"
+      - name: Run the agent and score it
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_EXPERIMENT_KEY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+          CASES_IN: ${{ inputs.cases }}
+          RUNS_IN: ${{ inputs.runs }}
+          CHECKLIST_IN: ${{ inputs.checklist }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            cases=$(grep -v '^#' eval/experiment_cases.txt | grep -m1 . | tr -d '[:space:]'); runs=1; checklist=false
+          else
+            cases="$CASES_IN"; runs="$RUNS_IN"; checklist="$CHECKLIST_IN"
+          fi
+          bash eval/run_and_score.sh experiments "$cases" "$runs" "$checklist"
+      - name: Keep the results with the run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: agent-run-${{ github.run_id }}
+          path: eval/runs/
+          retention-days: 90
+
+  release:
+    if: github.event_name == 'workflow_dispatch' && inputs.budget == 'release' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    environment: release
+    permissions:
+      contents: write        # to push the branch that carries the results
+      pull-requests: write   # to open the pull request
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Python package
+        run: python -m pip install "pyyaml==6.0.3"
+      - name: Run the agent and score it
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CASES_IN: ${{ inputs.cases }}
+          RUNS_IN: ${{ inputs.runs }}
+          CHECKLIST_IN: ${{ inputs.checklist }}
+        run: bash eval/run_and_score.sh release "$CASES_IN" "$RUNS_IN" "$CHECKLIST_IN"
+      - name: Deliver the results as a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CASES_IN: ${{ inputs.cases }}
+        run: |
+          branch="agent-run/run-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          while read -r d; do git add "$d"; done < "$RUNNER_TEMP/run_folders.txt"
+          git commit -q -m "Agent run on ${CASES_IN}, run ${GITHUB_RUN_ID}" -m "Workflow run: ${RUN_URL}"
+          git push -q origin "$branch"
+          python3 - "$branch" > "$RUNNER_TEMP/pr.json" <<'PY'
+          import json, os, sys
+          folders = [l.strip() for l in open(os.path.join(os.environ["RUNNER_TEMP"], "run_folders.txt")) if l.strip()]
+          parts = ["**What to check**",
+                   "- False approvals and evidence validity in each score table: both are hard gates.",
+                   "- The model version returned, and the settings, at the top of each run.",
+                   "- Any case marked as an error.", ""]
+          for f in folders:
+              run = json.load(open(os.path.join(f, "run.json")))
+              parts += [f"### {f}", "",
+                        f"Agent {run['agent_version']}, spec `{run['spec_sha256'][:12]}`; model asked for `{run['settings']['model']}`, "
+                        f"returned {', '.join(map(str, run['models_returned']))}; effort {run['settings']['effort']}, "
+                        f"thinking {run['settings']['thinking']['type']}, max tokens {run['settings']['max_tokens']}. "
+                        f"Cost estimate ${run['cost_usd_estimate_total']}.", "",
+                        open(os.path.join(f, "score.md")).read().split("\n", 2)[2], ""]
+          parts += ["Opened by the Agent run workflow: " + os.environ["RUN_URL"]]
+          print(json.dumps({"title": f"Agent run: {os.environ['CASES_IN']} (run {os.environ['GITHUB_RUN_ID']})",
+                            "head": sys.argv[1], "base": "main", "body": "\n".join(parts)}))
+          PY
+          url=$(gh api "repos/${GITHUB_REPOSITORY}/pulls" --input "$RUNNER_TEMP/pr.json" --jq .html_url)
+          echo "Pull request: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Opened $url"

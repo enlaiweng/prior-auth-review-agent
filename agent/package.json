@@ -1,0 +1,7 @@
+{
+  "name": "prior-auth-review-agent",
+  "private": true,
+  "type": "module",
+  "description": "The agent module (agent.js), shared by the evaluation runs and the Cloudflare Worker. No dependencies.",
+  "license": "MIT"
+}

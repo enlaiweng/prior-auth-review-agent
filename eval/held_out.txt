@@ -1,0 +1,5 @@
+# Cases held out from all prompt work (docs/EVAL_PLAN.md, Golden set composition). Scored only in the release
+# evaluation and the vendor-update run. eval/run_agent.mjs refuses them on the experiments budget.
+case_08
+case_10
+case_12
