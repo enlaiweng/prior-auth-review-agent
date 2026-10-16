@@ -14,11 +14,12 @@ The evaluation below tests the agent as a whole, not the underlying language mod
 
 ## Results
 
-Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], one headline run on all 12 cases and two more on the 9 not held out, at the pinned model version; range shown where it matters.
+Golden set of 12 adjudicated cases against Medicare LCD L34220 (Lumbar MRI, Noridian, revision effective October 23, 2025). Evaluated [date], model [vendor model and version], three runs on all 12 cases at the pinned model version and settings, the first reported as the headline; range shown where it matters.
 
 | Measure | Result | Release threshold |
 |---|---|---|
-| False approvals on the 8 cases adjudicated not approvable | [0 of 8] | 0 |
+| False approvals on the 8 cases adjudicated not approvable | [x of 8] | 0, in every run |
+| Evidence validity (every cited record and note paragraph exists in the case) | [xx%] | 100%, in every run |
 | Citation faithfulness (cited criterion appears verbatim in the policy) | [xx%] | 95% |
 | Per-criterion agreement with adjudication | [xx%] | 85% |
 | Routing agreement (approve / request / route) | [x of 12, xx%] | 80% |
