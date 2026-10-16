@@ -12,12 +12,13 @@ Agent version [tag] (see CHANGELOG.md for prompt and configuration versions). Mo
 
 | Metric | Threshold | Result | Pass |
 |---|---|---|---|
-| False approvals | 0 | [0 of n] | [ ] |
+| False approvals | 0, in every run | [x of 8] | [ ] |
 | Citation faithfulness | 95% | [ ] | [ ] |
-| Routing agreement | [ ] | [ ] | [ ] |
-| Per-criterion agreement | [ ] | [ ] | [ ] |
-| Missing-documentation recall | [ ] | [ ] | [ ] |
-| Abstention calibration | [ ] | [ ] | [ ] |
+| Evidence validity | 100%, in every run | [ ] | [ ] |
+| Routing agreement | 80% | [ ] | [ ] |
+| Per-criterion agreement | 85% | [ ] | [ ] |
+| Missing-documentation recall | 80% | [ ] | [ ] |
+| Abstention calibration | 90% | [ ] | [ ] |
 | Pend rate | reported | [ ] | n/a |
 | Reviewer minutes per case (method: [ ]) | reported | [ ] | n/a |
 
@@ -50,7 +51,7 @@ Small synthetic set. Cases and notes written by Claude and labeled by Enlai Weng
 
 ### Maintenance: vendor-update re-evaluation
 
-Second model version [second model id], run [date]: [table of the same metrics]. Outcome: [passed, no release required; or failed, returned to build]. Logged in CHANGELOG.md.
+Second model version claude-sonnet-5-5, run [date]: [table of the same metrics]. Outcome: [passed, no release required; or failed, returned to build]. Logged in CHANGELOG.md.
 
 ## Part 2: Model card (CHAI Applied Model Card layout)
 

@@ -12,7 +12,7 @@ Under Amendment 2 (CHARTER.md; EVAL_PLAN.md, How the answer key is made), Claude
 
 ## When it was fixed
 
-Written on 2026-10-15 together with the cases, and revised the same day after two independent reviews and after the restyle of notes 08, 10 and 12, with no status or routing changed by the restyle. It was encrypted and committed before any label existed. The commit date in the git history is the record.
+Written on 2026-10-15 together with the cases, and revised the same day after two independent reviews and after the restyle of notes 08, 10 and 12, with no status or routing changed by the restyle. It was encrypted and committed before any label existed. GitHub's record of pull request #4, merged by Enlai Weng on 2026-10-15 at 22:51 Pacific time, is the record. GitHub's servers set it, not anyone's computer clock.
 
 ## Fingerprint
 
@@ -32,7 +32,7 @@ OpenSSL 3.0.13, AES-256-CBC, with the key stretched by PBKDF2 (SHA-256, 600,000 
 openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -salt -in intended_answers.yaml -out intended_answers.yaml.enc -pass file:key.txt
 ```
 
-The key is a random string of 43 characters, made by a computer. It stays outside this repository until Enlai Weng's blind labels are committed. Not using it before then is an honor rule (DATASHEET.md).
+The key is a random string of 43 characters, made by a computer. It stays outside this repository until the reveal, after Enlai Weng's blind labels and the third reader's labels are committed. Not using it before then is an honor rule (DATASHEET.md).
 
 ## How to check it after the key is published
 

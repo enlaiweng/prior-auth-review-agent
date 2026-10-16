@@ -10,7 +10,7 @@ On a golden set of 12 cases adjudicated against LCD L34220 under a documented pr
 
 ## Criterion inventory
 
-The criteria the agent checks, from L34220 (revision effective October 23, 2025). This is a working summary for planning; the agent retrieves and cites the policy's own wording, and the list is to be verified against the current text before the first case is authored.
+The criteria the agent checks, from L34220 (revision effective October 23, 2025). This is a working summary for planning; the agent retrieves and cites the policy's own wording, and the list was verified against the current text on 2026-09-14 (GOVERNANCE.md, decision log).
 
 C1. A red-flag indication is present. The LCD's list: major trauma; minor trauma in a potentially osteoporotic patient; history of cancer; fever; chills; unexplained weight loss; recent bacterial infection; IV drug abuse; immune suppression; pain that worsens when supine or at night; saddle anesthesia; recent onset of bladder dysfunction; clinically significant or progressive neurologic deficit in the lower extremity; unexpected laxity of the anal sphincter; perianal or perineal sensory loss; clinically significant motor weakness; other nerve root compromise. A red flag counts as supported when a structured element of the record documents it (a Condition, Observation, Procedure, DiagnosticReport, or other discrete entry), with or without the note. A red flag stated only in the note, with nothing structured behind it, or one the structured record contradicts, is labeled undeterminable, and the case routes.
 
@@ -43,7 +43,7 @@ A false approval costs the payer money and costs the patient nothing. A false ro
 | Pend rate | Share of cases not approved | reported, not gated |
 | Reviewer minutes per case | Estimated, method below | reported |
 
-Thresholds are set before the first evaluation run and not moved afterward; if one is changed, the change and the reason go in the decision log. With twelve cases these percentages are coarse: one case moves routing agreement by about eight points, and 80 percent missing-documentation recall on four named gaps, or 90 percent abstention on five route cases, allows no misses. They are kept as set on 2026-09-14 rather than loosened for the smaller set. On 2026-10-15, before any run, two gates were made stricter: the false-approval gate now applies to every release run, and an evidence-validity gate was added (GOVERNANCE.md, decision log).
+Thresholds are set before the first evaluation run and not moved afterward; if one is changed, the change and the reason go in the decision log. With twelve cases these percentages are coarse: one case moves routing agreement by about eight points, and 80 percent missing-documentation recall on three named gaps, or 90 percent abstention on five route cases, allows no misses. They are kept as set on 2026-09-14 rather than loosened for the smaller set. On 2026-10-15, before any run, two gates were made stricter: the false-approval gate now applies to every release run, and an evidence-validity gate was added (GOVERNANCE.md, decision log).
 
 Reviewer-minutes method, pre-registered: count the record elements the reviewer must open to verify the agent's output (one per cited element, plus the note if cited), multiply by 45 seconds, add two minutes of reading for a routed summary. Baseline for comparison: opening every element in the bundle plus the note. This is an estimate from output structure, not observed time, and is labeled as such wherever it appears.
 

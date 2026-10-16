@@ -4,7 +4,7 @@ EDOM Phase 6 artifact. In place before the first user. Holds the deploy and roll
 
 ## Deploy
 
-Deployment runs as a GitHub workflow that the owner approves (ADR-9). The workflow takes the Cloudflare token, account id, and demo key from the "release" environment, sets the Worker secrets (the demo key and CHECKLIST_MODE), deploys the Worker, and confirms the viewer loads with all twelve case ids. The first deployment runs with CHECKLIST_MODE=true; the approve output is enabled only after the release decision is signed. Smoke test: select case 01 and confirm the returned decision matches its final label, with citations rendering. The public viewer shows stored decisions; live runs need the demo passcode and are rate-limited.
+Deployment runs as a GitHub workflow that the owner approves (ADR-9). The workflow takes the Cloudflare token, account id, and demo key from the "release" environment, sets the Worker secrets (the demo key and CHECKLIST_MODE), deploys the Worker, and confirms the viewer loads with all twelve case ids. The first deployment runs with CHECKLIST_MODE=true; the approve output is enabled only after the release decision is signed. Smoke test: with the passcode, run case 01 live and confirm its per-criterion statuses match the final labels, with citations rendering. In checklist mode the routing returned is route; once the approve output is on, it must match the final label. In checklist mode the viewer also shows every stored decision as routed. The public viewer shows stored decisions; live runs need the demo passcode and are rate-limited.
 
 ## Roll back
 
@@ -27,7 +27,7 @@ Production thresholds, what must stay true after release, distinct from the rele
 | Signal | Threshold | Loop fired | Where recorded |
 |---|---|---|---|
 | False approval observed | any | Kill switch | GOVERNANCE.md decision log; inventory state Suspended |
-| Pend rate on a monitoring sample | more than [10] points from release value | Review; drift loop to build if confirmed | Decision log |
+| Pend rate on a monitoring sample | more than 10 points from release value | Review; drift loop to build if confirmed | Decision log |
 | Citation faithfulness on a monitoring sample | below 90% | Drift loop to build | Decision log |
 | Vendor model version change | any | Vendor-update loop: full re-evaluation before continued use | EVALUATION.md maintenance; CHANGELOG.md verification entry |
 | Policy text change (L34220 revision or new variant) | any | Regulation-change route: GOVERNANCE.md regime mapping and risk register updated, then ARCHITECTURE.md and EVAL_PLAN.md revisited for affected criteria | Decision log |

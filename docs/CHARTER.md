@@ -40,7 +40,7 @@ Release 2, after deployment: a commercial-payer variant requiring six weeks of c
 
 ## Constraints
 
-Clock: hard stop November 25, 2026 (Amendment 2; December 9 under Amendment 1; originally October 7); may move to December 9 under check 1 below. Hours: about 20 owner hours to the stop under Amendment 2 (10 per week committed originally), dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4) gives a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope is a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
+Clock: hard stop November 25, 2026 (Amendment 2; December 9 under Amendment 1; originally October 7); may move to December 9 under check 1 below. Hours: about 20 owner hours to the stop under Amendment 2 (10 per week committed originally), dependent on AI usage credit availability. The load test behind this plan (ARCHITECTURE.md, ADR-4), run for the 20-case plan in September 2026 and not repeated since, gave a 0.93 to 0.99 probability of deploying inside four weeks at 20 hours per week; at 16 hours per week the same scope was a five-week build. Budget: API and platform credits only. Data: synthetic only, redistributable on GitHub.
 
 ## Success measures
 

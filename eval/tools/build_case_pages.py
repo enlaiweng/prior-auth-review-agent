@@ -162,7 +162,7 @@ def policy_text():
 # Planning sentences in the Criterion inventory that describe how the golden set was built, not how to judge a
 # case. They are left out of what the readers see, so the readers are told the rule and nothing about the answers.
 PLANNING_SENTENCES = [
-    " This is a working summary for planning; the agent retrieves and cites the policy's own wording, and the list is to be verified against the current text before the first case is authored.",
+    " This is a working summary for planning; the agent retrieves and cites the policy's own wording, and the list was verified against the current text on 2026-09-14 (GOVERNANCE.md, decision log).",
     " The LCD's wording (\"no symptoms or signs suggesting nerve root disorder\") also allows a broader reading, so the golden set is built so that no expected routing depends on this choice (see Golden set composition).",
     " These two rules were written down on 2026-10-15, before any label existed; they state how the twelve cases were built.",
 ]

@@ -69,7 +69,7 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | 2026-11-04 | Smoke run on the 9 cases not held out: [false approvals: none / n]; check 2, deployed path in checklist mode returns a decision: [yes/no]; action: [none / checklist mode / finish deployment first] | Stop condition | | CHARTER.md |
 | [date] | Threshold changes, if any, with reason | Threshold | | EVAL_PLAN.md |
 | [date] | Release 2 design note (six-week commercial variant): how the regulation-change route would update the regime mapping, ARCHITECTURE.md and EVAL_PLAN.md for the affected criterion; not built (ADR-8) | Loop: regulation-change route (described) | Shows the route on a real policy difference without a second build | |
-| [date] | Vendor-update loop: second model version [second model id] evaluated; [passed, verification entry only / failed, returned to build] | Loop: vendor update | | EVALUATION.md maintenance |
+| [date] | Vendor-update loop: second model version claude-sonnet-5-5 evaluated; [passed, verification entry only / failed, returned to build] | Loop: vendor update | | EVALUATION.md maintenance |
 
 ## Model inventory entry
 
@@ -79,7 +79,7 @@ Decisions that are not architecture (those are ADRs in ARCHITECTURE.md). Loop tr
 | Owner | Enlai Weng |
 | Risk tier | Moderate (CHARTER.md) |
 | Setting | Medicare Advantage utilization review, lumbar MRI, Noridian LCD L34220 (rev. 2025-10-23) |
-| Foundation model and version | [vendor, model, version]; re-evaluated on [second version] |
+| Foundation model and version | Anthropic, claude-sonnet-5; re-evaluated on claude-sonnet-5-5 |
 | Lifecycle state | In development |
 | Last evaluation | [date], EVALUATION.md |
 | Kill switch owner | Enlai Weng |
