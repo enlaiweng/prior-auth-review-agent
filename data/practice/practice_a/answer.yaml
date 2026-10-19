@@ -34,9 +34,11 @@ criteria:
     also_fine: [note:p3]
     why: >-
       C3 needs a surgery or other aggressive treatment under consideration, and an MRI result that would change the
-      choice. The August 14 visit plans an epidural steroid injection with pain management, an injection like the
-      policy's own example, and the plan (note:p4) says the MRI is how the injection will be aimed at the right level
-      and side. For C3 and C4 the note counts as evidence on its own; the note-only rule is only for C1 and C2.
+      choice. The August 14 visit plans an epidural steroid injection with pain management. That isn't the policy's
+      exact example (an injection into a joint between vertebrae), but this worked answer counts it as an "other
+      aggressive treatment," because the national guidance the project cites (DATASHEET.md) ties MRI to candidates for
+      surgery or an epidural steroid injection. And the plan (note:p4) says the MRI is how the injection will be aimed
+      at the right level and side. For C3 and C4 the note counts as evidence on its own; the note-only rule is only for C1 and C2.
   C4_no_duplicate_imaging:
     status: supported
     evidence: []
