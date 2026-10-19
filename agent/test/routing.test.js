@@ -71,7 +71,7 @@ test("a red flag resting on the note alone does not block an approval C2 carries
     const v = decideRouting(report({ criteria: { C1_red_flag: crit(status, ["note:p1", "Patient/p"], ["L34220-15"]) } }), ctx());
     assert.equal(v.routing, "approve", status);
     assert.equal(v.basis, "C2", status);
-    assert.match(v.reasons.join(" "), /For the reviewer: .*(visit note|without a Condition)/, status);
+    assert.match(v.reasons.join(" "), /Also noted: .*(visit note|without a Condition)/, status);
   }
 });
 
@@ -99,7 +99,8 @@ test("C1 left undeterminable by the note, with a structured entry cited, approve
   const c1 = crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]);
   const v = decideRouting(report({ criteria: { C1_red_flag: c1 } }), ctx());
   assert.equal(v.routing, "approve");
-  assert.match(v.reasons.join(" "), /visit note/);
+  assert.equal(v.basis, "C2");
+  assert.match(v.reasons.join(" "), /Also noted: .*visit note/);
   const w = decideRouting(report({ criteria: { C1_red_flag: c1, C2_conservative_4wk: crit("unsupported", [], ["L34220-36"]) } }), ctx());
   assert.equal(w.routing, "route");
   assert.match(w.reasons.join(" "), /visit note/);
@@ -168,7 +169,44 @@ test("a red flag the record contradicts does not block an approval C2 carries, a
   const w = decideRouting(report({ criteria: { C1_red_flag: c1, C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
                                    contradictions, missing_document: { criterion: "C2", missing: "a named record" } }), ctx());
   assert.equal(w.routing, "route");
-  assert.match(w.reasons.join(" "), /contradicts itself on C1/);
+  assert.match(w.reasons.join(" "), /Routed because the record contradicts itself on C1/);
+});
+
+test("a red flag C1 calls supported from an Observation, but which the record contradicts, approves only on C2", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ["Observation/o"], ["L34220-15"]) },
+                                   contradictions: [{ criterion: "C1", description: "d", evidence: ["Observation/o", "note:p1"] }] }), ctx());
+  assert.equal(v.routing, "approve");
+  assert.equal(v.basis, "C2");
+  assert.match(v.reasons.join(" "), /Also noted: the record contradicts itself on C1/);
+});
+
+// ADR-12 (4): when the case is not approvable, a red flag on the note alone, unbacked, or contradicted routes instead of
+// any document request, whichever criterion the document is for.
+const openForms = {
+  "note-only": { criteria: { C1_red_flag: crit("undeterminable", ["note:p1"], ["L34220-15"]) } },
+  "unbacked": { criteria: { C1_red_flag: crit("supported", ["Encounter/e"], ["L34220-15"]) } },
+  "contradicted": { criteria: { C1_red_flag: crit("undeterminable", ["Condition/c", "note:p1"], ["L34220-15"]) },
+                    contradictions: [{ criterion: "C1", description: "d", evidence: ["Condition/c", "note:p1"] }] },
+};
+const gaps = {
+  C2: { C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
+  C3: { C3_informs_management: crit("undeterminable", [], ["L34220-39"]) },
+  C4: { C4_no_duplicate_imaging: crit("undeterminable", [], ["L34220-41"]) },
+};
+test("a red flag on the note alone, unbacked, or contradicted routes instead of requesting a C2, C3, or C4 document", () => {
+  for (const [form, f] of Object.entries(openForms)) {
+    for (const [gap, g] of Object.entries(gaps)) {
+      const v = decideRouting(report({ criteria: { ...f.criteria, ...g }, contradictions: f.contradictions,
+                                       missing_document: { criterion: gap, missing: "a named record" } }), ctx());
+      assert.equal(v.routing, "route", `${form} ${gap}`);
+      assert.match(v.reasons.join(" "), /Routed because /, `${form} ${gap}`);
+      // without the red flag, the same report would be a request (contradictions aside)
+      if (form !== "contradicted") {
+        const plain = decideRouting(report({ criteria: g, missing_document: { criterion: gap, missing: "a named record" } }), ctx());
+        assert.equal(plain.routing, "request", `${form} ${gap} control`);
+      }
+    }
+  }
 });
 
 test("a contradiction on C1 never lets C1 carry an approval", () => {

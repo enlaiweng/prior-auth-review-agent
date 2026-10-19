@@ -224,7 +224,7 @@ Radiating leg pain, or a positive straight leg raise, does **not** support C1 on
 **Where the red flag is written decides the answer:**
 
 - **Supported** when a structured entry shows the red flag: a Condition, an Observation, a Procedure, an Imaging report, a medication order, or any other entry that is not the visit note. An Observation counts whether it holds a number, a code, or text.
-- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when the structured record **contradicts** it. Either way, C1 can't carry an approval. It doesn't block an approval that C2 carries, but if the case can't be approved, it goes to a physician rather than waiting on a document for C1.
+- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when the structured record **contradicts** it. Either way, C1 can't carry an approval. It doesn't block an approval that C2 carries, but if the case can't be approved, it goes to a physician rather than to a document request.
 - **Unsupported** when nothing on the list appears anywhere in the record, or what appears doesn't meet the list's words (for example, leg pain with a normal nerve exam).
 
 A contradiction means two parts of the record say opposite things about the same fact. For example, if the note said "temperature 101" but the vital signs recorded at the same visit said 98.6, the structured entry would contradict the note.
@@ -251,7 +251,7 @@ So C2 has three parts, and all three must hold:
 
 **How to count four weeks.** Use the dates printed on the entry: a Procedure's "2026-06-15 to 2026-08-03," or a medication's "dosage period." Four weeks is 28 days. For example, June 1 to June 29 is exactly four weeks. A calendar makes this easy. Some entries show only a start date ("from 2026-07-20") and a status saying they are still going: no end date is recorded.
 
-**Note-only care.** Conservative care that appears only in the note, with no therapy Procedure or medication order behind it, or that a structured entry contradicts, is **undeterminable**. Unlike C1, the criteria don't say this alone routes the case; the routing questions below decide that.
+**Note-only care.** Conservative care that appears only in the note, with no therapy Procedure or medication order behind it, or that a structured entry contradicts, is **undeterminable**. Whether the case is then a request or a route, the routing questions below decide.
 
 C2 always gets its own answer, even when C1 is supported. The criteria say the criterion an approval doesn't rest on "is still labeled with its status."
 
@@ -282,11 +282,11 @@ The note counts as evidence for C4 on its own.
 After the four criteria, choose one outcome. Ask these questions in order, and stop at the first "yes":
 
 1. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag **or** a failed four-week trial, not both. (C4's evidence can be empty when there's no earlier imaging; that still counts as supported.) A red flag stated only in the note, or one the structured record contradicts, leaves C1 undeterminable, so it can't be what the approval rests on; but it doesn't stop an approval that C2 carries.
-2. **Otherwise the case can't be approved. Is there a red flag stated only in the note, or one the structured record contradicts?** Route. A possible red flag goes to a physician rather than waiting on a document.
+2. **Otherwise the case can't be approved. Is there a red flag stated only in the note, or one the structured record contradicts?** Route. A possible red flag goes to a physician rather than to a document request.
 3. **Does the record contradict itself on any criterion?** Route, even if a document could clear it up.
 4. **Would one record item that the doctor's office could send settle the open question?** Request it, naming the criterion and the missing item. If no single document could make the case approvable, route. A request is never for C1 (question 2 and the project's routing rule, ARCHITECTURE.md, ADR-10).
 
-These questions restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence"; C1's sentence that such a red flag "cannot carry an approval, and it does not block one that C2 carries; when the case is not approvable, the case routes rather than waiting on a document"; and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
+These questions restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence"; C1's sentence that such a red flag "cannot carry an approval, and it does not block one that C2 carries; when the case is not approvable, the case routes rather than requesting a document"; and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
 
 **Filling in a request.** Click **request**. Two boxes appear. In the first, pick the criterion the gap belongs to (C1 to C4). In the second, type the missing item in a few plain words, then click anywhere outside the box so it saves.
 
@@ -303,7 +303,7 @@ If you get stuck, use Part 5 and the **Policy and criteria** panel, just as you 
 
 ## Part 7. What the practice cases don't show
 
-Both practice cases are fairly simple on C2, C3, and C4: weeks of physical therapy, a plan that names an injection or surgery, and no earlier imaging. Real cases can have things the practice cases don't, such as medication orders, earlier imaging, a red flag in a structured entry, a contradiction, or a documentation request.
+Both practice cases are fairly simple on C2, C3, and C4: weeks of physical therapy, a plan that names an injection or surgery, and no earlier imaging. Real cases can have things the practice cases don't, such as medication orders, earlier imaging, a red flag in a structured entry, a contradiction, a documentation request, or a case that is routed to a physician.
 
 That's on purpose. A practice case for each of those paths would look a lot like one of the 12, and then your labels would partly be Claude's reading instead of your own. So for those, use Part 5 and the official wording, and decide from the record in front of you. A few reminders:
 
@@ -520,7 +520,7 @@ C4 asks whether this MRI would duplicate imaging the patient already had. Look f
 
 **Answer: approve.** In the **Routing** block, click **approve**. C1 being unsupported doesn't matter: a case needs C1 **or** C2, not both.
 
-Questions 2 to 4, about open red flags, contradictions, and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
+Questions 2 to 4, about red flags stated only in the note, contradictions, and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
 
 ### Step 18. Check your work
 

@@ -67,7 +67,7 @@ function approvalBasis(report, ctx, assumed) {
 
 // An open red flag: one that rests on the note alone, or that the record contradicts (EVAL_PLAN.md, C1: such a red flag
 // "is labeled undeterminable"; ADR-12). It can never carry an approval, and it does not block one that C2 carries. When
-// the case is not approvable, it routes the case rather than waiting on a document. Three ways the report can show one:
+// the case is not approvable, it routes the case rather than requesting a document. Three ways the report can show one:
 //   - a contradiction reported on C1;
 //   - C1 called supported without an entry that can document a red flag (the claim then rests on the note, or on
 //     nothing the rule accepts);
@@ -75,7 +75,7 @@ function approvalBasis(report, ctx, assumed) {
 // C1 unsupported, or undeterminable without citing the note, is not an open red flag.
 function openRedFlag(report, ctx) {
   const c = report.criteria[CRITERIA.C1];
-  if (contradicted("C1", report)) return "the record contradicts itself on C1 (a red flag)";
+  if (contradicted("C1", report)) return "the record contradicts itself on C1, the red-flag criterion";
   if (c.status === "supported" && !hasStructuredEvidence("C1", c, ctx))
     return "a red flag is reported without a Condition, Observation, Procedure, imaging report, or medication order behind it";
   if (c.status === "undeterminable" && c.evidence.some(id => isNote(id, ctx)))
@@ -110,12 +110,12 @@ export function decideRouting(report, ctx) {
   const basis = approvalBasis(report, ctx, null);
   if (basis) {
     reasons.push(`C3 and C4 are supported, and ${basis} is supported with a record entry other than the visit note; every applicable criterion cites the policy and every cited id exists in the case.`);
-    if (redFlag) reasons.push(`For the reviewer: ${redFlag}. C1 is not met, so the approval rests on ${basis}, not on the red flag (ADR-12).`);
+    if (redFlag) reasons.push(`Also noted: ${redFlag}. C1 is not met, so the approval rests on ${basis}, not on the red flag (ADR-12).`);
     return out("approve", { basis });
   }
   reasons.push("Not approvable: " + shortfall(report, ctx) + ".");
   if (redFlag) {
-    reasons.push(`Routed because ${redFlag}; when a case is not approvable, a red-flag question goes to a physician rather than waiting on a document (EVAL_PLAN.md, C1; ADR-12).`);
+    reasons.push(`Routed because ${redFlag}; when a case is not approvable, a red-flag question goes to a physician rather than to a document request (EVAL_PLAN.md, C1; ADR-12).`);
     return out("route");
   }
 

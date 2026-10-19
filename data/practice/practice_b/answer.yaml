@@ -44,9 +44,8 @@ routing_why: >-
   An approval needs C3 and C4, plus C1 or C2 with cited evidence. C2, C3, and C4 are all supported, and C2 rests on
   the physical therapy record (Procedure/practiceb-pt-01), not on the note, so the case is approved. C1 is
   undeterminable, so it can't be what the approval rests on, but a red flag stated only in the note doesn't stop an
-  approval that C2 carries. This matches how a clinician doing prior authorization would read the case. If C2 had
-  fallen short as well, the possible
-  red flag would have sent the case to a physician (routing question 2), not to a request for the urgent care record.
+  approval that C2 carries. If C2 had fallen short as well, the possible red flag would have sent the case to a
+  physician (routing question 2), not to a request for the urgent care record.
 lesson: >-
   Check every note paragraph against the red-flag list, including ones that read like background. A red flag that
   appears only in the note makes C1 undeterminable: it can't carry an approval. It doesn't block one that C2 carries,
