@@ -1,0 +1,122 @@
+# The third reader: Gemini labels the twelve golden cases from prompts fixed before labeling began
+# (docs/EVAL_PLAN.md, How the answer key is made).
+# How it starts: by hand, from the Actions page, on main only. It uses the "release" environment, which holds
+# GEMINI_API_KEY, so GitHub waits for the owner to approve the run before it can begin.
+# What it refuses to do: start before every golden case has complete blind labels on main, start while an earlier run's
+# third-reader/ branch still exists, or send a prompt that differs from its fingerprint in prompts.sha256.
+# What it delivers: a pull request with data/golden/case_NN/labels_gemini.yaml for each case Gemini labeled, and the run's
+# folder eval/third_reader/runs/RUN/ holding every reply as Gemini sent it and run_record.json (the model version Gemini
+# reported, fingerprints, token counts, and what happened to each case). This workflow merges nothing.
+# Keys: it prints none. The key reaches only eval/third_reader/run_third_reader.py, which sends it in a request header.
+# Data: Google's free tier may use what is sent to it. Every patient is synthetic and the policy text is public.
+name: Third reader (Gemini)
+
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Cases to send: all, or numbers separated by commas to rerun ones that failed (for example 03,07). Cases that already have Gemini labels are skipped."
+        required: true
+        default: "all"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: third-reader
+  cancel-in-progress: false
+
+jobs:
+  read:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: release
+    permissions:
+      contents: write        # to push the branch that carries the results
+      pull-requests: write   # to open the pull request
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the pinned Python package
+        run: python -m pip install "pyyaml==6.0.3"
+
+      - name: Check that the blind labels are all in and the prompts are the fixed ones
+        run: |
+          if [ -n "$(git ls-remote --heads origin 'refs/heads/third-reader/*')" ]; then
+            echo "::error title=Earlier run not merged::A third-reader branch from an earlier run still exists. Merge or close its pull request, delete its branch, then start this again."
+            exit 1
+          fi
+          python3 eval/tools/check_labels.py --require-blind
+          (cd eval/third_reader/prompts && sha256sum --check --strict prompts.sha256)
+          python3 eval/tools/build_case_pages.py > /dev/null
+          python3 eval/tools/build_third_reader_prompts.py > /dev/null
+          if ! git diff --quiet; then
+            git diff --stat
+            echo "::error title=Prompts out of date::The case pages or prompts no longer match the bundles. Nothing was sent."
+            exit 1
+          fi
+          echo "Blind labels complete for every case; all 12 prompts match their fingerprints." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Send each prompt to Gemini
+        id: read
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CASES: ${{ inputs.cases }}
+        run: |
+          set +e
+          python3 eval/third_reader/run_third_reader.py --cases "$CASES" --summary "$RUNNER_TEMP/summary.md"
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ -f "$RUNNER_TEMP/summary.md" ]; then cat "$RUNNER_TEMP/summary.md" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ "$code" != "0" ] && [ "$code" != "3" ]; then exit "$code"; fi
+
+      - name: Deliver the results as a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          branch="third-reader/run-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add "eval/third_reader/runs/${GITHUB_RUN_ID}"
+          git add data/golden/case_*/labels_gemini.yaml 2>/dev/null || true
+          git commit -q -m "Third reader labels from Gemini, run ${GITHUB_RUN_ID}" -m "Workflow run: ${RUN_URL}"
+          git push -q origin "$branch"
+          python3 - "$branch" > "$RUNNER_TEMP/pr.json" <<'PY'
+          import json, os, sys
+          summary = open(os.path.join(os.environ["RUNNER_TEMP"], "summary.md"), encoding="utf-8").read()
+          body = "\n".join([
+              "**What to check**",
+              "- The table below: every case should say `labeled`. A case that failed has no labels file here; its reply is still saved, and the problem is listed.",
+              "- The model version Gemini reported, recorded per case.",
+              "- Nothing in this pull request changes your blind labels.",
+              "",
+              "Gemini's labels for the golden set, from the fixed prompts (docs/EVAL_PLAN.md, How the answer key is made). "
+              "Before you merge, Claude adds the reveal (the key to the locked intended answers) and the disagreement report to this pull request, "
+              "so you review them together.",
+              "",
+              summary,
+              "",
+              "Files: `data/golden/case_NN/labels_gemini.yaml` (the labels), and `eval/third_reader/runs/" + os.environ["GITHUB_RUN_ID"] + "/` "
+              "(each reply exactly as Gemini sent it, and `run_record.json`).",
+              "",
+              "Opened by the Third reader (Gemini) workflow: " + os.environ["RUN_URL"],
+          ])
+          print(json.dumps({"title": "Third reader labels from Gemini (run " + os.environ["GITHUB_RUN_ID"] + ")",
+                            "head": sys.argv[1], "base": "main", "body": body}))
+          PY
+          url=$(gh api "repos/${GITHUB_REPOSITORY}/pulls" --input "$RUNNER_TEMP/pr.json" --jq .html_url)
+          echo "Pull request: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Opened $url"
+
+      - name: Mark the run as failed if some cases were not labeled
+        if: steps.read.outputs.code == '3'
+        run: |
+          echo "::error title=Some cases not labeled::See the table in this run's summary and in the pull request. Those cases can be rerun by entering their numbers in the cases box."
+          exit 1

@@ -1,0 +1,9 @@
+{
+  "name": "prior-auth-review-agent-tests",
+  "private": true,
+  "description": "Test tools for the labeling page. Installed only on GitHub's computers by the Checks workflow (npm ci).",
+  "license": "MIT",
+  "dependencies": {
+    "jsdom": "24.1.3"
+  }
+}

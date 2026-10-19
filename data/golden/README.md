@@ -10,7 +10,8 @@ Twelve cases (01 to 10, 12, and 15) and two paired fairness duplicates. What eac
 | `note.md` | The last visit note | Written by Claude; the notes of cases 08, 10 and 12 were restyled by Enlai Weng in the Gemini app on 2026-10-15, then normalized and fact-checked (docs/DATASHEET.md) |
 | `bundle.json` | The FHIR R4 record the agent reads | `eval/tools/render_case.py`, from the spec, the note, and the patient's baseline |
 | `case_page.md` | The record as a readable page, with the ids labels cite | `eval/tools/build_case_pages.py`, from the bundle |
-| `labels_blind.yaml` | Enlai Weng's blind labels (added at labeling) | The labeling page, `eval/labeling/labeling.html` |
+| `labels_blind.yaml` | Enlai Weng's blind labels (added at labeling); never edited after upload | The labeling page, `eval/labeling/labeling.html` |
+| `labels_gemini.yaml` | The third reader's labels (added after the blind labels); never edited | `eval/third_reader/run_third_reader.py`, in the Third reader (Gemini) workflow ([eval/third_reader/README.md](../../eval/third_reader/README.md)) |
 | `labels.yaml` | Final labels, after disagreements are settled (added later) | Enlai Weng |
 
 `case_01_pair_sex` and `case_09_pair_race` hold the fairness duplicates. Each is its original with one attribute of the patient changed (`eval/tools/make_pair.py`); ids, dates, and the note are the same, so they share the original's labels.
@@ -25,7 +26,7 @@ Other files: `patients.txt` (the 20 patients picked), `baselines/` (one thin bas
 4. The intended answers locked: encrypted and committed (EVAL_PLAN.md, How the answer key is made).
 5. Labeling.
 
-The `Validate golden set` workflow checks on every change that step 3's files match the specs and notes, and that every bundle validates with 0 errors.
+The `Validate golden set` workflow checks on every change that step 3's files match the specs and notes, and that every bundle validates with 0 errors. The `Checks` workflow checks the form of every label file (`eval/tools/check_labels.py`) and refuses any change to a blind or Gemini label file already on main.
 
 ## Regenerate it from the seed
 
