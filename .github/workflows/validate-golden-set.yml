@@ -3,8 +3,8 @@
 # When it runs: on pushes to main or a claude/ branch, and on pull requests, that change the golden set,
 # the tools that build it, or the documents whose text the case pages and prompts quote; also by hand.
 # Two checks:
-#   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, and prompts from the committed
-#      specs, notes, and baselines changes nothing, and every note is plain text.
+#   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, prompts, practice cases, and practice
+#      page from the committed specs, notes, answers, and baselines changes nothing, and every note is plain text.
 #   2. Valid: every bundle reports "Success: 0 errors" from the pinned HL7 validator (DATASHEET.md).
 name: Validate golden set
 
@@ -14,6 +14,7 @@ on:
     paths:
       - "data/golden/**"
       - "data/smoke/**"
+      - "data/practice/**"
       - "data/policy/**"
       - "eval/tools/**"
       - "eval/fhir-defs/**"
@@ -26,6 +27,7 @@ on:
     paths:
       - "data/golden/**"
       - "data/smoke/**"
+      - "data/practice/**"
       - "data/policy/**"
       - "eval/tools/**"
       - "eval/fhir-defs/**"
@@ -67,7 +69,7 @@ jobs:
     env:
       VALIDATOR_VERSION: "7.0.2"
       VALIDATOR_SHA256: "e3e50f06b806437821b7aef8189a1b790415cb96c5036e0812ed62981452b377"
-      EXPECTED_BUNDLES: "15"
+      EXPECTED_BUNDLES: "17"
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
 
@@ -89,7 +91,7 @@ jobs:
             echo "| Case | Result |"
             echo "|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-          for dir in data/smoke/case_00 data/golden/case_*; do
+          for dir in data/smoke/case_00 data/golden/case_* data/practice/practice_*; do
             if [ ! -f "$dir/bundle.json" ]; then
               echo "::error title=Missing bundle::$dir has no bundle.json"; status=1; continue
             fi
