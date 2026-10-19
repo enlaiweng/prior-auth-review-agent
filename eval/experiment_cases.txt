@@ -1,0 +1,4 @@
+# The case set that the "Agent run" workflow runs on each push of an agent change to a claude/ branch, on the
+# experiments budget. One of: smoke (the test case data/smoke/case_00) or dev (eval/dev_subset.txt, cases 01 to 05).
+# eval/run_agent.mjs refuses anything else on that budget, and refuses dev until the blind labels are in.
+smoke

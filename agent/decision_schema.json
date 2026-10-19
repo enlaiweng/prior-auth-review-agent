@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "properties": {
+    "criteria": {
+      "type": "object",
+      "properties": {
+        "C1_red_flag": {"$ref": "#/$defs/criterion"},
+        "C2_conservative_4wk": {"$ref": "#/$defs/criterion"},
+        "C3_informs_management": {"$ref": "#/$defs/criterion"},
+        "C4_no_duplicate_imaging": {"$ref": "#/$defs/criterion"}
+      },
+      "required": ["C1_red_flag", "C2_conservative_4wk", "C3_informs_management", "C4_no_duplicate_imaging"],
+      "additionalProperties": false
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "criterion": {"type": "string", "enum": ["C1", "C2", "C3", "C4"]},
+          "description": {"type": "string"},
+          "evidence": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["criterion", "description", "evidence"],
+        "additionalProperties": false
+      }
+    },
+    "missing_document": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "properties": {
+            "criterion": {"type": "string", "enum": ["C1", "C2", "C3", "C4"]},
+            "missing": {"type": "string"}
+          },
+          "required": ["criterion", "missing"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "case_summary": {"type": "string"},
+    "confidence": {"type": "string", "enum": ["high", "moderate", "low"]}
+  },
+  "required": ["criteria", "contradictions", "missing_document", "case_summary", "confidence"],
+  "additionalProperties": false,
+  "$defs": {
+    "criterion": {
+      "type": "object",
+      "properties": {
+        "explanation": {"type": "string"},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "policy_passages": {"type": "array", "items": {"type": "string"}},
+        "policy_quote": {"type": "string"},
+        "status": {"type": "string", "enum": ["supported", "unsupported", "undeterminable"]}
+      },
+      "required": ["explanation", "evidence", "policy_passages", "policy_quote", "status"],
+      "additionalProperties": false
+    }
+  }
+}
