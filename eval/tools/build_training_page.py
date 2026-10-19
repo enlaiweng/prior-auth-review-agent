@@ -94,9 +94,9 @@ def load_answer(case_dir, v):
     gap = a.get("named_gap")
     assert (gap is None) == (a["expected_routing"] != "request"), f"{case_dir}: a request needs a gap, nothing else does"
     c1 = a["criteria"]["C1_red_flag"]
-    if c1["status"] == "undeterminable" and any(is_note(x) for x in c1["evidence"]):
-        # C1: a red flag stated only in the note, or contradicted, "is labeled undeterminable, and the case routes"
-        assert a["expected_routing"] == "route", f"{case_dir}: a note-only red flag routes the case"
+    if c1["status"] == "undeterminable" and any(is_note(x) for x in c1["evidence"]) and a["expected_routing"] != "approve":
+        # C1: such a red flag "cannot carry an approval ...; when the case is not approvable, the case routes" (ADR-12)
+        assert a["expected_routing"] == "route", f"{case_dir}: a note-only red flag routes a case that is not approvable"
     if a["expected_routing"] == "approve":
         assert a["criteria"]["C3_informs_management"]["status"] == "supported"
         assert a["criteria"]["C4_no_duplicate_imaging"]["status"] == "supported"

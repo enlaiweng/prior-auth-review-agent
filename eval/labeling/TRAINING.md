@@ -73,7 +73,7 @@ For every case you answer the same five questions, in the form on the right side
 4. **C4, no duplicate imaging:** would this MRI duplicate imaging the patient already had (such as a spinal CT), unless the record shows why both are needed?
 5. **Routing:** given those four answers, should the case be approved, should a document be requested, or should it be routed to a physician?
 
-C1 and C2 are **alternatives**. A red flag is a reason not to wait for four weeks of treatment, so an approval needs C3 and C4 plus **either** C1 **or** C2, not both. (One exception, explained in Part 5: a red flag that rests on the visit note alone, or that the record contradicts, sends the case to a physician whatever else holds.)
+C1 and C2 are **alternatives**. A red flag is a reason not to wait for four weeks of treatment, so an approval needs C3 and C4 plus **either** C1 **or** C2, not both.
 
 For each of C1 to C4 you pick one of three answers (**supported**, **unsupported**, or **undeterminable**) and tick the parts of the record your answer is based on. The walkthrough in Part 4 shows you exactly how.
 
@@ -224,7 +224,7 @@ Radiating leg pain, or a positive straight leg raise, does **not** support C1 on
 **Where the red flag is written decides the answer:**
 
 - **Supported** when a structured entry shows the red flag: a Condition, an Observation, a Procedure, an Imaging report, a medication order, or any other entry that is not the visit note. An Observation counts whether it holds a number, a code, or text.
-- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when the structured record **contradicts** it. In both situations, the criteria say **the case routes** to a physician, even when C2 would otherwise support an approval.
+- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when the structured record **contradicts** it. Either way, C1 can't carry an approval. It doesn't block an approval that C2 carries, but if the case can't be approved, it goes to a physician rather than waiting on a document for C1.
 - **Unsupported** when nothing on the list appears anywhere in the record, or what appears doesn't meet the list's words (for example, leg pain with a normal nerve exam).
 
 A contradiction means two parts of the record say opposite things about the same fact. For example, if the note said "temperature 101" but the vital signs recorded at the same visit said 98.6, the structured entry would contradict the note.
@@ -281,12 +281,12 @@ The note counts as evidence for C4 on its own.
 
 After the four criteria, choose one outcome. Ask these questions in order, and stop at the first "yes":
 
-1. **Is there a red flag stated only in the note, or one the structured record contradicts?** Route. This comes first, even when C2 would otherwise support an approval, because C1's own sentence says such a red flag "is labeled undeterminable, and the case routes."
-2. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag **or** a failed four-week trial, not both. (C4's evidence can be empty when there's no earlier imaging; that still counts as supported.)
-3. **Otherwise the case can't be approved. Does the record contradict itself on any criterion?** Route, even if a document could clear it up.
-4. **Would one record item that the doctor's office could send settle the open question?** Request it, naming the criterion and the missing item. If no single document could make the case approvable, route. A request is never for C1: the project's routing rule (ARCHITECTURE.md, ADR-10) sends an open red-flag question to a physician instead.
+1. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag **or** a failed four-week trial, not both. (C4's evidence can be empty when there's no earlier imaging; that still counts as supported.) A red flag stated only in the note, or one the structured record contradicts, leaves C1 undeterminable, so it can't be what the approval rests on; but it doesn't stop an approval that C2 carries.
+2. **Otherwise the case can't be approved. Is there a red flag stated only in the note, or one the structured record contradicts?** Route. A possible red flag goes to a physician rather than waiting on a document.
+3. **Does the record contradict itself on any criterion?** Route, even if a document could clear it up.
+4. **Would one record item that the doctor's office could send settle the open question?** Request it, naming the criterion and the missing item. If no single document could make the case approvable, route. A request is never for C1 (question 2 and the project's routing rule, ARCHITECTURE.md, ADR-10).
 
-Questions 2 to 4 restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence," and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
+These questions restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence"; C1's sentence that such a red flag "cannot carry an approval, and it does not block one that C2 carries; when the case is not approvable, the case routes rather than waiting on a document"; and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
 
 **Filling in a request.** Click **request**. Two boxes appear. In the first, pick the criterion the gap belongs to (C1 to C4). In the second, type the missing item in a few plain words, then click anywhere outside the box so it saves.
 
@@ -316,7 +316,7 @@ That's on purpose. A practice case for each of those paths would look a lot like
 
 - **Read the whole record before answering anything,** in the same order as the walkthrough: request, patient, Conditions, Visits, Procedures, Imaging reports, Medications, Observations, then the note, paragraph by paragraph.
 - **For each answer, ask "What in the record shows this?"** Then tick those ids.
-- **Approve only when C3 and C4 hold and you can point to the evidence** for whichever of C1 or C2 the approval rests on, and routing question 1 doesn't apply.
+- **Approve only when C3 and C4 hold and you can point to the evidence** for whichever of C1 or C2 the approval rests on. That's the approve rule itself.
 - **When the record truly doesn't let you decide,** use undeterminable. It's a real answer, not a failure.
 - **Keep a short paper list** of case numbers that felt hard, with a sentence on why. Those are the first ones to look at when disagreements are settled.
 - **Pace:** about 12 minutes a case, and three or four cases a sitting.
@@ -453,7 +453,7 @@ Her exam shows **none** of them. The diagnosis "radiculopathy" in Conditions is 
 One more C1 rule, which Practice A doesn't need but Practice B will. When a case does have something on the list, **where** it is written decides the answer:
 
 - In a **structured entry** (any item in the lists at the top, not the visit note), and the structured record doesn't contradict it: **supported**.
-- **Only in the visit note**, or contradicted by the structured record: **undeterminable**, and the case is routed to a physician, even when the rest of the case would be approved.
+- **Only in the visit note**, or contradicted by the structured record: **undeterminable**. It can't carry an approval. If the rest of the case can't be approved either, the case goes to a physician.
 - Nothing on the list anywhere: **unsupported**.
 
 The reason: the tool can approve on its own, so the project wants a second source in the record before an approval rests on the note.
@@ -516,12 +516,11 @@ C4 asks whether this MRI would duplicate imaging the patient already had. Look f
 
 **Routing** is the question; **approve**, **request**, and **route** are its three answers. Ask these routing questions in order, and stop at the first "yes":
 
-1. **Is there a red flag stated only in the note, or one the record contradicts?** No.
-2. **Are C3 and C4 supported, and C1 or C2 supported with evidence?** Yes: C2, C3, and C4 are supported, and C2 has its evidence ticked.
+1. **Are C3 and C4 supported, and C1 or C2 supported with evidence?** Yes: C2, C3, and C4 are supported, and C2 has its evidence ticked.
 
 **Answer: approve.** In the **Routing** block, click **approve**. C1 being unsupported doesn't matter: a case needs C1 **or** C2, not both.
 
-Questions 3 and 4, about contradictions and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
+Questions 2 to 4, about open red flags, contradictions, and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
 
 ### Step 18. Check your work
 
