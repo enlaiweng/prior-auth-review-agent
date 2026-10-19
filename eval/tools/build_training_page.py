@@ -49,7 +49,7 @@ CHECKLIST = [
     "Observations: the exam.",
     "The visit note, every paragraph.",
     "C1: go through the red-flag list. Where is each one written?",
-    "C2: the three parts (four weeks of care in a structured entry, no response, a month of symptoms).",
+    "C2: the three parts (four weeks of care in a therapy Procedure or a medication order, no response, a month of symptoms).",
     "C3: the two parts (surgery or an aggressive treatment considered, and the MRI would change the choice).",
     "C4: any earlier imaging of the lower back?",
     "Routing: the four questions, in order, stopping at the first yes.",
@@ -211,6 +211,7 @@ ul.items li.hl,.para.hl,.card>p.hl{padding-left:6px;padding-right:6px}
 summary.tick{color:var(--fg);font-weight:600}
 .walk{border:2px solid var(--accent);font-size:14px;padding-bottom:0}
 .side .walk{position:sticky;top:0;z-index:3;max-height:52vh;overflow:auto;box-shadow:0 6px 14px rgba(0,0,0,.14)}
+.side .walk.read{max-height:74vh}
 .walk h2{font-size:16px}.walk p{margin:7px 0}.walk li{margin:3px 0}.walk ul,.walk ol{padding-left:20px}
 .walkpos{font-size:12px;color:var(--muted);margin:0 0 4px!important;text-transform:uppercase;letter-spacing:.04em}
 .walkbtns{position:sticky;bottom:0;background:var(--card);display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 12px;margin-top:6px;border-top:1px solid var(--line)}
@@ -218,7 +219,7 @@ summary.tick{color:var(--fg);font-weight:600}
 .wmore{margin-left:auto;align-self:center;font-size:12px;color:var(--muted)}
 #checkout{scroll-margin-top:84px}
 .turn ol{padding-left:20px;font-size:14px}.turn li{margin:3px 0}
-@media (max-width:900px){.side .walk{position:fixed;left:8px;right:8px;bottom:8px;top:auto;max-height:46vh;z-index:9;margin:0}body.walking{padding-bottom:50vh}}
+@media (max-width:900px){.side .walk,.side .walk.read{position:fixed;left:8px;right:8px;bottom:8px;top:auto;max-height:46vh;z-index:9;margin:0}body.walking{padding-bottom:50vh}}
 </style>"""
 
 GUIDE_DIV = """<div id="guidedlg" class="card" style="display:none;position:fixed;inset:60px 16px 16px 16px;z-index:11;overflow:auto;max-width:900px;margin:0 auto">
@@ -247,15 +248,15 @@ function walkHtml(c){
   const w = WALKS[c];
   if (walk && walk.case === c) {
     const n = w.steps.length, i = walk.step, s = i ? w.steps[i-1] : w.intro;
-    let h = '<div class="card walk" id="walkcard"><p class="walkpos">Guided walkthrough, '+(i ? 'step '+i+' of '+n : 'introduction')+'</p>';
+    let h = '<div class="card walk '+(s.focus ? 'act' : 'read')+'" id="walkcard"><p class="walkpos">Guided walkthrough, '+(i ? 'step '+i+' of '+n : 'introduction')+'</p>';
     h += '<h2>'+(i ? 'Step '+i+'. ' : '')+esc(s.title)+'</h2>'+s.html+'<div class="walkbtns">';
     h += '<button class="btn ghost" id="wback"'+(i ? '' : ' disabled')+'>Back</button>';
     h += i < n ? '<button class="btn" id="wnext">Next</button><button class="btn ghost" id="wexit">Exit walkthrough</button>'
                : '<button class="btn" id="wexit">Exit walkthrough</button>';
     return h+'<span class="wmore" id="wmore">More in this box, scroll down &#8595;</span></div></div>';
   }
-  if (w) return '<div class="card"><h2>New to labeling?</h2><p>The guided walkthrough labels this case with you, one step at a time, in about 30 minutes. It highlights each part of the record as it explains it, and tells you what to click.</p><button class="btn" id="wstart">Start the guided walkthrough</button></div>';
-  return '<div class="card turn"><h2>Your turn</h2><p>Label this case on your own, the way the walkthrough did. When the line under the form turns green, click <b>Check my answers</b>.</p><details id="turnlist"'+(turnOpen ? ' open' : '')+'><summary>Show the checklist</summary>'+CHECKLIST_HTML+'</details></div>';
+  if (w) return '<div class="card"><h2>New to labeling?</h2><p>The guided walkthrough labels this case with you, one step at a time, in about 35 minutes. It highlights each part of the record as it explains it, and tells you what to click.</p><button class="btn" id="wstart">Start the guided walkthrough</button></div>';
+  return '<div class="card turn"><h2>Your turn</h2><p>Label this case on your own, the way the walkthrough did. If you haven&#39;t yet, read Part 5 of the <b>Training guide</b> (the rules) first. When the line under the form turns green, click <b>Check my answers</b>.</p><details id="turnlist"'+(turnOpen ? ' open' : '')+'><summary>Show the checklist</summary>'+CHECKLIST_HTML+'</details></div>';
 }
 function walkStep(){ return walk && walk.step && walk.case === CASES[cur].case ? WALKS[walk.case].steps[walk.step-1] : null; }
 function moreHint(card){ const m = document.getElementById("wmore"); if (m) m.style.visibility = card.scrollTop + card.clientHeight < card.scrollHeight - 4 ? "visible" : "hidden"; }
@@ -326,7 +327,7 @@ function showCheckout(){  // below the step box when the walkthrough is open, el
 function bindCheck(c){
   const msg=document.getElementById("checkmsg");
   document.getElementById("check").onclick=()=>{
-    if(!complete(c)){ msg.innerHTML='Finish every criterion and the routing first. <a href="#" id="anyway">Show the worked answer anyway</a>';
+    if(!complete(c)){ msg.innerHTML='Finish every criterion and the routing first. <a href="#" id="anyway">Show the worked answer anyway</a> (it shows every answer at once)';
       document.getElementById("anyway").onclick=e=>{ e.preventDefault(); shown[c]=true; render(); showCheckout(); }; return; }
     shown[c]=true; render(); showCheckout(); };
   document.getElementById("clear").onclick=()=>{ delete store[c]; shown[c]=false; save(); render(); };
