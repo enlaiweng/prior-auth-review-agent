@@ -11,8 +11,8 @@ criteria:
       infection in late July and finished antibiotics on August 4. It is recent (about two weeks before this visit) and
       bacterial (treated with antibiotics). But it appears only in the visit note: there is no
       Condition for the infection, no antibiotic order, and nothing else in the record behind it. The criteria say a
-      red flag stated only in the note, with nothing structured behind it, is labeled undeterminable, and the case
-      routes. The thigh heaviness with walking is not a red flag, because the exam shows full strength, normal
+      red flag stated only in the note, with nothing structured behind it, is labeled undeterminable, and it can't
+      carry an approval. The thigh heaviness with walking is not a red flag, because the exam shows full strength, normal
       reflexes, and normal sensation. Evidence: note:p2, the paragraph where the red flag is stated.
   C2_conservative_4wk:
     status: supported
@@ -38,14 +38,15 @@ criteria:
     why: >-
       No earlier lumbar imaging anywhere in the record, so the status rests on what the record does not contain and
       evidence stays empty.
-expected_routing: route
+expected_routing: approve
 named_gap: null
 routing_why: >-
-  C2, C3, and C4 would support an approval, which is exactly why this case is worth practicing. The first routing
-  question settles it: a red flag stated only in the note routes the case. It is not a request either. Asking for the
-  urgent care record might seem natural, but the routing questions are asked in order, and the first one comes before
-  the request question.
+  An approval needs C3 and C4, plus C1 or C2 with cited evidence. C2, C3, and C4 are all supported, and C2 rests on
+  the physical therapy record (Procedure/practiceb-pt-01), not on the note, so the case is approved. C1 is
+  undeterminable, so it can't be what the approval rests on, but a red flag stated only in the note doesn't stop an
+  approval that C2 carries. If C2 had fallen short as well, the possible red flag would have sent the case to a
+  physician (routing question 2), not to a request for the urgent care record.
 lesson: >-
   Check every note paragraph against the red-flag list, including ones that read like background. A red flag that
-  appears only in the note makes C1 undeterminable and sends the case to a physician, even when everything else is in
-  order.
+  appears only in the note makes C1 undeterminable: it can't carry an approval. It doesn't block one that C2 carries,
+  though, so a case like this one is approved on C2.

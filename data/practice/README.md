@@ -5,7 +5,7 @@ Two cases for learning to label, **not part of the golden set**. They are built 
 | Case | What it practices |
 |---|---|
 | `practice_a` | The guided walkthrough: reading a record from top to bottom and answering each question in turn. Also: radiating leg pain that is not a red flag, even with a radiculopathy diagnosis on file; counting four weeks of conservative care from structured dates; empty evidence when there is no earlier imaging; an approval resting on C2 |
-| `practice_b` | A red flag mentioned only in the visit note, which makes C1 undeterminable and routes the case even when everything else would support approval; leg symptoms with a normal nerve exam |
+| `practice_b` | A red flag mentioned only in the visit note, which makes C1 undeterminable: it can't carry an approval, and it doesn't block the approval C2 carries (ADR-12); leg symptoms with a normal nerve exam |
 
 How to use them: eval/labeling/TRAINING.md, then the practice page `eval/labeling/training.html`, which shows each case, the same form as the labeling page, a **Start the guided walkthrough** button on Practice A, and a **Check my answers** button. Practice answers are kept in the browser under their own name, apart from the real labels, and the practice page has no download.
 

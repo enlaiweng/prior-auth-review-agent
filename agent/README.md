@@ -1,6 +1,6 @@
 # The agent
 
-This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.1**.
+This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.2** (ADR-12: an approval is checked before the red-flag step).
 
 ## How a case is decided
 
@@ -12,26 +12,26 @@ This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10):
 |---|---|
 | Checklist mode is on (the kill switch) | route |
 | Any cited id is not in the case | route |
-| A red flag rests on the visit note alone, is reported without an entry the rule accepts, or is contradicted | route |
 | C3 and C4 are met, and C1 or C2 is met with a record entry other than the visit note | approve |
+| A red flag rests on the visit note alone, is reported without an entry the rule accepts, or is contradicted | route |
 | One criterion other than C1 is undeterminable for want of one named document, nothing is contradicted, and that document would make the case approvable | request, naming the criterion and the document |
 | Anything else | route |
 
 "Met" means: status supported, at least one valid policy passage cited, and no contradiction reported on that criterion. For C1, the entry behind it must be a Condition, Observation, Procedure, imaging report (DiagnosticReport), or medication order. For C2, it must be a therapy Procedure or a medication order that started within the year before the request date. C3 must cite at least one id. C4 may cite nothing, since "no prior lumbar imaging" rests on an absence.
 
-The red-flag step routes when the model reports a contradiction on C1, calls C1 supported without one of the entries that count for C1, or calls C1 undeterminable while citing the note.
+The red-flag step routes when the model reports a contradiction on C1, calls C1 supported without one of the entries that count for C1, or calls C1 undeterminable while citing the note. Such a red flag never makes C1 met, so it can never carry an approval. It does not block an approval that C2 carries; when C2 carries an approval despite such a red flag, the reasons note the red flag, for the audit sample and anyone reading the decision.
 
 Every decision carries plain-language reasons naming the step that decided it.
 
 ## Readings written into the rule
 
-ADR-10 and EVAL_PLAN.md state the rule in a few sentences. Writing it as code needed these readings. Every one makes an approval harder, never easier.
+ADR-10 and EVAL_PLAN.md state the rule in a few sentences. Writing it as code needed these readings. Every one makes an approval harder, never easier, except the owner's decision in rule 5 (ADR-12).
 
 1. **A policy citation for every applicable criterion.** The charter says the system may never "issue an approval without a citation for every applicable criterion". So C3, C4, and the criterion the approval rests on each need a valid policy passage.
 2. **C3 needs a cited id.** A supported C3 says something the record contains, so it must point to it.
 3. **What can stand behind C1:** a Condition, Observation, Procedure, DiagnosticReport, or MedicationRequest. The request itself (Claim), the Patient, the visits (Encounter), and the note can't, because none of them records a clinical finding. A visit's recorded reason doesn't count either; this can be revisited before run 1 if you want it to.
 4. **What can stand behind C2:** a Procedure or a medication order that started on or before the request date and within the 365 days before it. Code can't tell a therapy Procedure from another Procedure, so any dated Procedure in that window counts; the window keeps an old order for an unrelated condition from counting.
-5. **A note-only, unbacked, or contradicted red flag routes the whole case**, as EVAL_PLAN.md's C1 says ("is labeled undeterminable, and the case routes"), even if C2 would otherwise approve. The code reads it from the report in three ways (the red-flag step above), so a report that is inconsistent, for example C1 supported with nothing behind it, routes rather than approves. A contradiction on C2, C3, or C4 blocks approval on that criterion and blocks any request.
+5. **A red flag on the note alone, with nothing the rule accepts behind it, or contradicted, never carries an approval, and routes a case that is not approvable** instead of any document request, as EVAL_PLAN.md's C1 says ("It cannot carry an approval, and it does not block one that C2 carries; when the case is not approvable, the case routes rather than requesting a document"). Until agent-0.2 it routed the whole case even when C2 would approve; the owner changed that on 2026-10-19 (ADR-12). The code reads it from the report in three ways (the red-flag step above), so a report that is inconsistent, for example C1 supported with nothing behind it, never approves on C1. A contradiction on C2, C3, or C4 blocks approval on that criterion and blocks any request.
 6. **Invalid ids route, whatever else holds.** ADR-10 requires valid ids for an approval; the code also routes rather than requests when an id is invalid.
 
 ## Known limit

@@ -1,4 +1,4 @@
-// Tests of the fixed routing rule (agent/routing.js), one scenario per rule in ADR-10 (1) and EVAL_PLAN.md.
+// Tests of the fixed routing rule (agent/routing.js), one scenario per rule in ADR-10 (1), ADR-12, and EVAL_PLAN.md.
 // Run from the repository root: node --test agent/test/
 // The ids and statuses below are made-up test values for the rule; they describe no golden case.
 import { test } from "node:test";
@@ -64,25 +64,46 @@ test("the request, the patient, or a visit cannot stand behind a red flag", () =
   }
 });
 
-test("a red flag resting on the note alone routes, even when C2 would approve", () => {
+// ADR-12: an open red flag (on the note alone, unbacked, or contradicted) never carries an approval, and does not block
+// one that C2 carries. When the case is not approvable, it routes.
+test("a red flag resting on the note alone does not block an approval C2 carries, and the reasons say so", () => {
   for (const status of ["supported", "undeterminable"]) {
     const v = decideRouting(report({ criteria: { C1_red_flag: crit(status, ["note:p1", "Patient/p"], ["L34220-15"]) } }), ctx());
+    assert.equal(v.routing, "approve", status);
+    assert.equal(v.basis, "C2", status);
+    assert.match(v.reasons.join(" "), /Also noted: .*(visit note|without a Condition)/, status);
+  }
+});
+
+test("a red flag resting on the note alone routes when C2 does not carry an approval", () => {
+  for (const status of ["supported", "undeterminable"]) {
+    const v = decideRouting(report({ criteria: { C1_red_flag: crit(status, ["note:p1", "Patient/p"], ["L34220-15"]),
+                                                 C2_conservative_4wk: crit("unsupported", [], ["L34220-36"]) } }), ctx());
     assert.equal(v.routing, "route", status);
-    assert.match(v.reasons.join(" "), /visit note|without a Condition/);
+    assert.match(v.reasons.join(" "), /Routed because .*(visit note|without a Condition)/, status);
   }
 });
 
-test("a red flag reported as supported with nothing the rule accepts behind it routes", () => {
+test("a red flag reported as supported with nothing the rule accepts behind it never carries an approval", () => {
   for (const ev of [[], ["Encounter/e"], ["Claim/r", "Patient/p"]]) {
-    const v = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ev, ["L34220-15"]) } }), ctx());
-    assert.equal(v.routing, "route", ev.join(","));
+    const onC2 = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ev, ["L34220-15"]) } }), ctx());
+    assert.equal(onC2.routing, "approve", ev.join(","));
+    assert.equal(onC2.basis, "C2", ev.join(","));
+    const alone = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ev, ["L34220-15"]),
+                                                     C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) } }), ctx());
+    assert.equal(alone.routing, "route", ev.join(","));
   }
 });
 
-test("C1 left undeterminable by the note routes, even with a structured entry cited and no contradiction listed", () => {
-  const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]) } }), ctx());
-  assert.equal(v.routing, "route");
-  assert.match(v.reasons.join(" "), /visit note/);
+test("C1 left undeterminable by the note, with a structured entry cited, approves on C2 and routes without it", () => {
+  const c1 = crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]);
+  const v = decideRouting(report({ criteria: { C1_red_flag: c1 } }), ctx());
+  assert.equal(v.routing, "approve");
+  assert.equal(v.basis, "C2");
+  assert.match(v.reasons.join(" "), /Also noted: .*visit note/);
+  const w = decideRouting(report({ criteria: { C1_red_flag: c1, C2_conservative_4wk: crit("unsupported", [], ["L34220-36"]) } }), ctx());
+  assert.equal(w.routing, "route");
+  assert.match(w.reasons.join(" "), /visit note/);
 });
 
 test("C1 undeterminable without the note cited does not stop an approval on C2", () => {
@@ -138,11 +159,61 @@ test("a contradiction on an applicable criterion blocks approval", () => {
   assert.equal(v.routing, "route");
 });
 
-test("a red flag the record contradicts routes, even when C2 would approve", () => {
-  const v = decideRouting(report({ criteria: { C1_red_flag: crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]) },
-                                   contradictions: [{ criterion: "C1", description: "d", evidence: ["Condition/c", "note:p1"] }] }), ctx());
-  assert.equal(v.routing, "route");
+test("a red flag the record contradicts does not block an approval C2 carries, and routes when C2 does not", () => {
+  const c1 = crit("undeterminable", ["note:p1", "Condition/c"], ["L34220-15"]);
+  const contradictions = [{ criterion: "C1", description: "d", evidence: ["Condition/c", "note:p1"] }];
+  const v = decideRouting(report({ criteria: { C1_red_flag: c1 }, contradictions }), ctx());
+  assert.equal(v.routing, "approve");
+  assert.equal(v.basis, "C2");
   assert.match(v.reasons.join(" "), /contradicts itself on C1/);
+  const w = decideRouting(report({ criteria: { C1_red_flag: c1, C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
+                                   contradictions, missing_document: { criterion: "C2", missing: "a named record" } }), ctx());
+  assert.equal(w.routing, "route");
+  assert.match(w.reasons.join(" "), /Routed because the record contradicts itself on C1/);
+});
+
+test("a red flag C1 calls supported from an Observation, but which the record contradicts, approves only on C2", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ["Observation/o"], ["L34220-15"]) },
+                                   contradictions: [{ criterion: "C1", description: "d", evidence: ["Observation/o", "note:p1"] }] }), ctx());
+  assert.equal(v.routing, "approve");
+  assert.equal(v.basis, "C2");
+  assert.match(v.reasons.join(" "), /Also noted: the record contradicts itself on C1/);
+});
+
+// ADR-12 (4): when the case is not approvable, a red flag on the note alone, unbacked, or contradicted routes instead of
+// any document request, whichever criterion the document is for.
+const openForms = {
+  "note-only": { criteria: { C1_red_flag: crit("undeterminable", ["note:p1"], ["L34220-15"]) } },
+  "unbacked": { criteria: { C1_red_flag: crit("supported", ["Encounter/e"], ["L34220-15"]) } },
+  "contradicted": { criteria: { C1_red_flag: crit("undeterminable", ["Condition/c", "note:p1"], ["L34220-15"]) },
+                    contradictions: [{ criterion: "C1", description: "d", evidence: ["Condition/c", "note:p1"] }] },
+};
+const gaps = {
+  C2: { C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
+  C3: { C3_informs_management: crit("undeterminable", [], ["L34220-39"]) },
+  C4: { C4_no_duplicate_imaging: crit("undeterminable", [], ["L34220-41"]) },
+};
+test("a red flag on the note alone, unbacked, or contradicted routes instead of requesting a C2, C3, or C4 document", () => {
+  for (const [form, f] of Object.entries(openForms)) {
+    for (const [gap, g] of Object.entries(gaps)) {
+      const v = decideRouting(report({ criteria: { ...f.criteria, ...g }, contradictions: f.contradictions,
+                                       missing_document: { criterion: gap, missing: "a named record" } }), ctx());
+      assert.equal(v.routing, "route", `${form} ${gap}`);
+      assert.match(v.reasons.join(" "), /Routed because /, `${form} ${gap}`);
+      // without the red flag, the same report would be a request (contradictions aside)
+      if (form !== "contradicted") {
+        const plain = decideRouting(report({ criteria: g, missing_document: { criterion: gap, missing: "a named record" } }), ctx());
+        assert.equal(plain.routing, "request", `${form} ${gap} control`);
+      }
+    }
+  }
+});
+
+test("a contradiction on C1 never lets C1 carry an approval", () => {
+  const v = decideRouting(report({ criteria: { C1_red_flag: crit("supported", ["Observation/o"], ["L34220-15"]),
+                                               C2_conservative_4wk: crit("undeterminable", [], ["L34220-36"]) },
+                                   contradictions: [{ criterion: "C1", description: "d", evidence: ["Observation/o", "note:p1"] }] }), ctx());
+  assert.equal(v.routing, "route");
 });
 
 test("requests when one criterion is undeterminable for want of one named document", () => {

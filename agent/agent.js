@@ -7,7 +7,7 @@ import { SYSTEM_PROMPT, SCHEMA, PASSAGE_IDS, SPEC_SHA256 } from "./spec.generate
 import { readCase, caseMessage } from "./record.js";
 import { decideRouting, CRITERIA } from "./routing.js";
 
-export const AGENT_VERSION = "agent-0.1";
+export const AGENT_VERSION = "agent-0.2";
 
 // Pinned settings (ADR-10 (4)). Recorded with every run; fixed at the freeze. temperature is not sent: on these
 // models a non-default value returns an error. No tools and no tool_choice: the report comes back through the

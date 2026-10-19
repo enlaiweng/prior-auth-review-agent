@@ -131,7 +131,7 @@ steps:
       One more C1 rule, which Practice A doesn't need but Practice B will. When a case does have something on the list, **where** it is written decides the answer:
 
       - In a **structured entry** (any item in the lists at the top, not the visit note), and the structured record doesn't contradict it: **supported**.
-      - **Only in the visit note**, or contradicted by the structured record: **undeterminable**, and the case is routed to a physician, even when the rest of the case would be approved.
+      - **Only in the visit note**, or contradicted by the structured record: **undeterminable**. It can't carry an approval. If the rest of the case can't be approved either, the case goes to a physician.
       - Nothing on the list anywhere: **unsupported**.
 
       The reason: the tool can approve on its own, so the project wants a second source in the record before an approval rests on the note.
@@ -202,12 +202,11 @@ steps:
     text: |
       **Routing** is the question; **approve**, **request**, and **route** are its three answers. Ask these routing questions in order, and stop at the first "yes":
 
-      1. **Is there a red flag stated only in the note, or one the record contradicts?** No.
-      2. **Are C3 and C4 supported, and C1 or C2 supported with evidence?** Yes: C2, C3, and C4 are supported, and C2 has its evidence ticked.
+      1. **Are C3 and C4 supported, and C1 or C2 supported with evidence?** Yes: C2, C3, and C4 are supported, and C2 has its evidence ticked.
 
       **Answer: approve.** In the **Routing** block, click **approve**. C1 being unsupported doesn't matter: a case needs C1 **or** C2, not both.
 
-      Questions 3 and 4, about contradictions and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
+      Questions 2 to 4, about red flags stated only in the note, contradictions, and requests, only come up when a case can't be approved. Part 5 of the Training guide explains them.
 
   - title: "Check your work"
     highlight: []
