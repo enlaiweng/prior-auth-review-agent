@@ -26,7 +26,7 @@ episode:
       sessions: 12
   prior_imaging: []
   observations:
-    - text: Straight leg raise positive on the left at 50 degrees, reproducing pain down the back of the left thigh and calf; negative on the right. Strength 5/5 in both lower extremities, including ankle dorsiflexion and great toe extension. Patellar and Achilles reflexes 2+ and equal. Sensation to light touch normal in both legs and feet.
+    - text: Straight leg raise positive on the left at 50 degrees, reproducing pain down the back of the left thigh and calf; negative on the right. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and equal. Sensation to light touch normal in both legs and feet.
       date: 2026-08-14
 note:
   file: note.md

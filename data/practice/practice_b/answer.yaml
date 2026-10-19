@@ -12,26 +12,24 @@ criteria:
       Condition for the infection, no antibiotic order, and nothing else in the record behind it. The criteria say a
       red flag stated only in the note, with nothing structured behind it, is labeled undeterminable, and the case
       routes. Two things here are not red flags. The thigh heaviness with walking is not, because the exam shows full
-      strength, normal reflexes, and normal sensation. High blood pressure and hip arthritis are not, because they are
-      in the Conditions list but not on the policy's list. Evidence: note:p2, the paragraph where the red flag is
-      stated.
+      strength, normal reflexes, and normal sensation. Evidence: note:p2, the paragraph where the red flag is stated.
   C2_conservative_4wk:
     status: supported
-    evidence: [Procedure/practiceb-pt-01, MedicationRequest/practiceb-med-01, Encounter/practiceb-enc-04]
-    also_fine: [note:p3, Condition/practiceb-cond-01, Encounter/practiceb-enc-02, Encounter/practiceb-enc-03]
+    evidence: [Procedure/practiceb-pt-01, Encounter/practiceb-enc-03]
+    also_fine: [note:p3, Condition/practiceb-cond-01, Encounter/practiceb-enc-02]
     why: >-
-      Physical therapy from June 22 to August 10 is seven weeks (Procedure/practiceb-pt-01), and acetaminophen has
-      been ordered since May 19 (MedicationRequest/practiceb-med-01). The August 18 visit says the symptoms persist
-      after therapy (Encounter/practiceb-enc-04). Symptoms since May 18, about three months before the request. C2
-      gets its own status even though C1 has a problem: every criterion is labeled on its own terms.
+      Physical therapy from June 22 to August 10 is seven weeks (Procedure/practiceb-pt-01). The August 18 visit says
+      the symptoms are unchanged after it (Encounter/practiceb-enc-03). Symptoms since May 18, about three months
+      before the request. C2 gets its own status even though C1 has a problem: every criterion is labeled on its own
+      terms.
   C3_informs_management:
     status: supported
-    evidence: [Encounter/practiceb-enc-04, note:p6]
-    also_fine: [note:p5]
+    evidence: [Encounter/practiceb-enc-03, note:p5]
+    also_fine: []
     why: >-
-      He is referred to spine surgery to discuss a decompression, so surgery is under consideration, and the plan
-      (note:p6) says the MRI will look for narrowing of the spinal canal and its level before that visit, which is what
-      decides whether and where surgery could help.
+      He is referred to spine surgery to discuss a decompression, so surgery is under consideration, and the
+      assessment and plan (note:p5) say the MRI will look for narrowing of the spinal canal and its level before that
+      visit, which is what decides whether and where surgery could help.
   C4_no_duplicate_imaging:
     status: supported
     evidence: []

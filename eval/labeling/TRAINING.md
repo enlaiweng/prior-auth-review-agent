@@ -108,7 +108,7 @@ The criteria: "a surgical intervention or other aggressive treatment (for exampl
 
 Two parts:
 
-1. **Surgery or another aggressive treatment is under consideration.** The criteria's example is an intervertebral joint injection. Look at the latest visit and the note's assessment and plan, and read the policy's own wording in the **Policy and criteria** panel.
+1. **Surgery or another aggressive treatment is under consideration.** The criteria's example is an intervertebral joint injection (an injection into a joint of the spine). Look at the latest visit and the note's assessment and plan, and read the policy's own wording in the **Policy and criteria** panel.
 2. **The MRI's result would affect the treatment choice.** The record should say, in some form, how the result would change what happens next.
 
 The note counts as evidence for C3 on its own.
