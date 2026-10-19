@@ -1,5 +1,5 @@
 # Facts only. What each fact means for the policy is decided by the labels, not written here.
-case_id: case_15
+case_id: case_11
 patient_baseline: data/golden/baselines/d17a831a-279f-aae8-25d5-9801509dcc38.json
 request_date: 2026-08-14
 requested_procedure:

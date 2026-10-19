@@ -1,6 +1,6 @@
 # Golden set
 
-Twelve cases (01 to 10, 12, and 15) and two paired fairness duplicates. What each case tests, how the labels are made, and the limits of the set are in [docs/DATASHEET.md](../../docs/DATASHEET.md) and [docs/EVAL_PLAN.md](../../docs/EVAL_PLAN.md).
+Twelve cases (01 to 12) and two paired fairness duplicates. Case 11 was called case 15 until 2026-10-18 (docs/ARCHITECTURE.md, ADR-11). What each case tests, how the labels are made, and the limits of the set are in [docs/DATASHEET.md](../../docs/DATASHEET.md) and [docs/EVAL_PLAN.md](../../docs/EVAL_PLAN.md).
 
 ## What is in each case folder
 

@@ -14,6 +14,10 @@ Under Amendment 2 (CHARTER.md; EVAL_PLAN.md, How the answer key is made), Claude
 
 Written on 2026-10-15 together with the cases, and revised the same day after two independent reviews and after the restyle of notes 08, 10 and 12, with no status or routing changed by the restyle. It was encrypted and committed before any label existed. GitHub's record of pull request #4, merged by Enlai Weng on 2026-10-15 at 22:51 Pacific time, is the record. GitHub's servers set it, not anyone's computer clock.
 
+## Case numbers
+
+The file was written when the cases were numbered 01 to 10, 12, and 15. On 2026-10-18, before any label existed, case 15 was renamed case 11 (docs/ARCHITECTURE.md, ADR-11). The file was not opened or changed, so its fingerprint below is the same. When it is read after the reveal, its `case_15` is today's `case_11`, and every id in it that starts with `case15-` starts with `case11-` in the repository. Every other case keeps its number.
+
 ## Fingerprint
 
 sha256 of `intended_answers.yaml.enc`:
