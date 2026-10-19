@@ -1,0 +1,174 @@
+# The guided walkthrough of Practice A, shown one step at a time on eval/labeling/training.html, and written out at
+# the end of eval/labeling/TRAINING.md. Both are made from this file by eval/tools/build_training_page.py.
+#   highlight: ids in the record to highlight on the left
+#   focus:     the part of the form to highlight on the right (a criterion key, or "routing")
+#   expect:    the answer the step tells you to click; the build checks it against answer.yaml
+#   tick:      the evidence the step tells you to tick; the build checks it equals the worked answer's evidence
+# Text uses the same simple markdown as TRAINING.md.
+intro:
+  title: How this walkthrough works
+  text: |
+    This walkthrough labels one whole case with you, one step at a time. After this introduction there are 14 steps, and they take about 30 minutes. You don't need to know any medicine: each step explains the words it uses.
+
+    - The **left side** of the page is the patient's record. At each step, the part to look at is **highlighted** in yellow, and the page scrolls to it.
+    - The **right side** is the form where you answer. It has a block for each question: C1, C2, C3, C4, and Routing. Each block has three choices to click, and an **Evidence** list that opens when you click it. When a step asks you to click something, that block is highlighted too.
+    - Use **Next** and **Back** in this box to move between steps. **Exit walkthrough** closes it; your answers stay.
+
+    Steps 1 to 8 read the record from top to bottom. Steps 9 to 13 answer the five questions. Step 14 checks your work.
+
+steps:
+  - title: "The request: what is being asked for"
+    highlight: [Claim/practicea-claim]
+    text: |
+      Every case starts with the **request**. A clinic is asking the patient's insurance plan to approve an **MRI of the lumbar spine**: a detailed scan of the lower back. "Without contrast" means no dye is injected for the scan. "Use: preauthorization" means the clinic is asking **before** the scan is done.
+
+      The long code (SNOMED CT 241648005) is a standard code for the test. You can ignore it.
+
+      **Write down the request date: August 19, 2026.** You'll use it to count how long the symptoms have lasted.
+
+  - title: "The patient"
+    highlight: [Patient/8f48ea64-12eb-a55e-c747-42fd4dab5908]
+    text: |
+      A 62-year-old woman. She is under 65, and some younger people have Medicare too, for example because of a disability; the record doesn't need to say why.
+
+      Read the age and sex, but they rarely decide anything by themselves. The long string of letters and numbers is just the patient's id in the record.
+
+  - title: "Conditions: the patient's list of diagnoses"
+    highlight: [Condition/practicea-cond-01]
+    text: |
+      **Conditions** is the patient's problem list: the diagnoses written in the chart. Here there is one: **low back pain with radiculopathy**. Radiculopathy means an irritated or pinched nerve root in the spine, which causes pain that travels down a leg. The code in brackets (ICD-10-CM M54.16) is a billing code for the diagnosis; you can ignore it.
+
+      Two things to note:
+
+      - The **onset date, June 8**, is when the symptoms began. It starts the clock for "at least a month of symptoms" in C2.
+      - A diagnosis is a name someone gave the problem. It is **not** an exam finding. Keep that in mind for C1 in Step 9.
+
+  - title: "Visits: the story in order"
+    highlight: [Encounter/practicea-enc-01, Encounter/practicea-enc-02, Encounter/practicea-enc-03]
+    text: |
+      **Visits** are the patient's appointments, with a one-line summary of each. Read them in date order. Together they tell the story:
+
+      - **June 9:** back pain and left leg pain for one day, with no injury or fall. She is sent to physical therapy and given exercises to do at home.
+      - **July 14:** the leg pain is unchanged.
+      - **August 14:** still unchanged after seven weeks of physical therapy. The plan is an **epidural steroid injection**: a shot of anti-inflammatory medicine placed next to the irritated nerve in the spine, given by a **pain management** clinic. The MRI is ordered to choose the **level**: the spot along the spine where the shot goes.
+
+      "Ambulatory" means an office visit, not a hospital stay. "Sciatica" is another word for pain running down the back of the leg.
+
+  - title: "Procedures: treatment that was done"
+    highlight: [Procedure/practicea-pt-01]
+    text: |
+      **Procedures** lists treatments that were carried out. Here: **physical therapy from June 15 to August 3, 12 sessions, completed.** Physical therapy is the kind of treatment C2 calls **conservative care**: treatment short of injections or surgery.
+
+      **Count the weeks.** Four weeks is 28 days. Four weeks after June 15 is July 13. August 3 is seven weeks after June 15. So the therapy lasted **seven weeks**, more than the four that C2 asks for.
+
+      Tip: a calendar on your phone makes counting weeks easy.
+
+  - title: "Medications: none here"
+    highlight: [note:p2]
+    text: |
+      This record has **no Medications section**, because no medicine was ordered. A case shows a section only when it has something in it, so a missing section just means there is nothing of that kind in the record. That's normal.
+
+      The note's second paragraph (highlighted) says she prefers not to take pain medicine, which explains it.
+
+  - title: "Observations: the exam, in plain words"
+    highlight: [Observation/practicea-obs-01]
+    text: |
+      **Observations** are findings recorded in the chart, such as an exam result or a weight. This one is the physical exam from August 14. Phrase by phrase:
+
+      - **Straight leg raise positive on the left at 50 degrees:** while she lay on her back, lifting her straightened left leg brought on the leg pain. That points to an irritated nerve root. On the right it was negative: no pain.
+      - **Strength 5/5:** muscle strength is graded from 0 to 5, and 5 is normal.
+      - **Patellar and Achilles reflexes 2+ and equal:** the knee and ankle reflexes. 2+ is normal. A reduced reflex would be 1+, and an absent one 0.
+      - **Sensation to light touch normal:** she feels a light touch normally on both legs and feet.
+
+      So the exam shows signs of an irritated nerve, but **no weakness, no reflex change, and no numbness**. That difference decides C1.
+
+  - title: "The visit note, paragraph by paragraph"
+    highlight: [note:p1, note:p2, note:p3, note:p4]
+    text: |
+      The **visit note** is the clinician's own write-up of the last visit, split into numbered paragraphs (note:p1, note:p2, and so on).
+
+      - **note:p1, the history.** Notice what the clinician asked about and ruled out: no injury or fall, no numbness, tingling, or weakness, no fever, chills, or weight loss, no history of cancer, and normal bladder and bowel function. These are red-flag questions.
+      - **note:p2, treatment so far:** therapy since June 15, and no change. 6/10 is a pain score, where 0 is no pain and 10 is the worst.
+      - **note:p3, the exam and the impression** (the clinician's summary): radiculopathy "without neurologic deficit," meaning no weakness, reflex change, or loss of feeling.
+      - **note:p4, the plan:** the injection, with the MRI to aim it.
+
+      You've now read the whole record. Time to answer the questions.
+
+  - title: "C1, red flag: go through the list"
+    highlight: [note:p1, Observation/practicea-obs-01, Condition/practicea-cond-01]
+    focus: C1_red_flag
+    expect: unsupported
+    tick: []
+    text: |
+      A **red flag** is a warning sign of something more serious than ordinary back pain. The policy lists them; Part 6 of the Training guide groups the list, and **Policy and criteria** at the top right has the official wording. Go through the list group by group:
+
+      - **Injury and bone:** no injury or fall (note:p1).
+      - **Cancer:** "no history of cancer" (note:p1).
+      - **Infection and immune system:** no fever or chills, and nothing anywhere about an infection, IV drug use, or immune-suppressing medicine.
+      - **Weight:** no weight loss.
+      - **Pain pattern:** nothing about pain at night or when lying flat. Pain that is worse with sitting is not on the list.
+      - **Nerves:** the leg pain and the positive straight leg raise suggest an irritated nerve. But this project counts only objective signs: clinically significant or progressive weakness, a reduced or absent reflex, loss of feeling in a nerve root pattern, new bladder or bowel trouble, or numbness in the saddle area or around the anus. The exam shows none of them. The diagnosis "radiculopathy" in Conditions is a name, not one of those signs.
+
+      **Answer: unsupported.** In the highlighted block on the right, **C1 red flag**, click **unsupported**.
+
+      **Evidence:** you can leave it empty, because the answer rests on red flags the record does not contain. Or, if the exam is what settled it for you, click **Evidence (0 selected)** and tick **Observation/practicea-obs-01**. Either is fine.
+
+  - title: "C2, four weeks of conservative care that hasn't worked"
+    highlight: [Procedure/practicea-pt-01, Encounter/practicea-enc-03, Condition/practicea-cond-01]
+    focus: C2_conservative_4wk
+    expect: supported
+    tick: [Procedure/practicea-pt-01, Encounter/practicea-enc-03]
+    text: |
+      C2 has three parts. Check each one:
+
+      1. **At least four weeks of conservative care, in a structured entry** (an entry in one of the lists, not only the note): physical therapy for seven weeks, in Procedures. **Yes.**
+      2. **No response:** the August 14 visit says the leg pain is unchanged after the therapy. **Yes.**
+      3. **At least a month of symptoms before the request:** June 8 (the Condition's onset) to August 19 (the request) is about ten weeks. **Yes.**
+
+      **Answer: supported.** In the **C2 conservative care, four weeks** block, click **supported**. Then click **Evidence (0 selected)** and tick the two highlighted boxes: **Procedure/practicea-pt-01** (the therapy) and **Encounter/practicea-enc-03** (the visit that shows no improvement). Ticking note:p2 as well is fine.
+
+  - title: "C3, the MRI will change what happens next"
+    highlight: [Encounter/practicea-enc-03, note:p4]
+    focus: C3_informs_management
+    expect: supported
+    tick: [Encounter/practicea-enc-03, note:p4]
+    text: |
+      C3 has two parts: a surgery or other aggressive treatment is being considered, **and** the MRI's result would affect the choice.
+
+      - The plan is an **epidural steroid injection**, an injection into the spine like the criteria's own example (an intervertebral joint injection). **Yes.**
+      - The MRI is how the doctor will decide where to aim it. **Yes.**
+
+      **Answer: supported.** In the **C3 informs management** block, click **supported**, then open its Evidence and tick **Encounter/practicea-enc-03** and **note:p4**. For C3, the note counts as evidence on its own.
+
+  - title: "C4, not a repeat of an earlier scan"
+    highlight: []
+    focus: C4_no_duplicate_imaging
+    expect: supported
+    tick: []
+    text: |
+      Look for any earlier scan or X-ray of the lower back: an **Imaging reports** section, imaging in **Procedures**, or a mention in the note. There is none.
+
+      **Answer: supported, with no evidence ticked.** The answer rests on something the record does not contain, so evidence stays empty. In the **C4 no duplicate imaging** block, click **supported** and leave its Evidence alone.
+
+  - title: "Routing: the outcome for the whole case"
+    highlight: []
+    focus: routing
+    expect: approve
+    text: |
+      Now ask the routing questions in order, and stop at the first "yes":
+
+      1. **Is there a red flag stated only in the note, or one the record contradicts?** No.
+      2. **Are C3 and C4 supported, and C1 or C2 supported with evidence?** Yes: C2, C3, and C4 are all supported, and C2 has its evidence ticked.
+
+      **Answer: approve.** In the **Routing** block, click **approve**. A case needs a red flag **or** a failed four-week trial, not both, so C1 being unsupported doesn't matter here.
+
+      (Questions 3 and 4, about contradictions and requests, only come up when a case can't be approved. Part 6 of the Training guide explains them.)
+
+  - title: "Check your work"
+    highlight: []
+    text: |
+      The line near the bottom of the form should now be green and say **Complete. Saved in this browser.** If it says "Not complete yet," look for a block with nothing clicked.
+
+      Click **Check my answers** under that line. The worked answer appears below the form and should match every choice you just made, with the reasoning written out.
+
+      That's one full case. Click **Exit walkthrough**, then click **Practice B** at the top left and label it **on your own**, the same way. When you're done, check your answers there too.
