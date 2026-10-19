@@ -50,7 +50,7 @@ CHECKLIST = [
     "The visit note, every paragraph.",
     "C1: go through the red-flag list. Where is each one written?",
     "C2: the three parts (four weeks of care in a therapy Procedure or a medication order, no response, a month of symptoms).",
-    "C3: the two parts (surgery or an aggressive treatment considered, and the MRI would change the choice).",
+    "C3: the two parts (surgery or another aggressive treatment considered, and the MRI's findings would affect that choice).",
     "C4: any earlier imaging of the lower back?",
     "Routing: the four questions, in order, stopping at the first yes.",
 ]
@@ -69,6 +69,15 @@ def all_ids(v):
     return out
 
 
+def is_note(x):
+    return x.startswith("note:") or x.startswith("DocumentReference/")
+
+
+STATUS_WORDS = "supported|unsupported|undeterminable|approve|request|route"
+ID_RE = re.compile(r"(?:Claim|Patient|Condition|Encounter|Procedure|Observation|DiagnosticReport|MedicationRequest|"
+                   r"DocumentReference)/[A-Za-z0-9-]+[A-Za-z0-9]|note:p\d+")
+
+
 def load_answer(case_dir, v):
     a = yaml.safe_load(open(os.path.join(case_dir, "answer.yaml")))
     assert a["case_id"] == v["case"], f"{case_dir}: case_id is {a['case_id']}"
@@ -84,10 +93,16 @@ def load_answer(case_dir, v):
     assert a["expected_routing"] in ("approve", "request", "route"), f"{case_dir}: routing {a['expected_routing']}"
     gap = a.get("named_gap")
     assert (gap is None) == (a["expected_routing"] != "request"), f"{case_dir}: a request needs a gap, nothing else does"
+    c1 = a["criteria"]["C1_red_flag"]
+    if c1["status"] == "undeterminable" and any(is_note(x) for x in c1["evidence"]):
+        # C1: a red flag stated only in the note, or contradicted, "is labeled undeterminable, and the case routes"
+        assert a["expected_routing"] == "route", f"{case_dir}: a note-only red flag routes the case"
     if a["expected_routing"] == "approve":
         assert a["criteria"]["C3_informs_management"]["status"] == "supported"
         assert a["criteria"]["C4_no_duplicate_imaging"]["status"] == "supported"
-        assert "supported" in (a["criteria"]["C1_red_flag"]["status"], a["criteria"]["C2_conservative_4wk"]["status"])
+        # C1 or C2 supported "with cited evidence": at least one record entry other than the visit note
+        assert any(a["criteria"][k]["status"] == "supported" and any(not is_note(x) for x in a["criteria"][k]["evidence"])
+                   for k in ("C1_red_flag", "C2_conservative_4wk")), f"{case_dir}: approval needs C1 or C2 with a cited entry"
     return {"criteria": a["criteria"], "routing": a["expected_routing"], "gap": gap,
             "routing_why": a["routing_why"].strip(), "lesson": a["lesson"].strip()}
 
@@ -102,6 +117,9 @@ def load_walk(case_dir, v, ans):
     n = len(w["steps"])
     assert f"there are {n} steps" in w["intro"]["text"], f"{path}: the introduction must say there are {n} steps"
     ok, answered = set(all_ids(v)), set()
+    for k, s in enumerate([w["intro"]] + w["steps"]):
+        for m in re.findall(r"\bSteps? (\d+)", s["text"]):  # cross-references stay inside the walkthrough
+            assert 1 <= int(m) <= n, f"{path}: step {k} refers to step {m}, but there are {n}"
     for k, s in enumerate(w["steps"], 1):
         where = f"{path} step {k}"
         assert set(s) <= {"title", "highlight", "focus", "expect", "tick", "text"}, f"{where}: unknown field"
@@ -109,10 +127,16 @@ def load_walk(case_dir, v, ans):
         assert s["text"].strip(), f"{where}: no text"
         for x in s["highlight"] + s.get("tick", []):
             assert x in ok, f"{where}: {x} is not an id on the page"
+        told = set(re.findall(rf"[Cc]lick \*\*({STATUS_WORDS})\*\*", s["text"]))  # what the text tells you to click
+        named = set(ID_RE.findall(s["text"]))
+        for x in named:
+            assert x in ok, f"{where}: the text names {x}, which is not an id on the page"
         f = s.get("focus")
         if f is None:
             assert "expect" not in s and "tick" not in s, f"{where}: expect and tick need a focus"
+            assert not told, f"{where}: the text says to click {told}, but the step has no focus"
             continue
+        assert told == {s.get("expect")}, f"{where}: the text says to click {told or 'nothing'}, expect is {s.get('expect')}"
         assert f in FORM_NAMES, f"{where}: focus {f}"
         answered.add(f)
         want = ans["routing"] if f == "routing" else ans["criteria"][f]["status"]
@@ -122,6 +146,8 @@ def load_walk(case_dir, v, ans):
         else:
             want_ev = ans["criteria"][f]["evidence"]
             assert sorted(s.get("tick", [])) == sorted(want_ev), f"{where}: tick must be the worked evidence {want_ev}"
+            fine = set(want_ev) | set(ans["criteria"][f]["also_fine"]) | set(s["highlight"])
+            assert named <= fine, f"{where}: the text names {named - fine}, which the worked answer doesn't accept"
     assert answered == set(FORM_NAMES), f"{path}: must answer every criterion and the routing"
     return w
 
@@ -212,6 +238,7 @@ summary.tick{color:var(--fg);font-weight:600}
 .walk{border:2px solid var(--accent);font-size:14px;padding-bottom:0}
 .side .walk{position:sticky;top:0;z-index:3;max-height:52vh;overflow:auto;box-shadow:0 6px 14px rgba(0,0,0,.14)}
 .side .walk.read{max-height:74vh}
+body.walking .side{padding-bottom:50vh}  /* room to scroll any form block below the step box */
 .walk h2{font-size:16px}.walk p{margin:7px 0}.walk li{margin:3px 0}.walk ul,.walk ol{padding-left:20px}
 .walkpos{font-size:12px;color:var(--muted);margin:0 0 4px!important;text-transform:uppercase;letter-spacing:.04em}
 .walkbtns{position:sticky;bottom:0;background:var(--card);display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 12px;margin-top:6px;border-top:1px solid var(--line)}
@@ -219,7 +246,7 @@ summary.tick{color:var(--fg);font-weight:600}
 .wmore{margin-left:auto;align-self:center;font-size:12px;color:var(--muted)}
 #checkout{scroll-margin-top:84px}
 .turn ol{padding-left:20px;font-size:14px}.turn li{margin:3px 0}
-@media (max-width:900px){.side .walk,.side .walk.read{position:fixed;left:8px;right:8px;bottom:8px;top:auto;max-height:46vh;z-index:9;margin:0}body.walking{padding-bottom:50vh}}
+@media (max-width:900px){.side .walk,.side .walk.read{position:fixed;left:8px;right:8px;bottom:8px;top:auto;max-height:46vh;z-index:9;margin:0}body.walking{padding-bottom:50vh}body.walking .side{padding-bottom:0}}
 </style>"""
 
 GUIDE_DIV = """<div id="guidedlg" class="card" style="display:none;position:fixed;inset:60px 16px 16px 16px;z-index:11;overflow:auto;max-width:900px;margin:0 auto">

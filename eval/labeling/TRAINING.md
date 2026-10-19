@@ -55,7 +55,7 @@ It can never say no. Only a person can deny a request.
 
 To find out whether the tool gets things right, the project needs an **answer key**, the way an exam needs one before it can be graded. The 12 real cases, with their answer key, are called the **golden set**.
 
-The key is made from three sets of answers to the same 12 cases: **yours**, made first and on your own; the **third reader's** (another AI model, Gemini, labeling the same cases separately); and answers Claude (the AI that helped build this project) locked away before labeling began, which nobody sees until all the labels are in. Every place where they disagree, you settle by re-reading the policy. The settled answers are the key the tool is graded against.
+The key is made from three sets of answers to the same 12 cases: **yours**, made first and on your own; the **third reader's** (another AI model, Gemini, labeling the same cases separately); and answers Claude (the AI that helped build this project) wrote and locked away before labeling began, which stay encrypted until all the labels are in. Every place where they disagree, you settle by re-reading the policy. The settled answers are the key the tool is graded against.
 
 You are **not** diagnosing anyone. You are reading a record and checking it against written rules. Careful reading matters far more than medical knowledge, and this training explains the medical words you'll need.
 
@@ -67,13 +67,13 @@ Each case is a **made-up patient's record**, built to look like a real electroni
 
 For every case you answer the same five questions, in the form on the right side of the page:
 
-1. **C1, red flag:** does the record show a warning sign of something serious, such as an infection or a badly pinched nerve?
+1. **C1, red flag:** does the record show a warning sign of something serious, from a list in the policy (for example, a recent bacterial infection, or certain nerve problems)?
 2. **C2, conservative care:** has the patient tried at least four weeks of treatment short of injections or surgery, such as physical therapy, without getting better? ("Conservative" here is a medical word meaning cautious.)
-3. **C3, informs management:** would the MRI change the treatment plan?
-4. **C4, no duplicate imaging:** is this MRI something other than a repeat of a scan the patient already had?
+3. **C3, informs management:** is surgery or another aggressive treatment, such as an injection in the spine, being considered, and would the MRI's result affect that choice?
+4. **C4, no duplicate imaging:** would this MRI duplicate imaging the patient already had (such as a spinal CT), unless the record shows why both are needed?
 5. **Routing:** given those four answers, should the case be approved, should a document be requested, or should it be routed to a physician?
 
-C1 and C2 are **alternatives**. A red flag is a reason not to wait for four weeks of treatment, so an approval needs C3 and C4 plus **either** C1 **or** C2, not both.
+C1 and C2 are **alternatives**. A red flag is a reason not to wait for four weeks of treatment, so an approval needs C3 and C4 plus **either** C1 **or** C2, not both. (One exception, explained in Part 5: a red flag that rests on the visit note alone, or that the record contradicts, sends the case to a physician whatever else holds.)
 
 For each of C1 to C4 you pick one of three answers (**supported**, **unsupported**, or **undeterminable**) and tick the parts of the record your answer is based on. The walkthrough in Part 4 shows you exactly how.
 
@@ -84,14 +84,14 @@ You don't need to memorize these. Skim them now, and come back when a word stops
 ### The body and back pain
 
 - **Lumbar spine:** the lower back. **Vertebrae** are the bones of the spine. **Discs** are the cushions between them. A **level** is one spot along the spine, named by the vertebrae there.
-- **Lumbosacral junction:** where the lower back meets the pelvis.
+- **Lumbosacral junction:** where the lumbar spine meets the **sacrum**, the bone at the back of the pelvis.
 - **Nerve root:** where a nerve leaves the spine. An irritated or pinched nerve root can cause pain, tingling, numbness, or weakness along that nerve, often down a leg. **Nerve root compromise** means trouble with a nerve root.
 - **Nerve root pattern:** the strip of skin that one nerve root supplies. Numbness "in a nerve root pattern" follows that strip, rather than being everywhere.
 - **Radiating pain:** pain that travels from the back down a leg. **Sciatica** is radiating pain down the back of the leg.
 - **Radiculopathy:** a diagnosis meaning an irritated or pinched nerve root.
 - **Spinal cord and spinal canal:** the spinal cord is the bundle of nerves running inside the spine; the canal is the tunnel it runs through. **Stenosis** means a narrowing of that canal.
 - **Neurogenic claudication:** heaviness or pain in the legs when walking, caused by a narrowed spinal canal. It eases when the person sits or bends forward.
-- **Herniated disc** (also called **herniated nucleus pulposus**): a disc that bulges out and can press on a nerve. **Degenerative disc disease:** wear and tear of the discs.
+- **Herniated disc** (also called **herniated nucleus pulposus**): a disc whose soft center pushes out through its tougher outer ring and can press on a nerve. **Degenerative disc disease:** wear and tear of the discs.
 - **Bilateral:** on both sides. **Symmetric:** the same on both sides. **Supine:** lying flat on the back.
 - **Flexion:** bending forward. **Extension:** bending backward.
 
@@ -101,19 +101,19 @@ You don't need to memorize these. Skim them now, and come back when a word stops
 - **Straight leg raise:** while the patient lies on their back, the examiner lifts one straightened leg. If that brings on the leg pain, the test is **positive**, which suggests an irritated nerve root. **Negative** means it didn't.
 - **Strength 5/5:** muscle strength is graded from 0 (no movement) to 5 (normal). **Weakness** means a grade below 5. **Motor** means to do with muscles and movement, so **motor weakness** is muscle weakness.
 - **Reflexes:** the automatic jerk when a tendon is tapped, at the knee (**patellar**) or the ankle (**Achilles**). **2+** is normal; **1+** is reduced; **0** is absent.
-- **Sensation:** the ability to feel touch. **Sensory loss** means numbness.
+- **Sensation:** the ability to feel touch. **Sensory loss** means reduced or absent feeling (numbness).
 - **Pulses:** the heartbeat felt in an artery. **Dorsalis pedis** is the pulse on the top of the foot. Pulses are graded like reflexes, and 2+ is normal.
 - **Neurologic deficit:** a measurable problem with the nerves, such as weakness, a reduced reflex, or numbness. **Neurologically intact** or **without neurologic deficit** means none was found.
 - **Pain score:** a number from 0 (no pain) to 10 (the worst), such as 6/10.
 
 ### The red-flag words
 
-These words come from the red-flag list. Part 5 explains how the list is used.
+These words come from the red-flag list and the policy text around it. Part 5 explains how the list is used.
 
 - **Trauma:** an injury. **Osteoporosis:** thinning bones that break easily. **Potentially osteoporotic:** someone whose bones may be thin.
 - **Cancer** that is **metastatic** has spread from where it started to other parts of the body.
 - **Bacterial infection:** an infection caused by bacteria.
-- **Immune suppression:** a weakened immune system, for example from long-term steroid pills, chemotherapy, or medicines taken after an organ transplant.
+- **Immune suppression:** a weakened immune system, so the body fights infection less well. It can come from some illnesses, or from medicines such as long-term steroid pills, chemotherapy, or anti-rejection medicines after an organ transplant.
 - **IV drug abuse:** injecting drugs into a vein.
 - **Saddle anesthesia:** numbness in the area that would touch a saddle (the buttocks, inner thighs, and groin). **Perianal or perineal sensory loss:** numbness around the anus or between the legs.
 - **Bladder dysfunction:** trouble controlling or emptying the bladder. **Laxity of the anal sphincter:** looseness of the muscle that keeps the bowel closed.
@@ -122,7 +122,7 @@ These words come from the red-flag list. Part 5 explains how the list is used.
 ### Tests and treatments
 
 - **MRI:** a detailed scan made with a strong magnet. **Contrast:** a dye injected so some things show up better; "without contrast" means no dye.
-- **CT scan:** a detailed scan made with X-rays. **X-ray:** a simple picture of the bones.
+- **CT scan:** a detailed scan made with X-rays. **X-ray:** a picture made with X-rays, mostly used to show bones.
 - **Conservative care:** treatment short of injections or surgery, such as physical therapy, exercises, or pain medicine.
 - **Physical therapy:** exercises and hands-on treatment with a physical therapist, usually over several weeks. A **home program** is exercises the patient does at home.
 - **NSAID:** a common type of anti-inflammatory pain medicine, such as ibuprofen or naproxen. **Acetaminophen** (Tylenol) is another common pain medicine.
@@ -180,7 +180,7 @@ The same steps are written out at the end of this guide, under "The walkthrough,
 
 This part restates the official rules in plain words. You've seen most of them used in the walkthrough; here they are in one place, including the ones Practice A didn't need.
 
-**About the Policy and criteria panel.** It has three parts. The first two, the **criteria** and the **routing** rules, are the ones you'll use. (Their headings name the project files they come from, EVAL_PLAN.md and CHARTER.md; you can ignore the file names.) The third is the full policy text, which is long and technical, and you don't need to understand all of it. If this guide and the criteria or routing rules ever seem to differ, the criteria and routing rules win. Where the policy text reads more broadly than the criteria (for example on the nerve items), follow the criteria: they say how this project reads the policy.
+**About the Policy and criteria panel.** It has three parts. **Criteria:** C1 to C4 and, at the end, the rules for approve, request, and route. These are the ones you'll use most. **Routing:** the three outputs the tool may give. (Both headings name the project files the text comes from, EVAL_PLAN.md and CHARTER.md; you can ignore the file names.) **Policy text:** the full policy, which is long and technical; you don't need to understand all of it. If this guide and the criteria ever seem to differ, the criteria win. Where the policy text reads more broadly than the criteria (for example on the nerve items), follow the criteria: they say how this project reads the policy.
 
 ### The three answers, and evidence
 
@@ -196,7 +196,7 @@ When your labels are compared with others', the answer (supported, unsupported, 
 
 ### Why the note alone isn't enough for C1 and C2
 
-For C1 and C2, this project has a rule: the visit note alone is not enough. A red flag, or a course of conservative care, also has to show up in a **structured entry** (an item in one of the lists at the top of the record). The reason is that the tool can approve requests automatically, and the note is the easiest place for a claim to be overstated, so the project asks for a second source in the record before an approval rests on what the note says. For C3 and C4, the note counts on its own.
+For C1 and C2, this project has a rule: the visit note alone is not enough. A red flag, or a course of conservative care, also has to show up in a **structured entry** (an item in one of the lists at the top of the record; for C2, only a therapy in Procedures or a medication order counts). The reason is that the tool can approve requests automatically, and the note is the easiest place for a claim to be overstated, so the project asks for a second source in the record before an approval rests on what the note says. For C3 and C4, the note counts on its own.
 
 ### C1. A red flag is present
 
@@ -209,7 +209,7 @@ A **red flag** is a warning sign that something more serious than ordinary back 
 - **Pain pattern:** pain that worsens when supine (lying flat on the back) or at night.
 - **Nerves and spinal cord:** saddle anesthesia; recent onset of bladder dysfunction; clinically significant or progressive neurologic deficit in the lower extremity (a nerve problem in the leg that is serious or getting worse); unexpected laxity of the anal sphincter; perianal or perineal sensory loss; clinically significant motor weakness; other nerve root compromise.
 
-Anything not on the list is not a red flag for this criterion, however serious it sounds. High blood pressure and arthritis are common examples you'll see in the Conditions list. An item on the list can turn up anywhere in the record, in any paragraph, and it doesn't have to look connected to the back: what matters is whether the record meets the list's words.
+Anything not on the list is not a red flag for this criterion, however serious it sounds. An item on the list can turn up anywhere in the record, in any paragraph, and it doesn't have to look connected to the back: what matters is whether the record meets the list's words.
 
 **The nerve items, as this project reads them.** The criteria spell this out: C1 is supported by **objective** nerve root or spinal cord compromise in the record, which they list as:
 
@@ -224,7 +224,7 @@ Radiating leg pain, or a positive straight leg raise, does **not** support C1 on
 **Where the red flag is written decides the answer:**
 
 - **Supported** when a structured entry shows the red flag: a Condition, an Observation, a Procedure, an Imaging report, a medication order, or any other entry that is not the visit note. An Observation counts whether it holds a number, a code, or text.
-- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when a structured entry **contradicts** it. In both situations, the criteria say **the case routes** to a physician.
+- **Undeterminable** when the red flag appears **only in the note**, with nothing in the structured entries behind it, or when the structured record **contradicts** it. In both situations, the criteria say **the case routes** to a physician, even when C2 would otherwise support an approval.
 - **Unsupported** when nothing on the list appears anywhere in the record, or what appears doesn't meet the list's words (for example, leg pain with a normal nerve exam).
 
 A contradiction means two parts of the record say opposite things about the same fact. For example, if the note said "temperature 101" but the vital signs recorded at the same visit said 98.6, the structured entry would contradict the note.
@@ -234,8 +234,8 @@ A contradiction means two parts of the record say opposite things about the same
 1. Read the whole record first, every note paragraph included. Look for anything on the list.
 2. If you find nothing on the list, C1 is **unsupported**. Evidence can stay empty, because the answer rests on what the record does not contain. If a particular exam is what settled it for you (for example, one showing that a leg finding falls short), you may tick it instead. Either is fine.
 3. For a nerve finding, check it against the nerve reading above. Leg pain or a positive straight leg raise alone does not count.
-4. For a red flag that is on the list, find where it is written. If it's in a structured entry and nothing contradicts it, C1 is **supported**; tick that entry.
-5. If it's only in the note, or a structured entry contradicts it, C1 is **undeterminable**. Tick the note paragraph, and the contradicting entry if there is one.
+4. For a red flag that is on the list, find where it is written. If a structured entry shows it and the structured record doesn't contradict it, C1 is **supported**; tick that entry.
+5. If it's only in the note, or the structured record contradicts it, C1 is **undeterminable**. Tick the note paragraph, and the contradicting entry if there is one.
 
 **Words that carry a condition.** Some items include a qualifier: "unexplained" weight loss, "potentially osteoporotic," "recent" bacterial infection, "clinically significant," or "progressive." The policy gives no exact cut-off for any of them (no number of weeks for "recent," for example). Read them literally, and check whether the record says enough to meet the words. If the record truly doesn't let you decide, that is what undeterminable is for.
 
@@ -245,11 +245,11 @@ The official wording: for a non-red-flag condition, the patient "has not respond
 
 So C2 has three parts, and all three must hold:
 
-1. **Conservative care for at least four weeks, in the right kind of entry:** a therapy in Procedures, or a medication order in Medications. For C2, only these two count as structured entries; the note, or a visit summary that mentions treatment, isn't enough by itself.
-2. **No response:** the latest visit or the note says the pain persists, is unchanged, or is worse.
+1. **A reasonable trial of conservative care for at least four weeks, in the right kind of entry:** a therapy in Procedures, or an order in Medications for a medicine given for the back pain. Medicines for other conditions are not conservative care. For C2, only these two kinds of entry count; the note, or a visit summary that mentions treatment, isn't enough by itself.
+2. **No response:** the latest visit or the note says the care hasn't helped.
 3. **At least a month of symptoms** before the request. Compare the low back pain Condition's onset date with the request date at the top of the page.
 
-**How to count four weeks.** Use the dates printed on the entry: a Procedure's "2026-06-15 to 2026-08-03," or a medication's "dosage period." Four weeks is 28 days. For example, June 1 to June 29 is exactly four weeks. A calendar makes this easy.
+**How to count four weeks.** Use the dates printed on the entry: a Procedure's "2026-06-15 to 2026-08-03," or a medication's "dosage period." Four weeks is 28 days. For example, June 1 to June 29 is exactly four weeks. A calendar makes this easy. Some entries show only a start date ("from 2026-07-20") and a status saying they are still going: no end date is recorded.
 
 **Note-only care.** Conservative care that appears only in the note, with no therapy Procedure or medication order behind it, or that a structured entry contradicts, is **undeterminable**. Unlike C1, the criteria don't say this alone routes the case; the routing questions below decide that.
 
@@ -261,19 +261,19 @@ The official wording: "a surgical intervention or other aggressive treatment (fo
 
 Two parts:
 
-1. **Surgery or another aggressive treatment is under consideration.** The criteria's example is an intervertebral joint injection (an injection into a joint of the spine). Look at the latest visit and the note's assessment and plan, and read the policy's own wording in the **Policy and criteria** panel.
-2. **The MRI's result would affect the treatment choice.** The record should say, in some form, how the result would change what happens next.
+1. **Surgery or another aggressive treatment is under consideration.** The criteria's example is an intervertebral joint injection (an injection into a joint of the spine). Look at the latest visit and the note's assessment and plan.
+2. **The MRI's findings would affect the treatment choice.** Ask what in the record shows that.
 
 The note counts as evidence for C3 on its own.
 
-### C4. Not a repeat of an earlier scan
+### C4. Not a duplicate of earlier imaging
 
 The official wording: "The study is not a duplication of other imaging (such as a spinal CT) unless documentation supports the need for both, for example inconclusive findings on the prior study."
 
 Look for earlier imaging of the lower back in Procedures, Imaging reports, and the note.
 
 - **No earlier lower-back imaging anywhere:** supported, with **empty** evidence. The answer rests on what the record does not contain.
-- **Earlier lower-back imaging exists:** ask whether the MRI would duplicate it (the criteria's example is a spinal CT). If it would, check whether the record documents the need for both, such as an inconclusive result on the earlier study, and label from what you find.
+- **Earlier lower-back imaging exists:** ask whether the MRI would duplicate it (the criteria's example is a spinal CT). If it would, check whether the record documents the need for both, such as an inconclusive result on the earlier study, and label from what you find. If you decide it would not duplicate it, the "unless" part doesn't apply; label from what you find, and tick what your answer rests on.
 
 The note counts as evidence for C4 on its own.
 
@@ -281,12 +281,12 @@ The note counts as evidence for C4 on its own.
 
 After the four criteria, choose one outcome. Ask these questions in order, and stop at the first "yes":
 
-1. **Is there a red flag stated only in the note, or one the record contradicts?** Route. (The C1 rule.)
+1. **Is there a red flag stated only in the note, or one the structured record contradicts?** Route. This comes first, even when C2 would otherwise support an approval, because C1's own sentence says such a red flag "is labeled undeterminable, and the case routes."
 2. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag **or** a failed four-week trial, not both. (C4's evidence can be empty when there's no earlier imaging; that still counts as supported.)
 3. **Otherwise the case can't be approved. Does the record contradict itself on any criterion?** Route, even if a document could clear it up.
-4. **Would one record item that the doctor's office could send settle the open question?** Request it, naming the criterion and the missing item. If no single document could make the case approvable, route.
+4. **Would one record item that the doctor's office could send settle the open question?** Request it, naming the criterion and the missing item. If no single document could make the case approvable, route. A request is never for C1: the project's routing rule (ARCHITECTURE.md, ADR-10) sends an open red-flag question to a physician instead.
 
-These questions restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence," and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
+Questions 2 to 4 restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence," and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said." (The panel's routing text says to approve "when every applicable criterion is supported." The applicable ones are C3, C4, and one of C1 or C2.)
 
 **Filling in a request.** Click **request**. Two boxes appear. In the first, pick the criterion the gap belongs to (C1 to C4). In the second, type the missing item in a few plain words, then click anywhere outside the box so it saves.
 
@@ -303,25 +303,25 @@ If you get stuck, use Part 5 and the **Policy and criteria** panel, just as you 
 
 ## Part 7. What the practice cases don't show
 
-Both practice cases are fairly simple on C2, C3, and C4: weeks of physical therapy, a clear plan, and no earlier imaging. Real cases can have things the practice cases don't, such as medication orders, earlier imaging, a red flag in a structured entry, a contradiction, or a documentation request.
+Both practice cases are fairly simple on C2, C3, and C4: weeks of physical therapy, a plan that names an injection or surgery, and no earlier imaging. Real cases can have things the practice cases don't, such as medication orders, earlier imaging, a red flag in a structured entry, a contradiction, or a documentation request.
 
 That's on purpose. A practice case for each of those paths would look a lot like one of the 12, and then your labels would partly be Claude's reading instead of your own. So for those, use Part 5 and the official wording, and decide from the record in front of you. A few reminders:
 
 - **The three answers work the same way everywhere.** Supported: the record shows the criterion is met. Unsupported: the record shows it isn't. Undeterminable: the record doesn't let you decide, or contradicts itself.
 - **Routing always follows the four questions in Part 5, in order.**
 - **A request names one criterion and one missing item** the doctor's office could send, in a few plain words.
-- **Some cases will turn on a word** such as "recent," "clinically significant," or "duplication," which the policy doesn't define exactly. Read it literally, decide what the record supports, and put the case on your paper list. Those cases are what the settling step is for, and a careful label you can explain is worth more than a guess at what anyone intended.
+- **A label can turn on a word** the policy doesn't define exactly, such as "recent," "clinically significant," or "duplication." If one does, read it literally, decide what the record supports, and put the case on your paper list. Those cases are what the settling step is for, and a careful label you can explain is worth more than a guess at what anyone intended.
 
 ## Part 8. Habits for the 12 real cases
 
 - **Read the whole record before answering anything,** in the same order as the walkthrough: request, patient, Conditions, Visits, Procedures, Imaging reports, Medications, Observations, then the note, paragraph by paragraph.
 - **For each answer, ask "What in the record shows this?"** Then tick those ids.
-- **Approve only when C3 and C4 hold and you can point to the evidence** for whichever of C1 or C2 the approval rests on. That's the approve rule itself.
+- **Approve only when C3 and C4 hold and you can point to the evidence** for whichever of C1 or C2 the approval rests on, and routing question 1 doesn't apply.
 - **When the record truly doesn't let you decide,** use undeterminable. It's a real answer, not a failure.
 - **Keep a short paper list** of case numbers that felt hard, with a sentence on why. Those are the first ones to look at when disagreements are settled.
 - **Pace:** about 12 minutes a case, and three or four cases a sitting.
 - **What you may use:** the labeling page, its **Policy and criteria** panel, a printed copy of the cases if you made one, this guide, and a dictionary or MedlinePlus for what a single word means. Never search for how to label a case, never put any part of a case into an AI tool, and don't ask anyone about a case until your labels are in.
-- **You are not the last word.** Your labels, the third reader's, and the locked answers are compared, and every disagreement is settled against the policy text. Hard calls are expected, and they're what the settling step is for.
+- **You are not the last word.** Your labels, the third reader's, and the locked answers are compared, and every disagreement is settled against the policy text. If a label is still split after re-reading the policy, it becomes undeterminable and the case routes. Hard calls are expected, and they're what the settling step is for.
 
 Questions about the practice cases or the rules are welcome before you start the 12.
 
@@ -387,7 +387,7 @@ Tip: a calendar on your phone makes counting weeks easy.
 
 A case shows a section only when it has something in it. Two sections that some cases have are missing here:
 
-- **Imaging reports** would come right after Procedures. It lists earlier scans or X-rays, with their dates and results. Its absence matters for C4.
+- **Imaging reports** would come right after Procedures. It lists earlier scans or X-rays, with their dates and results. Its absence is one thing C4 looks at; earlier imaging can also show up in Procedures or the note.
 - **Medications** would list medicines a clinician ordered, with their dates. The note's second paragraph (highlighted) says she prefers not to take pain medicine, which explains why there are none.
 
 A missing section just means there is nothing of that kind in the record.
@@ -428,9 +428,9 @@ The list is in Part 5 of the Training guide, grouped; **Policy and criteria** at
 
 - **Injury and bone:** no injury or fall.
 - **Cancer:** "no history of cancer."
-- **Infection and immune system:** no fever or chills, and nothing anywhere about an infection, IV drug use, or immune-suppressing medicine.
+- **Infection and immune system:** no fever or chills, and nothing anywhere about an infection, IV drug use, or immune suppression.
 - **Weight:** no weight loss.
-- **Pain pattern:** nothing about pain at night or lying flat. Pain worse with sitting isn't on the list.
+- **Pain pattern:** nothing about pain at night or lying flat. Not being able to sit through a work day isn't on the list either.
 
 That leaves the nerve items, in the next step.
 
@@ -452,8 +452,8 @@ Her exam shows **none** of them. The diagnosis "radiculopathy" in Conditions is 
 
 One more C1 rule, which Practice A doesn't need but Practice B will. When a case does have something on the list, **where** it is written decides the answer:
 
-- In a **structured entry** (any item in the lists at the top, not the visit note), and nothing contradicts it: **supported**.
-- **Only in the visit note**, or contradicted by a structured entry: **undeterminable**, and the case is routed to a physician.
+- In a **structured entry** (any item in the lists at the top, not the visit note), and the structured record doesn't contradict it: **supported**.
+- **Only in the visit note**, or contradicted by the structured record: **undeterminable**, and the case is routed to a physician, even when the rest of the case would be approved.
 - Nothing on the list anywhere: **unsupported**.
 
 The reason: the tool can approve on its own, so the project wants a second source in the record before an approval rests on the note.
@@ -474,8 +474,8 @@ In Practice A, nothing on the list appears anywhere in the record.
 
 C2 asks whether at least four weeks of conservative care hasn't worked. It has three parts, and all three must hold:
 
-1. **At least four weeks of conservative care, in the right kind of entry.** For C2 that means a therapy in **Procedures** or a medicine order in **Medications**; the note or a visit summary alone isn't enough. Here: physical therapy for seven weeks, in Procedures. **Yes.**
-2. **No response:** the August 14 visit says the leg pain is unchanged after the therapy. **Yes.**
+1. **A reasonable trial of conservative care, at least four weeks, in the right kind of entry.** For C2 that means a therapy in **Procedures** or an order in **Medications** for a medicine given for the back pain; the note or a visit summary alone isn't enough. Here: physical therapy for seven weeks, in Procedures. **Yes.**
+2. **No response:** the August 14 visit says the leg pain is unchanged after the therapy, so it hasn't helped. **Yes.**
 3. **At least a month of symptoms before the request:** June 8 (the Condition's onset) to August 19 (the request) is about ten weeks. **Yes.**
 
 ### Step 14. C2, your answer and evidence
@@ -495,18 +495,18 @@ Each id in the list matches the blue label at the start of an item on the left, 
 
 **Look at:** `Encounter/practicea-enc-03`, `note:p4`. **In the form:** the **C3 informs management** block.
 
-C3 ("informs management") asks whether the MRI would change the treatment plan. Two parts: a surgery or other aggressive treatment is being considered, **and** the MRI's result would affect the choice.
+C3 ("informs management") has two parts: a surgery or other aggressive treatment is being considered, **and** the MRI's findings would affect that choice.
 
-- The plan is an **epidural steroid injection**, an injection into the spine like the criteria's own example (an intervertebral joint injection). **Yes.**
-- The MRI is how the doctor will decide where to aim it. **Yes.**
+- The plan is an **epidural steroid injection**. It isn't the criteria's exact example (an injection into a joint between vertebrae), but the worked answer counts it as an "other aggressive treatment": the national guidance the project cites ties MRI to candidates for surgery or an epidural steroid injection. **Yes.**
+- The note says the MRI is how the injection will be aimed. **Yes.**
 
 **Answer: supported.** In the **C3 informs management** block, click **supported**, then open its Evidence and tick **Encounter/practicea-enc-03** and **note:p4**. For C3, the note counts as evidence on its own.
 
-### Step 16. C4, not a repeat of an earlier scan
+### Step 16. C4, not a duplicate of earlier imaging
 
 **In the form:** the **C4 no duplicate imaging** block.
 
-C4 asks whether this MRI would repeat a scan the patient already had. Look for any earlier scan or X-ray of the lower back: an **Imaging reports** section (there isn't one, as Step 6 noted), imaging in **Procedures**, or a mention in the note. There is none.
+C4 asks whether this MRI would duplicate imaging the patient already had. Look for any earlier scan or X-ray of the lower back: an **Imaging reports** section (there isn't one, as Step 6 noted), imaging in **Procedures**, or a mention in the note. There is none.
 
 **Answer: supported, with no evidence ticked.** The answer rests on something the record doesn't contain, so evidence stays empty. In the **C4 no duplicate imaging** block, click **supported** and leave its Evidence alone.
 

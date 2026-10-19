@@ -68,7 +68,7 @@ steps:
     text: |
       A case shows a section only when it has something in it. Two sections that some cases have are missing here:
 
-      - **Imaging reports** would come right after Procedures. It lists earlier scans or X-rays, with their dates and results. Its absence matters for C4.
+      - **Imaging reports** would come right after Procedures. It lists earlier scans or X-rays, with their dates and results. Its absence is one thing C4 looks at; earlier imaging can also show up in Procedures or the note.
       - **Medications** would list medicines a clinician ordered, with their dates. The note's second paragraph (highlighted) says she prefers not to take pain medicine, which explains why there are none.
 
       A missing section just means there is nothing of that kind in the record.
@@ -106,9 +106,9 @@ steps:
 
       - **Injury and bone:** no injury or fall.
       - **Cancer:** "no history of cancer."
-      - **Infection and immune system:** no fever or chills, and nothing anywhere about an infection, IV drug use, or immune-suppressing medicine.
+      - **Infection and immune system:** no fever or chills, and nothing anywhere about an infection, IV drug use, or immune suppression.
       - **Weight:** no weight loss.
-      - **Pain pattern:** nothing about pain at night or lying flat. Pain worse with sitting isn't on the list.
+      - **Pain pattern:** nothing about pain at night or lying flat. Not being able to sit through a work day isn't on the list either.
 
       That leaves the nerve items, in the next step.
 
@@ -130,8 +130,8 @@ steps:
     text: |
       One more C1 rule, which Practice A doesn't need but Practice B will. When a case does have something on the list, **where** it is written decides the answer:
 
-      - In a **structured entry** (any item in the lists at the top, not the visit note), and nothing contradicts it: **supported**.
-      - **Only in the visit note**, or contradicted by a structured entry: **undeterminable**, and the case is routed to a physician.
+      - In a **structured entry** (any item in the lists at the top, not the visit note), and the structured record doesn't contradict it: **supported**.
+      - **Only in the visit note**, or contradicted by the structured record: **undeterminable**, and the case is routed to a physician, even when the rest of the case would be approved.
       - Nothing on the list anywhere: **unsupported**.
 
       The reason: the tool can approve on its own, so the project wants a second source in the record before an approval rests on the note.
@@ -153,8 +153,8 @@ steps:
     text: |
       C2 asks whether at least four weeks of conservative care hasn't worked. It has three parts, and all three must hold:
 
-      1. **At least four weeks of conservative care, in the right kind of entry.** For C2 that means a therapy in **Procedures** or a medicine order in **Medications**; the note or a visit summary alone isn't enough. Here: physical therapy for seven weeks, in Procedures. **Yes.**
-      2. **No response:** the August 14 visit says the leg pain is unchanged after the therapy. **Yes.**
+      1. **A reasonable trial of conservative care, at least four weeks, in the right kind of entry.** For C2 that means a therapy in **Procedures** or an order in **Medications** for a medicine given for the back pain; the note or a visit summary alone isn't enough. Here: physical therapy for seven weeks, in Procedures. **Yes.**
+      2. **No response:** the August 14 visit says the leg pain is unchanged after the therapy, so it hasn't helped. **Yes.**
       3. **At least a month of symptoms before the request:** June 8 (the Condition's onset) to August 19 (the request) is about ten weeks. **Yes.**
 
   - title: "C2, your answer and evidence"
@@ -178,20 +178,20 @@ steps:
     expect: supported
     tick: [Encounter/practicea-enc-03, note:p4]
     text: |
-      C3 ("informs management") asks whether the MRI would change the treatment plan. Two parts: a surgery or other aggressive treatment is being considered, **and** the MRI's result would affect the choice.
+      C3 ("informs management") has two parts: a surgery or other aggressive treatment is being considered, **and** the MRI's findings would affect that choice.
 
-      - The plan is an **epidural steroid injection**, an injection into the spine like the criteria's own example (an intervertebral joint injection). **Yes.**
-      - The MRI is how the doctor will decide where to aim it. **Yes.**
+      - The plan is an **epidural steroid injection**. It isn't the criteria's exact example (an injection into a joint between vertebrae), but the worked answer counts it as an "other aggressive treatment": the national guidance the project cites ties MRI to candidates for surgery or an epidural steroid injection. **Yes.**
+      - The note says the MRI is how the injection will be aimed. **Yes.**
 
       **Answer: supported.** In the **C3 informs management** block, click **supported**, then open its Evidence and tick **Encounter/practicea-enc-03** and **note:p4**. For C3, the note counts as evidence on its own.
 
-  - title: "C4, not a repeat of an earlier scan"
+  - title: "C4, not a duplicate of earlier imaging"
     highlight: []
     focus: C4_no_duplicate_imaging
     expect: supported
     tick: []
     text: |
-      C4 asks whether this MRI would repeat a scan the patient already had. Look for any earlier scan or X-ray of the lower back: an **Imaging reports** section (there isn't one, as Step 6 noted), imaging in **Procedures**, or a mention in the note. There is none.
+      C4 asks whether this MRI would duplicate imaging the patient already had. Look for any earlier scan or X-ray of the lower back: an **Imaging reports** section (there isn't one, as Step 6 noted), imaging in **Procedures**, or a mention in the note. There is none.
 
       **Answer: supported, with no evidence ticked.** The answer rests on something the record doesn't contain, so evidence stays empty. In the **C4 no duplicate imaging** block, click **supported** and leave its Evidence alone.
 

@@ -12,7 +12,7 @@ episode:
   encounters:
     - date: 2026-05-19
       type: primary care visit
-      summary: Low back pain for one day after a long drive, no fall or injury; walking program
+      summary: Low back pain since the previous morning, no fall or injury; walking program
     - date: 2026-06-16
       type: follow-up
       summary: Low back pain at four weeks, now with heaviness in both thighs after walking two blocks; physical therapy referral
