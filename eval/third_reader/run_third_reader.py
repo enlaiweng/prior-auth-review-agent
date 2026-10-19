@@ -5,7 +5,7 @@ Run by the "Third reader (Gemini)" workflow, after the owner's blind labels are 
 It needs the key in the environment variable GEMINI_API_KEY and never prints it.
 
 Usage (from the repository root):
-  python3 eval/third_reader/run_third_reader.py [--cases all | 01,05,15] [--summary FILE]
+  python3 eval/third_reader/run_third_reader.py [--cases all | 01,05,11] [--summary FILE]
 
 For each case it:
   1. checks the prompt against its fingerprint in eval/third_reader/prompts/prompts.sha256 (it stops if any differ);

@@ -1,0 +1,32 @@
+# Practice case, not part of the golden set. Facts only, in the same format as the golden specs.
+case_id: practice_a
+patient_baseline: data/practice/baselines/8f48ea64-12eb-a55e-c747-42fd4dab5908-practice.json
+request_date: 2026-08-19
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain with radiculopathy
+    onset_date: 2026-06-08
+  encounters:
+    - date: 2026-06-09
+      type: primary care visit
+      summary: Low back pain and left leg pain for one day, no injury or fall; physical therapy referral and home exercises
+    - date: 2026-07-14
+      type: follow-up
+      summary: Left leg pain unchanged; physical therapy ongoing
+    - date: 2026-08-14
+      type: follow-up
+      summary: Left sciatica unchanged after seven weeks of physical therapy; epidural steroid injection planned with pain management; lumbar MRI ordered to choose the level
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-06-15
+      end: 2026-08-03
+      sessions: 12
+  prior_imaging: []
+  observations:
+    - text: Straight leg raise positive on the left at 50 degrees, reproducing pain down the back of the left thigh and calf; negative on the right. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and equal. Sensation to light touch normal in both legs and feet.
+      date: 2026-08-14
+note:
+  file: note.md

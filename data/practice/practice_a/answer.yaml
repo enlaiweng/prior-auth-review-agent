@@ -1,0 +1,56 @@
+# Worked answer for a practice case (not part of the golden set). Written from the criteria in
+# docs/EVAL_PLAN.md and the routing in docs/CHARTER.md only. The training page shows it after you check.
+case_id: practice_a
+criteria:
+  C1_red_flag:
+    status: unsupported
+    evidence: []
+    also_fine: [Observation/practicea-obs-01, note:p1, note:p3]
+    why: >-
+      The only red-flag question this record raises is the leg pain. The policy's list has nerve items, and this
+      project reads them as objective signs in the record: clinically significant or progressive weakness, a reduced
+      or absent reflex, sensory loss in a nerve root pattern, new bladder or bowel trouble, or saddle or perianal
+      numbness. The exam (Observation/practicea-obs-01) shows full strength, equal reflexes, and normal sensation.
+      Pain running down the leg and a positive straight leg raise do not count on their own, so the case is assessed
+      under C2 instead. The Conditions list names radiculopathy (Condition/practicea-cond-01), but that is a
+      diagnosis, not an exam finding; the reading asks for objective weakness, reflex change, or sensory loss, and
+      the exam shows none. Nothing else on the list appears anywhere: no injury, no cancer, no fever, no infection.
+      Evidence can stay empty, because the status rests on red flags the record does not contain. Ticking the exam,
+      or the note paragraphs that rule red flags out (note:p1, note:p3), is fine too.
+  C2_conservative_4wk:
+    status: supported
+    evidence: [Procedure/practicea-pt-01, Encounter/practicea-enc-03]
+    also_fine: [note:p2, Condition/practicea-cond-01, Encounter/practicea-enc-02]
+    why: >-
+      C2 needs three things. Conservative care for at least four weeks, in a structured entry: physical therapy from
+      June 15 to August 3 is seven weeks (Procedure/practicea-pt-01). No response: the August 14 visit says the leg
+      pain is unchanged after the therapy (Encounter/practicea-enc-03). At least a month of symptoms before the MRI:
+      pain since June 8 (the low back pain Condition) and a request on August 19, about ten weeks. There is no
+      medication order here, and none is needed: one therapy that meets the four weeks is enough. The note's
+      treatment paragraph (note:p2) says the same things and is fine to tick, but by itself it could not carry C2.
+  C3_informs_management:
+    status: supported
+    evidence: [Encounter/practicea-enc-03, note:p4]
+    also_fine: [note:p3]
+    why: >-
+      C3 needs a surgery or other aggressive treatment under consideration, and an MRI result that would change the
+      choice. The August 14 visit plans an epidural steroid injection with pain management, an injection like the
+      policy's own example, and the plan (note:p4) says the MRI is how the injection will be aimed at the right level
+      and side. For C3 and C4 the note counts as evidence on its own; the note-only rule is only for C1 and C2.
+  C4_no_duplicate_imaging:
+    status: supported
+    evidence: []
+    also_fine: []
+    why: >-
+      There is no earlier lumbar imaging anywhere in the record: no Imaging reports section and no imaging in
+      Procedures. The status rests on something the record does not contain, so evidence stays empty, as the legend
+      on the form says.
+expected_routing: approve
+named_gap: null
+routing_why: >-
+  An approval needs C3 and C4, plus either C1 or C2 with cited evidence. Here C2, C3, and C4 are all supported. C1
+  being unsupported is fine: a case needs a red flag or a failed four-week trial, not both.
+lesson: >-
+  Leg pain and a positive straight leg raise are not red flags on their own, and neither is a diagnosis name without
+  the exam findings behind it. For C2, count the weeks from the dates in the structured entries. For C4, empty
+  evidence is right when there is no earlier imaging.

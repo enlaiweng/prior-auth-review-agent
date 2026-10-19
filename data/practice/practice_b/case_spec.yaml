@@ -1,0 +1,32 @@
+# Practice case, not part of the golden set. Facts only, in the same format as the golden specs.
+case_id: practice_b
+patient_baseline: data/practice/baselines/ba1a5e29-bd6d-1385-6e12-3a099fc0b84f-practice.json
+request_date: 2026-08-20
+requested_procedure:
+  text: MRI lumbar spine without contrast
+  snomed: "241648005"
+episode:
+  index_condition:
+    code_text: Low back pain
+    onset_date: 2026-05-18
+  encounters:
+    - date: 2026-05-19
+      type: primary care visit
+      summary: Low back pain for one day after a long drive, no fall or injury; walking program
+    - date: 2026-06-16
+      type: follow-up
+      summary: Low back pain at four weeks, now with heaviness in both thighs after walking two blocks; physical therapy referral
+    - date: 2026-08-18
+      type: follow-up
+      summary: Neurogenic claudication unchanged after seven weeks of physical therapy; spine surgery consultation for possible decompression; lumbar MRI ordered beforehand
+  conservative_therapy:
+    - kind: physical therapy
+      start: 2026-06-22
+      end: 2026-08-10
+      sessions: 14
+  prior_imaging: []
+  observations:
+    - text: Mild tenderness at the lumbosacral junction. Lumbar flexion relieves the pain; extension reproduces back pain and bilateral thigh heaviness. Straight leg raise negative bilaterally. Strength 5/5 in both lower extremities. Patellar and Achilles reflexes 2+ and symmetric. Sensation intact to light touch in both legs. Dorsalis pedis pulses 2+ bilaterally.
+      date: 2026-08-18
+note:
+  file: note.md
