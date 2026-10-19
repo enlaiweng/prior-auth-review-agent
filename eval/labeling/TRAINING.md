@@ -10,7 +10,7 @@ About an hour, before you label the 12 cases. This is practice only. Nothing you
 4. Do the same for **Practice B**.
 5. If both explanations made sense, you are ready for the 12 cases.
 
-Questions about the practice cases or the rules are welcome before you start the 12. Once you start, use only the labeling page, its **Policy and criteria** panel, the printed packet, and this guide.
+Questions about the practice cases or the rules are welcome before you start the 12. Once you start, use only the labeling page, its **Policy and criteria** panel, a printed copy of the cases if you made one, and this guide.
 
 ## Part 1. What you are doing
 
@@ -24,7 +24,7 @@ You know each case's designed outcome from the evaluation plan. That is expected
 
 Every case page has the same two kinds of information, and the difference matters for C1 and C2.
 
-- **Structured entries.** The lists at the top: Conditions, Visits, Procedures, Imaging reports, Medications, and Observations. Each item starts with a blue id, such as `Procedure/case03-pt-01`. Think of these as the fields and lists in a chart.
+- **Structured entries.** The lists at the top: Conditions, Visits, Procedures, Imaging reports, Medications, and Observations. Each item starts with a blue id, such as `Procedure/practicea-pt-01`. Think of these as the fields and lists in a chart.
 - **The visit note.** The clinician's free text at the bottom, split into numbered paragraphs: `note:p1`, `note:p2`, and so on.
 
 For C1 and C2, this project's rule is that the note alone is not enough. A red flag or a course of conservative care has to show up in a structured entry too. For C3 and C4, the note counts on its own.
@@ -56,7 +56,7 @@ In plain words, a red flag is a sign that something more serious than ordinary b
 - **Pain pattern:** pain that worsens when supine (lying flat on the back) or at night.
 - **Nerves and spinal cord:** saddle anesthesia (numbness where a saddle would touch: buttocks, inner thighs, groin); recent onset of bladder dysfunction; clinically significant or progressive neurologic deficit in the lower extremity; unexpected laxity of the anal sphincter; perianal or perineal sensory loss; clinically significant motor weakness; other nerve root compromise.
 
-Anything not on the list is not a red flag for this criterion, however serious it sounds. Diabetes, high blood pressure, and arthritis are common examples you will see in the Conditions list.
+Anything not on the list is not a red flag for this criterion, however serious it sounds. High blood pressure and arthritis are common examples you will see in the Conditions list.
 
 **The nerve items, as this project reads them.** The criteria spell this out. C1 is supported by objective nerve root or spinal cord compromise in the record:
 
@@ -78,8 +78,8 @@ A contradiction means two parts of the record say opposite things about the same
 
 **A step-by-step check for C1:**
 
-1. Read the whole record first, every note paragraph included, even ones that read like background. Look for anything on the list.
-2. If you find nothing on the list, C1 is **unsupported**. If an exam shows the nerves are fine, tick that exam as evidence; if nothing in the record speaks to red flags at all, leave evidence empty.
+1. Read the whole record first, every note paragraph included. Look for anything on the list.
+2. If you find nothing on the list, C1 is **unsupported**. Evidence can stay empty, because the status rests on what the record does not contain. If a particular exam is what settled it for you (for example, one showing that a leg finding falls short), you may tick it instead. Either is fine.
 3. For a nerve finding, check it against the reading above. Leg pain or a positive straight leg raise alone does not count.
 4. For a red flag that is on the list, find where it is written. In a structured entry, and not contradicted: **supported**, and tick that entry.
 5. Only in the note, or contradicted by a structured entry: **undeterminable**. Tick the note paragraph, and the contradicting entry if there is one.
@@ -96,7 +96,7 @@ So C2 has three parts, and all three have to hold:
 2. **No response.** The latest visit or the note says the pain persists, is unchanged, or is worse.
 3. **At least a month of symptoms** before the MRI request. Compare the low back pain Condition's onset date with the request date at the top of the page.
 
-**How to count four weeks.** Use the dates printed on the entry: a Procedure's "2026-06-02 to 2026-07-28", or a medication's "dosage period". Four weeks is 28 days. For example, June 1 to June 29 is exactly four weeks.
+**How to count four weeks.** Use the dates printed on the entry: a Procedure's "2026-06-15 to 2026-08-03", or a medication's "dosage period". Four weeks is 28 days. For example, June 1 to June 29 is exactly four weeks.
 
 **Note-only care.** Conservative care stated only in the note, with nothing structured behind it (no therapy Procedure or medication order), or contradicted by the structured record, is labeled undeterminable. Unlike C1, the criteria do not say this alone routes the case; the routing questions in Part 4 decide that.
 
@@ -108,8 +108,8 @@ The criteria: "a surgical intervention or other aggressive treatment (for exampl
 
 Two parts:
 
-1. **A treatment beyond conservative care is being considered**: surgery, or an aggressive treatment such as a spinal injection. Look at the latest visit and the note's assessment and plan.
-2. **The MRI's result would affect the choice**: for example, the plan says the MRI will find the level to inject or show whether surgery could help.
+1. **Surgery or another aggressive treatment is under consideration.** The criteria's example is an intervertebral joint injection. Look at the latest visit and the note's assessment and plan, and read the policy's own wording in the **Policy and criteria** panel.
+2. **The MRI's result would affect the treatment choice.** The record should say, in some form, how the result would change what happens next.
 
 The note counts as evidence for C3 on its own.
 
@@ -120,7 +120,7 @@ The criteria: "The study is not a duplication of other imaging (such as a spinal
 Look for earlier imaging of the lumbar spine in Procedures, Imaging reports, and the note.
 
 - **No earlier lumbar imaging anywhere:** supported, with **empty** evidence. The status rests on what the record does not contain.
-- **Earlier lumbar imaging exists:** check whether the record documents why another study is needed, such as an inconclusive result on the earlier one, and label from what you find.
+- **Earlier lumbar imaging exists:** ask whether the MRI would duplicate it (the criteria's example is a spinal CT). If it would, check whether the record documents the need for both, such as an inconclusive result on the earlier study, and label from what you find.
 
 The note counts as evidence for C4 on its own.
 
@@ -129,9 +129,9 @@ The note counts as evidence for C4 on its own.
 After the four criteria, choose one outcome. Ask these questions in order and stop at the first "yes":
 
 1. **Is there a red flag stated only in the note, or one the structured record contradicts?** Route. (The C1 rule.)
-2. **Does the record contradict itself on any criterion?** Route, even if a document could resolve it.
-3. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag or a failed four-week trial, not both. (C4's evidence can be empty when there is no earlier imaging; that still counts as supported.)
-4. **Otherwise the case is not approvable.** Would one record item that the provider could send settle the open question? Request, and name the criterion and the missing item. If no single document could make the case approvable, route.
+2. **Are C3 and C4 supported, and C1 or C2 supported with cited evidence?** Approve. A case needs a red flag or a failed four-week trial, not both. (C4's evidence can be empty when there is no earlier imaging; that still counts as supported.)
+3. **Otherwise the case is not approvable. Does the record contradict itself on any criterion?** Route, even if a document could resolve it.
+4. **Would one record item that the provider could send settle the open question?** Request, and name the criterion and the missing item. If no single document could make the case approvable, route.
 
 These four questions restate the criteria's own sentences: "A case is approvable when C3 and C4 hold and either C1 or C2 holds with cited evidence," and, when a case is not approvable, "request when one record element the provider could send would settle the question, naming the criterion and the element; route when the record contradicts itself on a criterion, even if a document could resolve it, or when the case could not be approved whatever such a document said."
 
@@ -139,7 +139,7 @@ These four questions restate the criteria's own sentences: "A case is approvable
 
 ## Part 5. Habits for the 12 cases
 
-- **Read the whole record before answering anything.** C1 in particular depends on every part of it, including note paragraphs that look like background.
+- **Read the whole record before answering anything.** C1 in particular depends on every part of it.
 - **For each status, ask "what in the record shows this?"** Then tick those ids.
 - **Approve only when C3 and C4 hold and you can point to the evidence** for whichever of C1 or C2 the approval rests on. That is the approve rule itself.
 - **When the record truly doesn't let you decide,** use undeterminable. It is a real answer, not a failure.
@@ -156,6 +156,6 @@ These four questions restate the criteria's own sentences: "A case is approvable
 3. Open **Finder**, press **Cmd+Shift+G**, type `~/Projects/prior-auth-review-agent/eval/labeling` and press **Return**.
 4. Right-click **training.html**, choose **Open With**, then **Google Chrome**.
 
-What you should see: a page titled **Labeling Practice**, with two buttons at the top (**Practice A** and **Practice B**) and two at the top right (**Training guide**, which opens this text, and **Policy and criteria**). It looks and works like the real labeling page, with a **Check my answers** button under each form instead of the download.
+What you should see: a page titled **Labeling Practice**, with two buttons at the top (**Practice A** and **Practice B**) and two at the top right (**Training guide**, which opens this text, and **Policy and criteria**). It looks and works like the real labeling page, with a **Check my answers** button under each form and no download button.
 
 Your practice answers are saved in Chrome separately from your real labels, so nothing you do on the practice page can change them. To try a case again, click **Clear this case**.

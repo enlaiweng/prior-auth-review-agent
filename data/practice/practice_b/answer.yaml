@@ -12,8 +12,9 @@ criteria:
       Condition for the infection, no antibiotic order, and nothing else in the record behind it. The criteria say a
       red flag stated only in the note, with nothing structured behind it, is labeled undeterminable, and the case
       routes. Two things here are not red flags. The thigh heaviness with walking is not, because the exam shows full
-      strength, normal reflexes, and normal sensation. Diabetes is not, because it is in the Conditions list but not
-      on the policy's list. Evidence: note:p2, the paragraph where the red flag is stated.
+      strength, normal reflexes, and normal sensation. High blood pressure and hip arthritis are not, because they are
+      in the Conditions list but not on the policy's list. Evidence: note:p2, the paragraph where the red flag is
+      stated.
   C2_conservative_4wk:
     status: supported
     evidence: [Procedure/practiceb-pt-01, MedicationRequest/practiceb-med-01, Encounter/practiceb-enc-04]

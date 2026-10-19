@@ -4,7 +4,7 @@
 # the tools that build it, or the documents whose text the case pages and prompts quote; also by hand.
 # Two checks:
 #   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, prompts, practice cases, and practice
-#      page from the committed specs, notes, answers, and baselines changes nothing, and every note is plain text.
+#      page from the committed specs, notes, answers, and baselines changes nothing, and every golden note is plain text.
 #   2. Valid: every bundle reports "Success: 0 errors" from the pinned HL7 validator (DATASHEET.md).
 name: Validate golden set
 

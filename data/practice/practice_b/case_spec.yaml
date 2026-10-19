@@ -1,6 +1,6 @@
 # Practice case, not part of the golden set. Facts only, in the same format as the golden specs.
 case_id: practice_b
-patient_baseline: data/golden/baselines/ba1a5e29-bd6d-1385-6e12-3a099fc0b84f.json
+patient_baseline: data/golden/baselines/461a7e63-f8f7-14bc-e5c2-f73ed8ea603e.json
 request_date: 2026-08-20
 requested_procedure:
   text: MRI lumbar spine without contrast

@@ -1,9 +1,7 @@
-Follow-up visit, 2026-08-17. 63-year-old with low back pain and right leg pain that started on June 4 without any injury, now about ten weeks. The leg pain runs from the right buttock down the back of the thigh into the calf and is worse with sitting and bending forward. He has not noticed numbness or weakness. No fever, chills, or weight loss. No history of cancer. Bladder and bowel function normal.
+Seen 2026-08-14 for left leg pain. 62-year-old woman whose low back pain and left leg pain began on June 8, with no injury or fall. The leg pain follows the back of the left thigh into the calf and is now the main problem; the back pain is mild. No numbness, tingling, or weakness. No fever, chills, or weight loss, and no history of cancer. Bladder and bowel function normal.
 
-Treatment so far: cyclobenzaprine from June 5 for four weeks, and physical therapy from June 23 to August 11, 12 sessions, with a home stretching program that continues. The back pain eased somewhat in July, but the leg pain has not changed and is 6/10 most days. He has missed two shifts at work this month.
+She has done physical therapy since June 15, twelve sessions through August 3, plus daily home exercises. Neither the back pain nor the leg pain has changed, and the leg pain is 6/10 most days. She cannot sit through a full work day.
 
-Exam: pain radiating from the right buttock to the calf. Straight leg raise positive on the right at 45 degrees, negative on the left. Strength 5/5 in both legs. Knee and ankle reflexes 2+ and symmetric. Sensation intact.
+On exam the straight leg raise is positive on the left at 50 degrees, with full strength, equal reflexes, and normal sensation in both legs. Impression: left lumbar radiculopathy without neurologic deficit, persisting after seven weeks of physical therapy.
 
-Assessment: right-sided lumbar radiculopathy, likely L5 or S1, persisting after seven weeks of physical therapy and a course of medication. No weakness, reflex change, or sensory loss.
-
-Plan: refer to pain management for a lumbar epidural steroid injection. MRI of the lumbar spine without contrast to find the level and side of the affected nerve root before the injection. Continue home exercises. Follow up after the pain management visit.
+Plan: pain management referral for a lumbar epidural steroid injection. MRI of the lumbar spine without contrast so the injection can be aimed at the right level and side. Keep up the home exercises.

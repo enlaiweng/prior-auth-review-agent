@@ -134,7 +134,10 @@ function checkHtml(c){
     h+=got.status===want.status?'<span class="okmark">Same as yours: '+esc(want.status)+'</span>':'<span class="diffmark">Worked answer: '+esc(want.status)+'. Yours: '+esc(got.status||"none")+'</span>';
     h+='</p>';
     if(!want.evidence.length){
-      h+='<p class="status">Evidence: empty'+(got.evidence.length?'. You ticked '+got.evidence.map(esc).join(", ")+'; nothing is needed here.':', and yours is empty too.')+'</p>';
+      const fine=got.evidence.filter(x=>want.also_fine.includes(x)), extra=got.evidence.filter(x=>!want.also_fine.includes(x));
+      h+='<p class="status">Evidence in the worked answer: empty'+(got.evidence.length?'':', and yours is empty too.')+'</p>';
+      if(fine.length) h+='<p class="status">Also fine: '+fine.map(esc).join(", ")+'</p>';
+      if(extra.length) h+='<p class="status">Not needed for this criterion: '+extra.map(esc).join(", ")+'</p>';
     } else {
       const miss=want.evidence.filter(x=>!got.evidence.includes(x)), fine=got.evidence.filter(x=>want.also_fine.includes(x)), extra=got.evidence.filter(x=>!want.evidence.includes(x)&&!want.also_fine.includes(x));
       h+='<p class="status">Evidence in the worked answer: '+want.evidence.map(x=>'<code class="id">'+esc(x)+'</code>'+(got.evidence.includes(x)?' &#10003;':'')).join(" ")+'</p>';
@@ -184,6 +187,8 @@ CHANGES = [
     ('document.getElementById("formcol").innerHTML=h;',
      'if(shown[c]) h+=checkHtml(c);\n  document.getElementById("formcol").innerHTML=h; bindCheck(c);'),
     ('document.getElementById("zip").onclick=()=>{', "const unusedDownload=()=>{  // the practice page has no download"),
+    ('"Complete, but this browser is not saving it; download the labels before closing the page."',
+     '"Complete, but this browser is not saving it."'),
     ("\nrender();\n</script>", "\n" + EXTRA_JS),
 ]
 
@@ -209,6 +214,9 @@ def main():
     for old, new in CHANGES:
         assert out.count(old) == 1, f"labeling page changed; this text was not found exactly once: {old[:70]}"
         out = out.replace(old, new)
+    for ph in ("__CASES__", "__POLICY_HEAD__", "__POLICY_BODY__", "__CRITERIA__", "__OUTPUTS__", "__LEGEND__",
+               "__ANSWERS__", "__GUIDE_HTML__", "__NAMES__"):
+        assert out.count(ph) == 1, f"placeholder {ph} is not on the page exactly once"
     out = (out.replace("__CASES__", js(views)).replace("__POLICY_HEAD__", js(head)).replace("__POLICY_BODY__", js(body))
            .replace("__CRITERIA__", js(b.criteria_text())).replace("__OUTPUTS__", js(b.outputs_text()))
            .replace("__LEGEND__", js(b.LEGEND)).replace("__ANSWERS__", js(answers))
