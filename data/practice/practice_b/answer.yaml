@@ -8,7 +8,8 @@ criteria:
     also_fine: [Observation/practiceb-obs-01, note:p1]
     why: >-
       A recent bacterial infection is on the policy's list, and note:p2 says he was treated for a urinary tract
-      infection in late July and finished antibiotics on August 4. But it appears only in the visit note: there is no
+      infection in late July and finished antibiotics on August 4. It is recent (about two weeks before this visit) and
+      bacterial (treated with antibiotics). But it appears only in the visit note: there is no
       Condition for the infection, no antibiotic order, and nothing else in the record behind it. The criteria say a
       red flag stated only in the note, with nothing structured behind it, is labeled undeterminable, and the case
       routes. The thigh heaviness with walking is not a red flag, because the exam shows full strength, normal
