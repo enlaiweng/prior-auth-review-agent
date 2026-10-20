@@ -5,6 +5,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Agent, setGlobalDispatcher } from "undici";
+
+// Every request the tests send opens its own connection. Reusing an idle connection lets a request race the local
+// server closing it ("fetch failed: other side closed"), a test-only failure that shows up when the machine is busy.
+setGlobalDispatcher(new Agent({ pipelining: 0 }));
 
 export const SITE = dirname(dirname(fileURLToPath(import.meta.url)));
 export const ADMIN_KEY = "test-admin-key-0123456789-abcdefghij";

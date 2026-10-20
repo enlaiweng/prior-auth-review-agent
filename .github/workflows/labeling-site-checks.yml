@@ -10,6 +10,8 @@
 # - scenarios: twenty situations acted out in a real browser (labeling-site/test/scenarios.test.mjs), from the owner's
 #   invite to the downloaded labels, including losing the internet, two tabs, a phone, and keyboard-only use; and
 #   positive and negative tests of each form (labeling-site/test/forms.test.mjs).
+# The test files run one after another (each starts its own local copy of the site), and each failing test also
+# appears as an error note on the run's page (labeling-site/test/github-annotations.mjs).
 name: Labeling site checks
 
 on:
@@ -47,7 +49,7 @@ jobs:
       - name: Install the pinned tools
         run: npm ci --no-audit --no-fund
       - name: Site tests, and positive and negative tests of every input
-        run: node --test --test-reporter=spec test/api.test.mjs test/inputs.test.mjs
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/api.test.mjs test/inputs.test.mjs
 
   scenarios:
     runs-on: ubuntu-24.04
@@ -70,4 +72,4 @@ jobs:
       - name: Install the browser the pinned Playwright drives
         run: npx playwright install --with-deps chromium
       - name: Scenarios and form tests in a real browser
-        run: node --test --test-reporter=spec test/scenarios.test.mjs test/forms.test.mjs
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/scenarios.test.mjs test/forms.test.mjs
