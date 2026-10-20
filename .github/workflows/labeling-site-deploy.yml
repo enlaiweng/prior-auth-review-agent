@@ -27,8 +27,13 @@ jobs:
     environment: release
     env:
       WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash   # bash -eo pipefail: a failed command in a pipe fails the step
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
           node-version: "22"
@@ -118,6 +123,7 @@ jobs:
       - name: Check the site answers
         env:
           URL: ${{ steps.deploy.outputs.url }}
+          LABELING_ADMIN_KEY: ${{ secrets.LABELING_ADMIN_KEY }}
         run: |
           code() { curl -s -o /dev/null -w "%{http_code}" "$1"; }
           for i in $(seq 1 30); do [ "$(code "$URL/")" = "200" ] && break; sleep 4; done
@@ -126,11 +132,13 @@ jobs:
           [ "$(code "$URL/admin")" = "200" ] || fail="$fail admin page"
           [ "$(code "$URL/app")" = "401" ] || fail="$fail app-without-link"
           [ "$(code "$URL/api/me")" = "401" ] || fail="$fail api-without-link"
+          admin=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $LABELING_ADMIN_KEY" "$URL/api/admin/state")
+          [ "$admin" = "200" ] || fail="$fail admin-key(answered $admin)"
           if [ -n "$fail" ]; then echo "::error title=Site check failed::Unexpected answer from:$fail"; exit 1; fi
           {
             echo "## Labeling site deployed"
             echo ""
             echo "- Site: $URL"
             echo "- Admin page: $URL/admin (sign in with the admin key)"
-            echo "- The landing page answers, and the app and its data stay closed without a personal link."
+            echo "- The landing page answers, the app and its data stay closed without a personal link, and the admin key works."
           } >> "$GITHUB_STEP_SUMMARY"

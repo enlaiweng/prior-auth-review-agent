@@ -6,69 +6,108 @@ Your own blind labels don't go through this site. They stay on `eval/labeling/la
 
 ## What a labeler sees
 
-1. **Their personal link.** You send it yourself. Opening it signs them in on that browser for 60 days, and the link disappears from the address bar.
-2. **A welcome page.** They enter the name and role they want to be credited by, and tick two boxes:
-   - they agree that name and role may appear in the datasheet, next to their labels;
+1. **Their personal link.** You send it yourself. Opening it shows a short page naming who the link is for, with a **Continue** button. Clicking it signs them in on that browser for 60 days.
+   - Opening the link alone changes nothing, so email and chat link-checkers can't sign anyone in.
+   - If the browser is already signed in as someone else, the page says so before switching.
+2. **A welcome page.** It says the project is public. They enter the name and role to be credited by, and tick two boxes:
+   - their labels, with that name and role, may be published in the project's public repository and datasheet;
    - they'll label on their own: no AI tools on the cases, no searching for how to label a case, no discussing a case until it's submitted.
-3. **Their home page.** It explains what labeling is and links to the optional training (`eval/labeling/training.html`, served as it is, with the guided walkthrough). A box lets them say they've done the training. It lists **only the cases you assigned them**, with each one's status.
-4. **The labeling view.** The same record viewer and form as the labeling page, plus the "Policy and criteria" panel. Every change saves automatically. **Submit** locks the case.
+3. **Their home page.**
+   - What labeling is.
+   - The optional training: `eval/labeling/training.html` with the guided walkthrough, plus a note at the top for invited labelers saying which parts apply to them.
+   - A box to say they've done the training.
+   - **Only the cases you assigned them**, with each one's status.
+4. **The labeling view.** The same record viewer and form as the labeling page, plus the "Policy and criteria" panel.
+   - Changes save as they go, and the line under the form says whether the last change is saved.
+   - If a save fails, it says so and offers **Try saving again**. Closing the tab with an unsaved change asks first.
+   - **Submit** sends the answers exactly as shown and locks the case. If the last change isn't saved, it refuses.
 
 A labeler never sees anyone else's labels. The site never holds your labels, Gemini's, or the locked intended answers. The practice cases' worked answers appear only inside the training, as in the repository.
 
+**Two tabs or devices.** Every save says which version it was based on. A save from an out-of-date copy is refused, never merged; the page then shows the latest saved answers and says why. If the cases are updated while someone has the page open, their next save asks them to reload.
+
 ## What you see (the admin page, `/admin`)
 
-Sign in with the admin key (the value of the release environment's `LABELING_ADMIN_KEY`). It's kept in that browser tab only, and forgotten when the tab closes. From the admin page you can:
+Sign in with the admin key (the value of the release environment's `LABELING_ADMIN_KEY`). The tab keeps it while open; click **Sign out** when you're done. From the admin page you can:
 
 - **Invite a labeler.** Give their name and, optionally, an email and a note for your records, and choose cases. You get their personal link once: copy it and send it to them.
-- **See each labeler's progress.** Whether they agreed, how they asked to be credited, whether they said they did the training, and each case's status (not started, started, ready to submit, or submitted, with the time).
+- **See each labeler's progress:**
+  - their id;
+  - whether they agreed, and how they asked to be credited;
+  - whether they said they did the training;
+  - each case's status: not started, started, ready to submit, or submitted, with the time.
 - **Change their cases.** A case with a saved label stays assigned.
 - **Make a new link** (the old one stops working at once), or **turn a link off.**
 - **Reopen a submitted case,** with a reason. The reason goes into the activity log.
-- **Download submitted labels.** One JSON file holds every submitted label, with who labeled it, their credit name and role, when they agreed and submitted, and a fingerprint of the case content they saw.
-- **Activity.** The audit trail: invites, sign-ins, consent, first saves, submits, reopenings, link changes.
+- **Remove a person's details**, only if they ask. This deletes their labels and details from the site; the activity log keeps what happened and when, with the details cleared.
+- **Download submitted labels.** One JSON file. Each label carries:
+  - who labeled it: their credit name and role, and when they agreed;
+  - when it was submitted;
+  - whether the case is a golden or a practice case;
+  - a fingerprint of the case record their page showed.
+- **Activity.** The audit trail:
+  - invites;
+  - sign-ins: Continue clicks only, never link-checkers;
+  - consent and first saves;
+  - submits, each with exactly what was locked;
+  - reopenings, link changes, and removals.
+
+  Each entry is written together with the change it records. The database refuses to delete or rewrite entries, except clearing a removed person's details.
 
 ## Identity, and what the database keeps
 
-- **Identity is the personal link.** The link holds a random 256-bit token. The database stores only its SHA-256 fingerprint, so even a copy of the database can't be used to sign in. Anyone holding a link is recorded as that person, so send each link only to its person. If a link might have been forwarded, make a new one.
+- **Identity is the personal link.** The link holds a random 256-bit token. The database stores only its SHA-256 fingerprint, so even a copy of the database can't be used to sign in. Anyone holding a link is recorded as that person, so send each link only to its person. If a link might have been forwarded, make a new one and look at the activity log.
 - **For each labeler:** the name you typed, the optional email and note, the credit name and role they entered, when they agreed, and when they said they did the training.
-- **For each label:** the answers (statuses, evidence ids, routing, gap), when it was last saved and submitted, and the fingerprint of the case content. Evidence must be ids in that case, and only approve, request, and route are accepted.
-- **Not kept by the site:** IP addresses, browser details, or anything about a visit beyond the events listed above. Cloudflare keeps its usual traffic statistics for your account. The cases are synthetic; no real patient is in them.
-- **Security:** pages send strict security headers (no framing, no referrer, no caching, scripts only from the page itself). Every change must carry a header that only the site's own pages send, so another site can't submit on a labeler's behalf.
+- **For each label:**
+  - the answers: statuses, evidence ids, routing, and gap;
+  - its version number;
+  - when it was last saved and when it was submitted;
+  - a fingerprint of the case record and of all the case content the page was loaded with.
+
+  Evidence must be ids in that case, and only approve, request, and route are accepted.
+- **Not kept by the site:** IP addresses, browser details, request logs (they're turned off for this Worker), or anything about a visit beyond the activity log. Cloudflare keeps its usual traffic statistics for your account. The cases are synthetic; no real patient is in them.
+- **Security:**
+  - Each page may run only its own script; any other script is blocked.
+  - Pages can't be framed, send no referrer, and aren't cached.
+  - The sign-in cookie can be set only by this exact site.
+  - Every change must carry a header that only the site's own pages send, so another site can't act on a labeler's behalf.
 
 ## Deploying it (you, once)
 
-You need four things in the GitHub **release** environment. The first two are the same ones the week 3 deployment uses.
+You need three secrets in the GitHub **release** environment. The deployment planned for week 3 will use the first two as well.
 
 | Secret | What it is |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | A Cloudflare API token from the **Edit Cloudflare Workers** template, with **Account, D1, Edit** added |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account id |
-| `LABELING_ADMIN_KEY` | A long random value you make (at least 24 characters); you sign in to the admin page with it |
+| `LABELING_ADMIN_KEY` | A long random value with no spaces, at least 24 characters. Make it with `openssl rand -base64 33` in Terminal, or a password manager's generator, and keep it in your password manager; you sign in to the admin page with it |
 
-Your Cloudflare account also needs a **workers.dev subdomain** (Workers & Pages in the Cloudflare dashboard shows it). Then run **Actions, Deploy labeling site, Run workflow** from main and approve it. The workflow:
+Your Cloudflare account also needs a **workers.dev subdomain** (the Workers & Pages page of the Cloudflare dashboard shows it).
+
+To deploy, run **Actions, Deploy labeling site, Run workflow**, keep **Branch: main** (on any other branch it does nothing), and approve it. The workflow:
 1. checks the content and runs the tests;
 2. creates the database the first time and applies its migrations;
 3. deploys;
 4. sets the admin key;
-5. checks the site answers.
+5. checks that the site answers and the admin key works.
 
-The run's summary shows the address. Step-by-step instructions are in the project's setup guide.
+The run's summary shows the address. Step-by-step instructions are in the Claude project's guide, `claude/labeling-site-setup-2026-10-20.md`. Running it again is safe: it keeps the database and its data.
 
 **Changing the admin key:** update `LABELING_ADMIN_KEY` in the release environment and run the workflow again.
 
 ## Getting labels into the repository
 
-Download the submitted labels from the admin page and give the file to Claude. Each person's labels become files beside the other readers' (one per case, carrying who and when), through a pull request you review. The datasheet records how outside labels were collected and who gave them.
+Download the submitted labels from the admin page and give the file to Claude. Each person's labels become files beside the other readers' (one per case, carrying who and when), through a pull request you review. Practice-case labels are left out. The datasheet records how outside labels were collected and who gave them.
 
 ## Removing someone's details
 
-If a labeler asks to be removed, turn their link off on the admin page, and ask Claude to delete their rows. On your Mac, from this folder, it's this command (with their id from the admin page's activity log):
+If a labeler asks to be removed, use **Remove this person's details** on the admin page (click twice to confirm). If their labels were already copied into the repository, Claude removes them there through a pull request, and the change is recorded in the decision log. Earlier versions stay in the repository's history, which the welcome page tells labelers before they agree.
 
-```
-npx wrangler d1 execute prior-auth-labeling --remote --command "DELETE FROM labels WHERE labeler_id='lb_...'; DELETE FROM assignments WHERE labeler_id='lb_...'; DELETE FROM labelers WHERE id='lb_...';"
-```
+## Known limits
 
-Any labels of theirs already copied into the repository are removed by a pull request, and the change is recorded in the decision log.
+- A personal link is a password: anyone who has it can label as that person.
+- Cloudflare's free plan allows 100,000 requests a day. Someone determined could use that up and take the site offline for the day. Nothing would be lost, and at this size it's unlikely.
+- The labeling view is built for a computer. It works on a phone, but the form sits below the whole record; a **Go to the form** button jumps there.
 
 ## Shutting it down
 
@@ -84,7 +123,13 @@ npx wrangler d1 migrations apply prior-auth-labeling --local
 npx wrangler dev --local --var ADMIN_KEY:a-local-admin-key-at-least-24-chars
 ```
 
-`src/content.generated.js` is made by `build_content.py` (run by `bash eval/tools/rebuild_golden.sh`) from the cases, the criteria, the policy text, the training page, and `pages/*.html`. Never edit it by hand. The "Validate golden set" workflow fails if it is out of date, and so does the deploy.
+`src/content.generated.js` is made by `build_content.py` (run by `bash eval/tools/rebuild_golden.sh`) from:
+- the cases;
+- the criteria and the policy text;
+- the training page;
+- `pages/*.html`.
+
+It also holds each page's script fingerprint, which the security policy allows. Never edit it by hand. The "Validate golden set" workflow fails if it is out of date, and so does the deploy.
 
 ## Cost
 

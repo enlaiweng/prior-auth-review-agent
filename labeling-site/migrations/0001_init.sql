@@ -25,19 +25,23 @@ CREATE TABLE assignments (
 );
 
 -- One label per labeler and case. body is JSON: {criteria: {C1_red_flag: {status, evidence}, ...},
--- routing, gap_criterion, gap_missing}. Once submitted_at is set, the label cannot change unless the
--- owner reopens it, which is recorded in events.
+-- routing, gap_criterion, gap_missing}. rev goes up by one with every save, so a save made from an older copy of the
+-- label (another tab or device) is refused instead of overwriting a newer one. Once submitted_at is set, the label
+-- cannot change unless the owner reopens it, which is recorded in events.
 CREATE TABLE labels (
   labeler_id TEXT NOT NULL REFERENCES labelers(id),
   case_id TEXT NOT NULL,
   body TEXT NOT NULL,
+  rev INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL,
   submitted_at TEXT,
-  content_sha TEXT NOT NULL,           -- fingerprint of the case content the labeler saw
+  content_sha TEXT NOT NULL,           -- fingerprint of all the site's case content when the labeler loaded it
+  case_sha TEXT NOT NULL,              -- fingerprint of this case's record, as the labeler's page showed it
   PRIMARY KEY (labeler_id, case_id)
 );
 
--- Append-only audit trail: who did what, and when.
+-- The audit trail: who did what, and when. Rows are never changed or deleted, with one exception: when a person asks
+-- for their details to be removed, the detail column of their rows is cleared (and that removal is itself recorded).
 CREATE TABLE events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   at TEXT NOT NULL,
@@ -48,3 +52,15 @@ CREATE TABLE events (
   detail TEXT
 );
 CREATE INDEX events_by_labeler ON events (labeler_id, at);
+
+CREATE TRIGGER events_no_delete BEFORE DELETE ON events
+BEGIN
+  SELECT RAISE(ABORT, 'the audit trail is append-only');
+END;
+
+CREATE TRIGGER events_only_redact BEFORE UPDATE ON events
+WHEN NOT (NEW.detail IS NULL AND NEW.id = OLD.id AND NEW.at = OLD.at AND NEW.actor = OLD.actor
+          AND NEW.labeler_id IS OLD.labeler_id AND NEW.case_id IS OLD.case_id AND NEW.action = OLD.action)
+BEGIN
+  SELECT RAISE(ABORT, 'the audit trail is append-only; only a removal request may clear details');
+END;

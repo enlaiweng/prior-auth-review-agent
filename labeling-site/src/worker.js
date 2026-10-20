@@ -12,10 +12,11 @@ const CRIT_KEYS = ["C1_red_flag", "C2_conservative_4wk", "C3_informs_management"
 const STATUSES = new Set(["supported", "unsupported", "undeterminable"]);
 const ROUTES = new Set(["approve", "request", "route"]);
 const GAP_CRITERIA = new Set(["C1", "C2", "C3", "C4"]);
-const COOKIE = "lab_session";
+const COOKIE = "__Host-lab_session";   // __Host-: only this exact site can set it (no other subdomain), Secure, Path=/
 const COOKIE_DAYS = 60;
 const MAX_TEXT = { credit_name: 100, role: 150, gap_missing: 500, invited_name: 100, invited_email: 200, note: 300, reason: 300 };
 
+const isCase = id => typeof id === "string" && Object.hasOwn(CONTENT.cases, id);
 // Every id a label may cite, per case: the same list the labeling page offers.
 const CASE_IDS = Object.fromEntries(Object.entries(CONTENT.cases).map(([id, c]) => [id, new Set(idsOf(c.view))]));
 
@@ -27,23 +28,27 @@ function idsOf(v) {
   return out;
 }
 
-const SECURITY_HEADERS = {
-  "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; " +
-                             "img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-  "Referrer-Policy": "no-referrer",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Cache-Control": "no-store",
-};
-
-function html(body, status = 200, extra = {}) {
-  return new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", ...SECURITY_HEADERS, ...extra } });
+// Each page's one inline script is allowed by its SHA-256 (made by build_content.py), so no other script can run.
+function headers(page) {
+  const script = page && CONTENT.script_hashes[page] ? `'${CONTENT.script_hashes[page]}'` : "'none'";
+  return {
+    "Content-Security-Policy": `default-src 'none'; script-src ${script}; style-src 'unsafe-inline'; connect-src 'self'; ` +
+                               "img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cache-Control": "no-store",
+  };
 }
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...SECURITY_HEADERS } });
+function html(page, body, status = 200) {
+  return new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", ...headers(page) } });
 }
-function fail(status, message) { return json({ error: message }, status); }
-function landing(message) { return CONTENT.pages.landing.replace("__MESSAGE__", escapeHtml(message)); }
+function json(data, status = 200, extra = {}) {
+  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...headers(null), ...extra } });
+}
+function fail(status, message, code = null) { return json(code ? { error: message, code } : { error: message }, status); }
+function landing(message, status = 200) { return html("landing", CONTENT.pages.landing.replace("__MESSAGE__", escapeHtml(message)), status); }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 const now = () => new Date().toISOString();
@@ -78,24 +83,27 @@ function clip(value, field) {
 }
 class BadRequest extends Error {}
 
-async function logEvent(env, actor, action, { labeler = null, caseId = null, detail = null } = {}) {
-  await env.DB.prepare("INSERT INTO events (at, actor, labeler_id, case_id, action, detail) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(now(), actor, labeler, caseId, action, detail === null ? null : JSON.stringify(detail)).run();
+// An audit event, written in the same batch (one transaction) as the change it records. With onlyIfChanged, it is
+// written only if the statement just before it in the batch changed a row (SQLite's changes()), so a refused change
+// leaves no event claiming it happened.
+function event(env, actor, action, { labeler = null, caseId = null, detail = null, onlyIfChanged = false } = {}) {
+  return env.DB.prepare("INSERT INTO events (at, actor, labeler_id, case_id, action, detail) SELECT ?, ?, ?, ?, ?, ?" +
+                        (onlyIfChanged ? " WHERE changes() > 0" : ""))
+    .bind(now(), actor, labeler, caseId, action, detail === null ? null : JSON.stringify(detail));
 }
 
-// The labeler behind this request's session cookie, or null. A revoked link signs nobody in.
-async function currentLabeler(request, env) {
-  const token = cookieValue(request, COOKIE);
-  if (!token || token.length > 100) return null;
-  const row = await env.DB.prepare("SELECT * FROM labelers WHERE token_hash = ? AND revoked_at IS NULL").bind(await sha256(token)).first();
-  return row || null;
+async function labelerByToken(env, token) {
+  if (typeof token !== "string" || !token || token.length > 100) return null;
+  return (await env.DB.prepare("SELECT * FROM labelers WHERE token_hash = ? AND revoked_at IS NULL").bind(await sha256(token)).first()) || null;
 }
+// The labeler behind this request's session cookie, or null. A turned-off or replaced link signs nobody in.
+async function currentLabeler(request, env) { return labelerByToken(env, cookieValue(request, COOKIE)); }
 
+function adminKey(env) { return (env.ADMIN_KEY || "").trim(); }
 function adminAllowed(request, env) {
-  const key = env.ADMIN_KEY || "";
-  if (key.length < 24) return false;
+  const key = adminKey(env);
   const auth = request.headers.get("Authorization") || "";
-  return auth.startsWith("Bearer ") && sameText(auth.slice(7), key);
+  return auth.startsWith("Bearer ") && sameText(auth.slice(7).trim(), key);
 }
 
 // Checks a label body against the case: known statuses and routings, cited ids that exist in the case.
@@ -104,7 +112,7 @@ function cleanLabel(caseId, body) {
   const ok = CASE_IDS[caseId];
   const criteria = {};
   for (const k of CRIT_KEYS) {
-    const c = (body.criteria || {})[k] || {};
+    const c = (body.criteria && Object.hasOwn(body.criteria, k) ? body.criteria[k] : null) || {};
     const status = c.status || "";
     if (status && !STATUSES.has(status)) throw new BadRequest(`${k}: unknown status`);
     const evidence = Array.isArray(c.evidence) ? c.evidence : [];
@@ -128,10 +136,34 @@ function complete(label) {
   if (label.routing === "request" && (!label.gap_criterion || !label.gap_missing)) return false;
   return true;
 }
+function statusOf(row) {
+  return row ? (row.submitted_at ? "submitted" : (complete(JSON.parse(row.body)) ? "complete" : "started")) : "not started";
+}
 
 async function assignedCases(env, labelerId) {
   const { results } = await env.DB.prepare("SELECT case_id FROM assignments WHERE labeler_id = ?").bind(labelerId).all();
   return CONTENT.order.filter(id => results.some(r => r.case_id === id));
+}
+
+// ---- Signing in with a personal link --------------------------------------------------------------------------------
+// GET /l/<token> only shows a "Continue" page and changes nothing, so link scanners and other sites can't sign anyone
+// in or out. The page's button sends the token to POST /api/session, which sets the cookie and records the sign-in.
+
+async function linkPage(request, env, token) {
+  const who = await labelerByToken(env, token);
+  if (!who) return landing("This link isn't valid any more. Ask the person who sent it for a new one.", 404);
+  const current = await currentLabeler(request, env);
+  const switching = current && current.id !== who.id
+    ? `This browser is signed in as ${escapeHtml(current.credit_name || current.invited_name)}. Continuing switches it to ${escapeHtml(who.invited_name)}.` : "";
+  return html("continue", CONTENT.pages.continue.replace("__FOR__", escapeHtml(who.invited_name)).replace("__SWITCH__", switching));
+}
+
+async function startSession(request, env) {
+  const b = await request.json().catch(() => ({}));
+  const who = await labelerByToken(env, b.token);
+  if (!who) return fail(404, "This link isn't valid any more. Ask the person who sent it for a new one.");
+  await env.DB.batch([event(env, who.id, "signed in with link", { labeler: who.id })]);
+  return json({ ok: true }, 200, { "Set-Cookie": `${COOKIE}=${b.token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${COOKIE_DAYS * 86400}` });
 }
 
 // ---- Labeler API ----------------------------------------------------------------------------------------------------
@@ -146,8 +178,7 @@ async function labelerApi(request, env, path, me) {
       labeler: { invited_name: me.invited_name, credit_name: me.credit_name, role: me.role, consent_at: me.consent_at, training_done_at: me.training_done_at },
       assignments: cases.map(id => {
         const r = byCase[id];
-        return { case: id, name: CONTENT.cases[id].name, status: r ? (r.submitted_at ? "submitted" : (complete(JSON.parse(r.body)) ? "complete" : "started")) : "not started",
-                 updated_at: r ? r.updated_at : null, submitted_at: r ? r.submitted_at : null };
+        return { case: id, name: CONTENT.cases[id].name, status: statusOf(r), updated_at: r ? r.updated_at : null, submitted_at: r ? r.submitted_at : null };
       }),
     });
   }
@@ -156,16 +187,20 @@ async function labelerApi(request, env, path, me) {
     const credit = clip(b.credit_name, "credit_name"), role = clip(b.role, "role");
     if (!credit) throw new BadRequest("please enter the name to credit");
     if (b.agree_credit !== true || b.agree_rules !== true) throw new BadRequest("both boxes need to be ticked");
-    await env.DB.prepare("UPDATE labelers SET credit_name = ?, role = ?, consent_at = COALESCE(consent_at, ?) WHERE id = ?").bind(credit, role, now(), me.id).run();
-    await logEvent(env, me.id, "consent", { labeler: me.id, detail: { credit_name: credit, role } });
+    await env.DB.batch([
+      env.DB.prepare("UPDATE labelers SET credit_name = ?, role = ?, consent_at = COALESCE(consent_at, ?) WHERE id = ?").bind(credit, role, now(), me.id),
+      event(env, me.id, "consent", { labeler: me.id, detail: { credit_name: credit, role } }),
+    ]);
     return json({ ok: true });
   }
   if (!me.consent_at) return fail(403, "Please complete the welcome page first.");
   if (path === "/api/training" && method === "POST") {
     const b = await request.json().catch(() => ({}));
     const at = b.done === true ? now() : null;
-    await env.DB.prepare("UPDATE labelers SET training_done_at = ? WHERE id = ?").bind(at, me.id).run();
-    await logEvent(env, me.id, b.done === true ? "training marked done" : "training unmarked", { labeler: me.id });
+    await env.DB.batch([
+      env.DB.prepare("UPDATE labelers SET training_done_at = ? WHERE id = ?").bind(at, me.id),
+      event(env, me.id, b.done === true ? "training marked done" : "training unmarked", { labeler: me.id }),
+    ]);
     return json({ ok: true, training_done_at: at });
   }
   if (path === "/api/cases" && method === "GET") {
@@ -179,36 +214,38 @@ async function labelerApi(request, env, path, me) {
   const m = path.match(/^\/api\/labels\/([a-z0-9_]{1,40})(\/submit)?$/);
   if (m) {
     const caseId = m[1];
-    if (!CONTENT.cases[caseId] || !(await assignedCases(env, me.id)).includes(caseId)) return fail(404, "This case is not assigned to you.");
+    if (!isCase(caseId) || !(await assignedCases(env, me.id)).includes(caseId)) return fail(404, "This case is not assigned to you.");
     const row = await env.DB.prepare("SELECT * FROM labels WHERE labeler_id = ? AND case_id = ?").bind(me.id, caseId).first();
     if (!m[2] && method === "GET") {
-      return json(row ? { label: JSON.parse(row.body), updated_at: row.updated_at, submitted_at: row.submitted_at } : { label: null });
+      return json(row ? { label: JSON.parse(row.body), rev: row.rev, updated_at: row.updated_at, submitted_at: row.submitted_at } : { label: null, rev: 0 });
     }
-    if (!m[2] && method === "PUT") {
-      if (row && row.submitted_at) return fail(409, "This case is already submitted.");
-      const label = cleanLabel(caseId, await request.json().catch(() => null));
-      const at = now();
-      const r = await env.DB.prepare(
-        "INSERT INTO labels (labeler_id, case_id, body, updated_at, content_sha) VALUES (?, ?, ?, ?, ?) " +
-        "ON CONFLICT (labeler_id, case_id) DO UPDATE SET body = excluded.body, updated_at = excluded.updated_at, " +
-        "content_sha = excluded.content_sha WHERE labels.submitted_at IS NULL")
-        .bind(me.id, caseId, JSON.stringify(label), at, CONTENT.content_sha).run();
-      if (!r.meta.changes) return fail(409, "This case is already submitted.");
-      if (!row) await logEvent(env, me.id, "label started", { labeler: me.id, caseId });
-      return json({ ok: true, updated_at: at, complete: complete(label) });
-    }
-    if (m[2] && method === "POST") {
-      if (!row) return fail(400, "Nothing to submit yet.");
-      if (row.submitted_at) return fail(409, "This case is already submitted.");
-      const label = JSON.parse(row.body);
-      if (!complete(label)) return fail(400, "Every criterion needs a status, the routing needs a choice, and a request needs its gap.");
-      const at = now();
-      const r = await env.DB.prepare("UPDATE labels SET submitted_at = ? WHERE labeler_id = ? AND case_id = ? AND submitted_at IS NULL")
-        .bind(at, me.id, caseId).run();
-      if (!r.meta.changes) return fail(409, "This case is already submitted.");
-      await logEvent(env, me.id, "label submitted", { labeler: me.id, caseId, detail: { body: label, content_sha: row.content_sha } });
-      return json({ ok: true, submitted_at: at });
-    }
+    if (method !== (m[2] ? "POST" : "PUT")) return fail(404, "Not found.");
+    // A save or a submit carries the label as the page shows it, the revision it was based on, and the content
+    // fingerprint the page loaded, so nothing is saved over a newer copy or against content that has since changed.
+    const b = await request.json().catch(() => null);
+    if (!b || typeof b !== "object") throw new BadRequest("the request must be an object");
+    if (b.content_sha !== CONTENT.content_sha) return fail(409, "The cases were updated since this page was opened. Reload the page; your saved answers are kept.", "content_changed");
+    if (row && row.submitted_at) return fail(409, "This case is already submitted.", "submitted");
+    const rev = Number.isInteger(b.rev) ? b.rev : -1;
+    if ((row ? row.rev : 0) !== rev) return fail(409, "This case was changed in another tab or on another device.", "stale");
+    const label = cleanLabel(caseId, b.label);
+    const at = now(), submit = !!m[2];
+    if (submit && !complete(label)) return fail(400, "Every criterion needs a status, the routing needs a choice, and a request needs its gap.");
+    const caseSha = CONTENT.cases[caseId].case_sha;
+    const write = row
+      ? env.DB.prepare("UPDATE labels SET body = ?, rev = rev + 1, updated_at = ?, submitted_at = ?, content_sha = ?, case_sha = ? " +
+                       "WHERE labeler_id = ? AND case_id = ? AND rev = ? AND submitted_at IS NULL")
+          .bind(JSON.stringify(label), at, submit ? at : null, CONTENT.content_sha, caseSha, me.id, caseId, rev)
+      : env.DB.prepare("INSERT INTO labels (labeler_id, case_id, body, rev, updated_at, submitted_at, content_sha, case_sha) " +
+                       "VALUES (?, ?, ?, 1, ?, ?, ?, ?) ON CONFLICT (labeler_id, case_id) DO NOTHING")
+          .bind(me.id, caseId, JSON.stringify(label), at, submit ? at : null, CONTENT.content_sha, caseSha);
+    const stmts = [write];
+    if (submit) stmts.push(event(env, me.id, "label submitted", { labeler: me.id, caseId, onlyIfChanged: true, detail: { body: label, content_sha: CONTENT.content_sha, case_sha: caseSha } }));
+    else if (!row) stmts.push(event(env, me.id, "label started", { labeler: me.id, caseId, onlyIfChanged: true }));
+    const results = await env.DB.batch(stmts);
+    // Another save got in first (between the read above and this write): nothing was written.
+    if (!results[0].meta.changes) return fail(409, "This case was changed in another tab or on another device.", "stale");
+    return json({ ok: true, rev: rev + 1, updated_at: at, submitted_at: submit ? at : null, complete: complete(label), label });
   }
   return fail(404, "Not found.");
 }
@@ -218,7 +255,7 @@ async function labelerApi(request, env, path, me) {
 function cleanCases(list) {
   if (!Array.isArray(list)) throw new BadRequest("cases must be a list");
   const out = [...new Set(list)];
-  for (const id of out) if (!CONTENT.cases[id]) throw new BadRequest(`unknown case ${String(id).slice(0, 40)}`);
+  for (const id of out) if (!isCase(id)) throw new BadRequest(`unknown case ${String(id).slice(0, 40)}`);
   return out;
 }
 
@@ -236,8 +273,7 @@ async function adminApi(request, env, path) {
         consent_at: l.consent_at, training_done_at: l.training_done_at, created_at: l.created_at, revoked_at: l.revoked_at,
         cases: CONTENT.order.filter(id => assignments.some(a => a.labeler_id === l.id && a.case_id === id)).map(id => {
           const r = labels.find(x => x.labeler_id === l.id && x.case_id === id);
-          return { case: id, status: r ? (r.submitted_at ? "submitted" : (complete(JSON.parse(r.body)) ? "complete" : "started")) : "not started",
-                   updated_at: r ? r.updated_at : null, submitted_at: r ? r.submitted_at : null };
+          return { case: id, status: statusOf(r), updated_at: r ? r.updated_at : null, submitted_at: r ? r.submitted_at : null };
         }),
       })),
     });
@@ -249,31 +285,32 @@ async function adminApi(request, env, path) {
     const email = clip(b.invited_email, "invited_email"), note = clip(b.note, "note");
     const cases = cleanCases(b.cases || []);
     const id = randomId(), token = randomToken(), at = now();
-    const stmts = [env.DB.prepare("INSERT INTO labelers (id, token_hash, invited_name, invited_email, note, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(id, await sha256(token), name, email || null, note || null, at)];
-    for (const c of cases) stmts.push(env.DB.prepare("INSERT INTO assignments (labeler_id, case_id, assigned_at) VALUES (?, ?, ?)").bind(id, c, at));
-    await env.DB.batch(stmts);
-    await logEvent(env, "owner", "labeler invited", { labeler: id, detail: { invited_name: name, cases } });
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO labelers (id, token_hash, invited_name, invited_email, note, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(id, await sha256(token), name, email || null, note || null, at),
+      ...cases.map(c => env.DB.prepare("INSERT INTO assignments (labeler_id, case_id, assigned_at) VALUES (?, ?, ?)").bind(id, c, at)),
+      event(env, "owner", "labeler invited", { labeler: id, detail: { invited_name: name, cases } }),
+    ]);
     return json({ id, link: new URL("/l/" + token, request.url).toString() });
   }
   if (path === "/api/admin/export" && method === "GET") {
     const { results } = await env.DB.prepare(
-      "SELECT l.labeler_id, l.case_id, l.body, l.updated_at, l.submitted_at, l.content_sha, p.credit_name, p.role, p.consent_at, " +
-      "p.training_done_at, p.invited_name FROM labels l JOIN labelers p ON p.id = l.labeler_id WHERE l.submitted_at IS NOT NULL " +
+      "SELECT l.labeler_id, l.case_id, l.body, l.rev, l.updated_at, l.submitted_at, l.content_sha, l.case_sha, p.credit_name, p.role, " +
+      "p.consent_at, p.training_done_at, p.invited_name FROM labels l JOIN labelers p ON p.id = l.labeler_id WHERE l.submitted_at IS NOT NULL " +
       "ORDER BY l.labeler_id, l.case_id").all();
     return json({
       exported_at: now(), content_sha: CONTENT.content_sha,
-      note: "Submitted labels only. content_sha on each label is the fingerprint of the case content the labeler saw.",
+      note: "Submitted labels only. case_sha is the fingerprint of the case record the labeler's page showed; content_sha, of all the site's case content then. kind is golden or practice.",
       labels: results.map(r => ({ labeler_id: r.labeler_id, invited_name: r.invited_name, credit_name: r.credit_name, role: r.role,
-        consent_at: r.consent_at, training_done_at: r.training_done_at, case: r.case_id, submitted_at: r.submitted_at,
-        updated_at: r.updated_at, content_sha: r.content_sha, label: JSON.parse(r.body) })),
+        consent_at: r.consent_at, training_done_at: r.training_done_at, case: r.case_id, kind: isCase(r.case_id) ? CONTENT.cases[r.case_id].kind : "unknown",
+        submitted_at: r.submitted_at, updated_at: r.updated_at, revision: r.rev, case_sha: r.case_sha, content_sha: r.content_sha, label: JSON.parse(r.body) })),
     });
   }
   if (path === "/api/admin/events" && method === "GET") {
     const { results } = await env.DB.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 500").all();
     return json({ events: results.map(e => ({ ...e, detail: e.detail ? JSON.parse(e.detail) : null })) });
   }
-  const m = path.match(/^\/api\/admin\/labelers\/(lb_[0-9a-f]{16})\/(cases|link|revoke|reopen)$/);
+  const m = path.match(/^\/api\/admin\/labelers\/(lb_[0-9a-f]{16})\/(cases|link|revoke|reopen|remove)$/);
   if (m && method === "POST") {
     const [, id, what] = m;
     const l = await env.DB.prepare("SELECT * FROM labelers WHERE id = ?").bind(id).first();
@@ -286,28 +323,41 @@ async function adminApi(request, env, path) {
       if (keep.length) throw new BadRequest(`these cases already have saved labels and stay assigned: ${keep.join(", ")}`);
       const at = now();
       await env.DB.batch([env.DB.prepare("DELETE FROM assignments WHERE labeler_id = ?").bind(id),
-        ...cases.map(c => env.DB.prepare("INSERT INTO assignments (labeler_id, case_id, assigned_at) VALUES (?, ?, ?)").bind(id, c, at))]);
-      await logEvent(env, "owner", "cases assigned", { labeler: id, detail: { cases } });
+        ...cases.map(c => env.DB.prepare("INSERT INTO assignments (labeler_id, case_id, assigned_at) VALUES (?, ?, ?)").bind(id, c, at)),
+        event(env, "owner", "cases assigned", { labeler: id, detail: { cases } })]);
       return json({ ok: true });
     }
     if (what === "link") {
       const token = randomToken();
-      await env.DB.prepare("UPDATE labelers SET token_hash = ?, revoked_at = NULL WHERE id = ?").bind(await sha256(token), id).run();
-      await logEvent(env, "owner", "new link made (the old one stops working)", { labeler: id });
+      await env.DB.batch([env.DB.prepare("UPDATE labelers SET token_hash = ?, revoked_at = NULL WHERE id = ?").bind(await sha256(token), id),
+        event(env, "owner", "new link made (the old one stops working)", { labeler: id })]);
       return json({ link: new URL("/l/" + token, request.url).toString() });
     }
     if (what === "revoke") {
-      await env.DB.prepare("UPDATE labelers SET revoked_at = ? WHERE id = ?").bind(now(), id).run();
-      await logEvent(env, "owner", "link turned off", { labeler: id });
+      await env.DB.batch([env.DB.prepare("UPDATE labelers SET revoked_at = ? WHERE id = ?").bind(now(), id),
+        event(env, "owner", "link turned off", { labeler: id })]);
       return json({ ok: true });
     }
     if (what === "reopen") {
-      const caseId = typeof b.case === "string" ? b.case : "";
+      const caseId = isCase(b.case) ? b.case : "";
       const reason = clip(b.reason, "reason");
-      if (!reason) throw new BadRequest("please give a reason; it is kept in the audit trail");
-      const r = await env.DB.prepare("UPDATE labels SET submitted_at = NULL WHERE labeler_id = ? AND case_id = ? AND submitted_at IS NOT NULL").bind(id, caseId).run();
-      if (!r.meta.changes) return fail(404, "That case is not submitted.");
-      await logEvent(env, "owner", "label reopened", { labeler: id, caseId, detail: { reason } });
+      if (!reason) throw new BadRequest("please give a reason; it is kept in the activity log");
+      const r = await env.DB.batch([
+        env.DB.prepare("UPDATE labels SET submitted_at = NULL, rev = rev + 1 WHERE labeler_id = ? AND case_id = ? AND submitted_at IS NOT NULL").bind(id, caseId),
+        event(env, "owner", "label reopened", { labeler: id, caseId, onlyIfChanged: true, detail: { reason } })]);
+      if (!r[0].meta.changes) return fail(404, "That case is not submitted.");
+      return json({ ok: true });
+    }
+    if (what === "remove") {
+      // On a person's request: their labels, assignments, and details go; the audit trail keeps what happened and when,
+      // with the details of their events cleared, and records the removal.
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM labels WHERE labeler_id = ?").bind(id),
+        env.DB.prepare("DELETE FROM assignments WHERE labeler_id = ?").bind(id),
+        env.DB.prepare("DELETE FROM labelers WHERE id = ?").bind(id),
+        env.DB.prepare("UPDATE events SET detail = NULL WHERE labeler_id = ? AND detail IS NOT NULL").bind(id),
+        event(env, "owner", "details removed on request", { labeler: id }),
+      ]);
       return json({ ok: true });
     }
   }
@@ -321,34 +371,28 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     try {
-      if (request.method === "GET" && (path === "/" || path === "")) return html(landing("This site is for invited labelers. Open the personal link you were sent."));
-      if (request.method === "GET" && path.startsWith("/l/")) {
-        const token = path.slice(3);
-        const row = token && token.length <= 100
-          ? await env.DB.prepare("SELECT id FROM labelers WHERE token_hash = ? AND revoked_at IS NULL").bind(await sha256(token)).first() : null;
-        if (!row) return html(landing("This link isn't valid any more. Ask the person who sent it for a new one."), 404);
-        await logEvent(env, row.id, "signed in with link", { labeler: row.id });
-        return new Response(null, { status: 303, headers: { ...SECURITY_HEADERS, Location: "/app",
-          "Set-Cookie": `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${COOKIE_DAYS * 86400}` } });
-      }
+      if (request.method === "GET" && (path === "/" || path === "")) return landing("This site is for invited labelers. Open the personal link you were sent.");
+      if (request.method === "GET" && path.startsWith("/l/")) return await linkPage(request, env, path.slice(3));
       if (request.method === "GET" && (path === "/app" || path === "/training")) {
         const me = await currentLabeler(request, env);
-        if (!me) return html(landing("Please open the personal link you were sent. If it doesn't work, ask for a new one."), 401);
-        return html(path === "/app" ? CONTENT.pages.app : CONTENT.pages.training);
+        if (!me) return landing("Please open the personal link you were sent. If it doesn't work, ask for a new one.", 401);
+        return path === "/app" ? html("app", CONTENT.pages.app) : html("training", CONTENT.pages.training);
       }
-      if (request.method === "GET" && path === "/admin") return html(CONTENT.pages.admin);
+      if (request.method === "GET" && path === "/admin") return html("admin", CONTENT.pages.admin);
       if (path.startsWith("/api/")) {
-        // Changes must come from this site's own pages: a cross-site form cannot set this header.
+        // Changes must come from this site's own pages: another site cannot send this header without permission.
         if (request.method !== "GET" && request.headers.get("X-Labeling") !== "1") return fail(403, "Missing request header.");
+        if (path === "/api/session" && request.method === "POST") return await startSession(request, env);
         if (path.startsWith("/api/admin/")) {
-          if (!adminAllowed(request, env)) return fail(401, "The admin key is missing or wrong.");
+          if (adminKey(env).length < 24) return fail(503, "The site has no admin key set. Run the Deploy labeling site workflow again.", "no_admin_key");
+          if (!adminAllowed(request, env)) return fail(401, "The admin key is wrong.");
           return await adminApi(request, env, path);
         }
         const me = await currentLabeler(request, env);
         if (!me) return fail(401, "Please open your personal link again.");
         return await labelerApi(request, env, path, me);
       }
-      return html(landing("Page not found."), 404);
+      return landing("Page not found.", 404);
     } catch (e) {
       if (e instanceof BadRequest) return fail(400, e.message);
       console.error(e);

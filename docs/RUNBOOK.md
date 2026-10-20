@@ -52,7 +52,7 @@ The online labeling site (labeling-site/README.md; ARCHITECTURE.md, ADR-13) is s
 - **Collect labels:** download submitted labels from the admin page; Claude adds them to the repository through a pull request.
 - **If a link leaks:** make a new link for that person on the admin page (the old one stops at once), and check the activity log for sign-ins.
 - **If the admin key leaks:** change LABELING_ADMIN_KEY in the release environment and run the deploy workflow again.
-- **Remove a person's details on request:** labeling-site/README.md, Removing someone's details; record it in the decision log.
+- **Remove a person's details on request:** the admin page's "Remove this person's details" (labeling-site/README.md); record it in the decision log.
 - **Shut down:** delete the Worker and the D1 database named prior-auth-labeling in the Cloudflare dashboard, after downloading anything to keep.
 
 ## Demo path

@@ -16,7 +16,7 @@ main.single{display:block;max-width:980px}
 .linkbox{background:var(--accent-weak);border:1px solid var(--accent);border-radius:8px;padding:10px;margin:10px 0;word-break:break-all}
 .err{color:var(--warn);font-size:14px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
-table.log{width:100%;border-collapse:collapse;font-size:12.5px}table.log td,table.log th{text-align:left;padding:5px;border-top:1px solid var(--line);vertical-align:top}
+.logwrap{overflow-x:auto}table.log{width:100%;border-collapse:collapse;font-size:12.5px}table.log td,table.log th{text-align:left;padding:5px;border-top:1px solid var(--line);vertical-align:top}
 </style>
 </head>
 <body>
@@ -24,7 +24,7 @@ table.log{width:100%;border-collapse:collapse;font-size:12.5px}table.log td,tabl
 <main class="single" id="main">
   <div class="card" id="keycard">
     <h2>Sign in</h2>
-    <p>Paste the admin key (the value you saved as LABELING_ADMIN_KEY). It stays in this browser tab only, and is forgotten when you close the tab.</p>
+    <p>Paste the admin key (the value you saved as LABELING_ADMIN_KEY). This tab keeps it while it is open; click <b>Sign out</b> when you're done, especially on a shared computer.</p>
     <div class="field"><input type="password" id="key" autocomplete="off"></div>
     <p class="err" id="keyerr"></p>
     <button class="btn" id="keygo">Sign in</button>
@@ -77,7 +77,7 @@ function render() {
   h += '<div class="card"><h2>Labelers</h2>';
   if (!STATE.labelers.length) h += '<p>No one invited yet.</p>';
   STATE.labelers.forEach(l => {
-    h += '<div class="crit"><div class="name">' + esc(l.invited_name) + (l.revoked_at ? ' <span class="chip">link off</span>' : "") + '</div>';
+    h += '<div class="crit"><div class="name">' + esc(l.invited_name) + (l.revoked_at ? ' <span class="chip">link off</span>' : "") + ' <span class="status">(' + esc(l.id) + ')</span></div>';
     h += '<p class="status">' + (l.consent_at ? "Credited as <b>" + esc(l.credit_name) + "</b>" + (l.role ? ", " + esc(l.role) : "") + "; agreed " + esc(when(l.consent_at)) : "Hasn't opened the link and agreed yet") +
       (l.training_done_at ? "; says they did the training (" + esc(when(l.training_done_at)) + ")" : "") + (l.invited_email ? "; " + esc(l.invited_email) : "") + (l.note ? "; " + esc(l.note) : "") + '</p>';
     h += '<div>' + (l.cases.length ? l.cases.map(c => '<span class="chip ' + (c.status === "submitted" ? "done" : c.status === "not started" ? "" : "part") + '">' +
@@ -85,7 +85,8 @@ function render() {
     h += '<details><summary>Change cases, links, or reopen a case</summary>' +
       '<div class="field"><label>Assigned cases</label>' + casePicker("cases_" + l.id, l.cases.map(c => c.case)) + '<button class="btn ghost" data-act="cases" data-id="' + l.id + '">Save the cases</button></div>' +
       '<div class="row"><button class="btn ghost" data-act="link" data-id="' + l.id + '">Make a new link</button>' +
-      (l.revoked_at ? "" : '<button class="btn ghost" data-act="revoke" data-id="' + l.id + '">Turn the link off</button>') + '</div>';
+      (l.revoked_at ? "" : '<button class="btn ghost" data-act="revoke" data-id="' + l.id + '">Turn the link off</button>') + '</div>' +
+      '<div class="row"><button class="btn ghost" data-act="remove" data-id="' + l.id + '">Remove this person\'s details</button><span class="status">Only if they ask. Deletes their labels and details from this site; the activity log keeps what happened, without details.</span></div>';
     const sub = l.cases.filter(c => c.status === "submitted");
     if (sub.length) h += '<div class="row"><select id="ro_' + l.id + '">' + sub.map(c => '<option value="' + esc(c.case) + '">' + esc(STATE.cases.find(x => x.case === c.case).name) + '</option>').join("") +
       '</select><input type="text" id="rr_' + l.id + '" maxlength="300" placeholder="Reason (kept in the activity log)" style="max-width:340px"><button class="btn ghost" data-act="reopen" data-id="' + l.id + '">Reopen it</button></div>';
@@ -116,10 +117,11 @@ function showLink(box, link) {
 }
 async function act(b) {
   const id = b.dataset.id, what = b.dataset.act, out = document.getElementById("out_" + id);
-  if ((what === "link" || what === "revoke") && b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Click again to confirm"; return; }
+  if ((what === "link" || what === "revoke" || what === "remove") && b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = what === "remove" ? "Click again to remove for good" : "Click again to confirm"; return; }
   try {
     if (what === "cases") { await api("/api/admin/labelers/" + id + "/cases", { method: "POST", body: { cases: picked("cases_" + id) } }); await load(); }
     if (what === "revoke") { await api("/api/admin/labelers/" + id + "/revoke", { method: "POST", body: {} }); await load(); }
+    if (what === "remove") { await api("/api/admin/labelers/" + id + "/remove", { method: "POST", body: {} }); await load(); return; }
     if (what === "reopen") {
       await api("/api/admin/labelers/" + id + "/reopen", { method: "POST", body: { case: document.getElementById("ro_" + id).value, reason: document.getElementById("rr_" + id).value } });
       await load();
@@ -138,10 +140,10 @@ async function exportLabels() {
 async function showLog() {
   try {
     const { events } = await api("/api/admin/events");
-    const names = Object.fromEntries(STATE.labelers.map(l => [l.id, l.invited_name]));
-    document.getElementById("log").innerHTML = '<table class="log"><tr><th>When</th><th>Who</th><th>What</th><th>Case</th><th>Details</th></tr>' +
+    const names = Object.fromEntries(STATE.labelers.map(l => [l.id, l.invited_name]));  // removed people show as their id
+    document.getElementById("log").innerHTML = '<div class="logwrap"><table class="log"><tr><th>When</th><th>Who</th><th>What</th><th>Case</th><th>Details</th></tr>' +
       events.map(e => '<tr><td>' + esc(when(e.at)) + '</td><td>' + esc(e.actor === "owner" ? "you" : (names[e.actor] || e.actor)) + '</td><td>' + esc(e.action) + (e.labeler_id && e.actor === "owner" ? " (" + esc(names[e.labeler_id] || e.labeler_id) + ")" : "") +
-        '</td><td>' + esc(e.case_id || "") + '</td><td>' + esc(e.detail && e.action !== "label submitted" ? JSON.stringify(e.detail) : "") + '</td></tr>').join("") + '</table>';
+        '</td><td>' + esc(e.case_id || "") + '</td><td>' + esc(e.detail && e.action !== "label submitted" ? JSON.stringify(e.detail) : "") + '</td></tr>').join("") + '</table></div>';
   } catch (e) { alert(e.message); }
 }
 if (KEY) load().catch(() => { KEY = null; try { sessionStorage.removeItem("labeling-admin-key"); } catch (e) {} });

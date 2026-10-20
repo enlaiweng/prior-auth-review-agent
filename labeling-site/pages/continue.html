@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Case Labeling</title>
+<style>
+__CSS__
+main.single{display:block;max-width:640px}
+.err{color:var(--warn);font-size:14px}
+</style>
+</head>
+<body>
+<header><h1>Case Labeling</h1></header>
+<main class="single">
+  <div class="card">
+    <h2>Welcome</h2>
+    <p>This is the personal link for <b>__FOR__</b>.</p>
+    <p>__SWITCH__</p>
+    <button class="btn" id="go">Continue</button>
+    <p class="err" id="err"></p>
+    <p class="status">This site collects labels for a research project on prior authorization for lower back MRI. The cases are made-up records; no real patient is in them.</p>
+  </div>
+</main>
+<script>
+"use strict";
+document.getElementById("go").onclick = async () => {
+  const b = document.getElementById("go"), err = document.getElementById("err");
+  b.disabled = true; err.textContent = "";
+  try {
+    const r = await fetch("/api/session", { method: "POST", credentials: "same-origin",
+      headers: { "X-Labeling": "1", "Content-Type": "application/json" }, body: JSON.stringify({ token: location.pathname.slice(3) }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "The server answered " + r.status + ".");
+    location.replace("/app");
+  } catch (e) { err.textContent = e.message; b.disabled = false; }
+};
+</script>
+</body>
+</html>
