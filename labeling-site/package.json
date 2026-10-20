@@ -1,0 +1,13 @@
+{
+  "name": "prior-auth-labeling-site",
+  "private": true,
+  "description": "The online labeling site for outside labelers: a Cloudflare Worker with a D1 database (see README.md).",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "test": "node --test test/api.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.147.0"
+  }
+}

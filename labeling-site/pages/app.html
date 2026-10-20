@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Labeling</title>
+<style>
+__CSS__
+main.single{display:block;max-width:860px}
+.lead{font-size:16px}
+table.cases{width:100%;border-collapse:collapse;font-size:14px}
+table.cases td,table.cases th{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:middle}
+table.cases th{color:var(--muted);font-weight:600;border-top:0}
+.chip{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;border:1px solid var(--line)}
+.chip.done{color:var(--ok);border-color:var(--ok)}.chip.part{color:var(--warn);border-color:var(--warn)}
+.field{margin:10px 0}.field label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+.check{display:flex;gap:8px;align-items:flex-start;margin:10px 0;font-size:14px}.check input{margin-top:3px}
+.err{color:var(--warn);font-size:14px}
+.ro .opts label,.ro .ev label{opacity:.75}
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;align-items:center;justify-content:center;padding:16px}
+#modal .card{max-width:480px;width:100%}
+a.btn{text-decoration:none;display:inline-block}
+@media (max-width:900px){table.cases td:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Case Labeling</h1>
+  <nav id="nav"></nav>
+  <div class="tools">
+    <button class="btn ghost" id="homebtn" style="display:none">Your cases</button>
+    <a class="btn ghost" id="trainbtn" href="/training" target="_blank" rel="noopener" style="display:none">Training</a>
+    <button class="btn ghost" id="showref" style="display:none">Policy and criteria</button>
+  </div>
+</header>
+<main id="main" class="single"><div class="card"><p class="status">Loading...</p></div></main>
+<div id="refdlg" class="card" style="display:none;position:fixed;inset:60px 16px 16px 16px;z-index:10;overflow:auto;max-width:900px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2>Policy and criteria (reference)</h2><button class="btn ghost" id="closeref">Close</button></div>
+  <div class="ref" id="refbody"></div>
+</div>
+<div id="modal"><div class="card"><h2 id="mtitle"></h2><p id="mtext"></p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="mok">Submit</button><button class="btn ghost" id="mcancel">Cancel</button></div></div></div>
+<script>
+"use strict";
+const CRIT = [["C1_red_flag","C1 red flag"],["C2_conservative_4wk","C2 conservative care, four weeks"],["C3_informs_management","C3 informs management"],["C4_no_duplicate_imaging","C4 no duplicate imaging"]];
+const STATUSES = ["supported","unsupported","undeterminable"];
+const ROUTES = ["approve","request","route"];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const main = document.getElementById("main");
+let ME = null, DATA = null, cur = null;
+const LABELS = {};   // case id -> {label, updated_at, submitted_at}
+let saveChain = Promise.resolve(), gapTimer = null, saveMsg = "";
+
+async function api(path, opts = {}) {
+  const headers = { "X-Labeling": "1" };
+  if (opts.body !== undefined) { headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(opts.body); }
+  const r = await fetch(path, { credentials: "same-origin", ...opts, headers });
+  let data = {};
+  try { data = await r.json(); } catch (e) {}
+  if (!r.ok) { const e = new Error(data.error || ("The server answered " + r.status + ".")); e.status = r.status; throw e; }
+  return data;
+}
+function when(iso) { if (!iso) return ""; const d = new Date(iso); return d.toLocaleDateString(undefined, {month:"short", day:"numeric"}) + " at " + d.toLocaleTimeString(undefined, {hour:"numeric", minute:"2-digit"}); }
+function blank() { const c = {}; CRIT.forEach(([k]) => c[k] = {status: "", evidence: []}); return {criteria: c, routing: "", gap_criterion: "", gap_missing: ""}; }
+function complete(l) { if (!l || !l.routing) return false; for (const [k] of CRIT) if (!l.criteria[k].status) return false; if (l.routing === "request" && (!l.gap_criterion || !l.gap_missing.trim())) return false; return true; }
+function ids(v) { const out = [v.request.id, v.patient.id]; v.sections.forEach(s => s.items.forEach(i => out.push(i.id))); out.push(v.note.id); v.note.paragraphs.forEach(p => out.push(p.id)); return out; }
+function signedOut(e) { main.className = "single"; main.innerHTML = '<div class="card"><h2>Please open your link again</h2><p>' + esc(e.message) + '</p><p>Use the personal link you were sent. If it no longer works, ask the person who sent it for a new one.</p></div>'; }
+
+async function start() {
+  try { ME = await api("/api/me"); } catch (e) { return signedOut(e); }
+  if (!ME.labeler.consent_at) return showConsent();
+  try { DATA = await api("/api/cases"); } catch (e) { return signedOut(e); }
+  document.getElementById("homebtn").style.display = document.getElementById("trainbtn").style.display = document.getElementById("showref").style.display = "";
+  const want = location.hash.match(/^#case=([a-z0-9_]+)$/);
+  if (want && DATA.cases.some(c => c.case === want[1])) openCase(want[1]); else showHome();
+}
+
+// ---- Welcome and consent ----
+function showConsent() {
+  const l = ME.labeler;
+  main.className = "single";
+  main.innerHTML = '<div class="card"><h2>Welcome</h2>' +
+    '<p class="lead">Thank you for helping. This site collects independent labels for a research project on prior authorization for lower back MRI under the Medicare policy LCD L34220.</p>' +
+    '<p>The cases are made-up patient records: no real patient is in them. For each case you check the record against four written criteria and choose an outcome. Your answers are saved as you go, and lock when you submit a case.</p>' +
+    '<div class="field"><label for="cname">Your name, as you would like to be credited</label><input type="text" id="cname" maxlength="100" value="' + esc(l.credit_name || l.invited_name || "") + '"></div>' +
+    '<div class="field"><label for="crole">Your role or credentials (optional)</label><input type="text" id="crole" maxlength="150" placeholder="For example: RN, utilization review" value="' + esc(l.role || "") + '"></div>' +
+    '<label class="check"><input type="checkbox" id="agree1"><span>I agree that the name and role above may appear in the project\'s datasheet as one of the people who labeled cases, next to my labels.</span></label>' +
+    '<label class="check"><input type="checkbox" id="agree2"><span>I\'ll label on my own: no AI tools on the cases, no searching for how to label a case, and no discussing a case with anyone until I\'ve submitted it. Looking up what a single medical word means is fine.</span></label>' +
+    '<p class="err" id="cerr"></p><button class="btn" id="cgo">Continue</button></div>';
+  document.getElementById("cgo").onclick = async () => {
+    const err = document.getElementById("cerr"); err.textContent = "";
+    try {
+      await api("/api/consent", { method: "POST", body: { credit_name: document.getElementById("cname").value, role: document.getElementById("crole").value,
+        agree_credit: document.getElementById("agree1").checked, agree_rules: document.getElementById("agree2").checked } });
+      start();
+    } catch (e) { err.textContent = e.message; }
+  };
+}
+
+// ---- Home: the labeler's cases ----
+function showHome() {
+  cur = null; history.replaceState(null, "", "#");
+  document.getElementById("nav").innerHTML = "";
+  const l = ME.labeler;
+  main.className = "single";
+  let h = '<div class="card"><h2>Welcome, ' + esc(l.credit_name || l.invited_name) + '</h2>' +
+    '<p>You have <b>' + ME.assignments.length + '</b> case' + (ME.assignments.length === 1 ? "" : "s") + ' to label. For each one you read the patient\'s record, answer four questions (C1 to C4) with the parts of the record your answer rests on, and choose the outcome: approve, request a document, or route to a physician.</p>' +
+    '<p>Your answers save automatically. You can leave and come back with your link at any time. When a case is finished, click <b>Submit</b>; after that it is locked.</p></div>';
+  h += '<div class="card"><h2>Training (optional, recommended)</h2>' +
+    '<p>New to this? The training explains the policy and every medical word, then walks you through a practice case step by step and lets you try a second one on your own. It takes about an hour and a half and opens in a new tab. Practice answers stay in your browser and are never sent here.</p>' +
+    '<p><a class="btn" href="/training" target="_blank" rel="noopener">Open the training</a></p>' +
+    '<label class="check"><input type="checkbox" id="trained"' + (l.training_done_at ? " checked" : "") + '><span>I\'ve done the training' + (l.training_done_at ? " (" + esc(when(l.training_done_at)) + ")" : "") + '.</span></label></div>';
+  h += '<div class="card"><h2>Your cases</h2>';
+  if (!ME.assignments.length) h += '<p>No cases are assigned to you yet. You\'ll be told when they are.</p>';
+  else {
+    h += '<table class="cases"><tr><th>Case</th><th>Status</th><th>Last change</th><th></th></tr>';
+    ME.assignments.forEach(a => {
+      const chip = a.status === "submitted" ? '<span class="chip done">Submitted</span>' : a.status === "complete" ? '<span class="chip part">Ready to submit</span>' : a.status === "started" ? '<span class="chip part">Started</span>' : '<span class="chip">Not started</span>';
+      h += '<tr><td><b>' + esc(a.name) + '</b></td><td>' + chip + '</td><td>' + esc(when(a.submitted_at || a.updated_at)) + '</td><td><button class="btn ghost" data-open="' + esc(a.case) + '">' + (a.status === "submitted" ? "View" : "Open") + '</button></td></tr>';
+    });
+    h += '</table>';
+  }
+  h += '</div><div class="card"><h2>If you\'re unsure</h2><p>Re-read the record and the <b>Policy and criteria</b> panel (top right), choose the answer you think fits, and move on. "Undeterminable" is a real answer when the record doesn\'t let you decide. Every disagreement between readers is talked through afterward.</p></div>';
+  main.innerHTML = h;
+  main.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openCase(b.dataset.open));
+  document.getElementById("trained").onchange = async e => {
+    try { const r = await api("/api/training", { method: "POST", body: { done: e.target.checked } }); ME.labeler.training_done_at = r.training_done_at; showHome(); }
+    catch (err) { e.target.checked = !e.target.checked; alertMsg(err.message); }
+  };
+  window.scrollTo(0, 0);
+}
+function alertMsg(text) { modal("Something went wrong", text, null); }
+
+// ---- One case: the record and the form ----
+async function openCase(id) {
+  cur = id; history.replaceState(null, "", "#case=" + id);
+  if (!LABELS[id]) {
+    try { const r = await api("/api/labels/" + id); LABELS[id] = { label: r.label || blank(), updated_at: r.updated_at || null, submitted_at: r.submitted_at || null }; }
+    catch (e) { return signedOut(e); }
+  }
+  saveMsg = LABELS[id].updated_at ? "Saved " + when(LABELS[id].updated_at) + "." : "";
+  renderCase(); renderForm(); renderNav(); window.scrollTo(0, 0);
+}
+function view() { return DATA.cases.find(c => c.case === cur); }
+function renderNav() {
+  const nav = document.getElementById("nav"); nav.innerHTML = "";
+  DATA.cases.forEach(c => {
+    const a = ME.assignments.find(x => x.case === c.case), b = document.createElement("button");
+    b.textContent = c.name; b.className = (c.case === cur ? "cur " : "") + (a && a.status === "submitted" ? "done" : "");
+    b.onclick = () => openCase(c.case); nav.appendChild(b);
+  });
+}
+function renderCase() {
+  const c = view(), v = c.view;
+  main.className = "";
+  let h = '<section id="casecol"><div class="card"><h2>' + esc(c.name) + '</h2>';
+  h += '<p><code class="id">' + esc(v.request.id) + '</code> ' + esc(v.request.text) + '. Requested on ' + esc(v.request.date) + '.</p>';
+  h += '<p><code class="id">' + esc(v.patient.id) + '</code> ' + esc(v.patient.text) + '.</p></div>';
+  v.sections.forEach(s => { h += '<div class="card"><h3>' + esc(s.title) + '</h3><ul class="items">'; s.items.forEach(i => { h += '<li><code class="id">' + esc(i.id) + '</code> ' + esc(i.text) + '</li>'; }); h += '</ul></div>'; });
+  h += '<div class="card"><h3>Visit note</h3><p class="status"><code class="id">' + esc(v.note.id) + '</code> dated ' + esc(v.note.date) + '</p>';
+  v.note.paragraphs.forEach(p => { h += '<p class="para"><code class="id">' + esc(p.id) + '</code> ' + esc(p.text) + '</p>'; });
+  h += '</div></section><section class="side" id="formcol"></section>';
+  main.innerHTML = h;
+}
+function renderForm() {
+  const c = view(), rec = LABELS[cur], l = rec.label, locked = !!rec.submitted_at, all = ids(c.view);
+  const dis = locked ? " disabled" : "";
+  let h = '<div class="card' + (locked ? " ro" : "") + '"><h2>Your labels, ' + esc(c.name) + '</h2><p class="status">' + esc(DATA.legend) + '</p>';
+  CRIT.forEach(([k, label]) => { const x = l.criteria[k];
+    h += '<div class="crit"><div class="name">' + esc(label) + '</div><div class="opts">';
+    STATUSES.forEach(s => { h += '<label><input type="radio" name="' + k + '" value="' + s + '"' + (x.status === s ? " checked" : "") + dis + '> ' + s + '</label>'; });
+    h += '</div><details' + (x.evidence.length ? " open" : "") + '><summary>Evidence (' + x.evidence.length + ' selected)</summary><div class="ev">';
+    all.forEach(id => { const on = x.evidence.includes(id); h += '<label class="' + (on ? "on" : "") + '"><input type="checkbox" data-crit="' + k + '" value="' + esc(id) + '"' + (on ? " checked" : "") + dis + '>' + esc(id) + '</label>'; });
+    h += '</div></details></div>'; });
+  h += '<div class="crit"><div class="name">Routing</div><div class="opts">';
+  ROUTES.forEach(s => { h += '<label><input type="radio" name="routing" value="' + s + '"' + (l.routing === s ? " checked" : "") + dis + '> ' + s + '</label>'; });
+  h += '</div><div id="gapbox" style="display:' + (l.routing === "request" ? "block" : "none") + '"><p class="status">For a documentation request: which criterion, and what is missing.</p><select id="gapc"' + dis + '><option value="">Criterion</option>' +
+    ["C1","C2","C3","C4"].map(g => '<option' + (l.gap_criterion === g ? " selected" : "") + '>' + g + '</option>').join("") + '</select><div style="height:6px"></div><input type="text" id="gapm" maxlength="500" placeholder="What is missing" value="' + esc(l.gap_missing) + '"' + dis + '></div></div>';
+  if (locked) h += '<p class="status ok">Submitted ' + esc(when(rec.submitted_at)) + '. This case is locked.</p>';
+  else h += '<p class="status ' + (complete(l) ? "ok" : "warn") + '" id="state">' + (complete(l) ? "Complete. " : "Not complete yet: every criterion needs a status, the routing needs a choice, and a request needs its gap. ") + esc(saveMsg) + '</p>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="submit"' + (complete(l) ? "" : " disabled") + '>Submit this case</button></div>';
+  const i = DATA.cases.findIndex(x => x.case === cur);
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn ghost" id="back">Your cases</button>' +
+    (i > 0 ? '<button class="btn ghost" id="prev">Previous case</button>' : "") + (i < DATA.cases.length - 1 ? '<button class="btn ghost" id="next">Next case</button>' : "") + '</div></div>';
+  const side = document.getElementById("formcol"), keep = side.scrollTop;
+  side.innerHTML = h; side.scrollTop = keep;
+  document.getElementById("back").onclick = () => refreshHome();
+  if (i > 0) document.getElementById("prev").onclick = () => openCase(DATA.cases[i - 1].case);
+  if (i < DATA.cases.length - 1) document.getElementById("next").onclick = () => openCase(DATA.cases[i + 1].case);
+  if (locked) return;
+  side.querySelectorAll("input[type=radio]").forEach(el => el.onchange = () => {
+    if (el.name === "routing") { l.routing = el.value; if (el.value !== "request") { l.gap_criterion = ""; l.gap_missing = ""; } }
+    else l.criteria[el.name].status = el.value;
+    save(); });
+  side.querySelectorAll("input[type=checkbox]").forEach(el => el.onchange = () => {
+    const x = l.criteria[el.dataset.crit], j = x.evidence.indexOf(el.value);
+    if (el.checked && j < 0) x.evidence.push(el.value); if (!el.checked && j >= 0) x.evidence.splice(j, 1);
+    x.evidence.sort((a, b) => all.indexOf(a) - all.indexOf(b)); save(); });
+  const gc = document.getElementById("gapc"), gm = document.getElementById("gapm");
+  if (gc) gc.onchange = () => { l.gap_criterion = gc.value; save(); };
+  if (gm) gm.oninput = () => { l.gap_missing = gm.value; clearTimeout(gapTimer); gapTimer = setTimeout(() => save(false), 700); };
+  document.getElementById("submit").onclick = () => modal("Submit " + c.name + "?", "After you submit, this case is locked and your answers can't be changed. If you need to change something later, ask the person who invited you.", doSubmit);
+}
+// Saves are sent one at a time, in order, so the last change always wins.
+function save(redraw = true) {
+  const id = cur, body = JSON.parse(JSON.stringify(LABELS[id].label));
+  saveMsg = "Saving...";
+  if (redraw) renderForm(); else setState();
+  saveChain = saveChain.then(async () => {
+    try { const r = await api("/api/labels/" + id, { method: "PUT", body }); LABELS[id].updated_at = r.updated_at; if (id === cur) saveMsg = "Saved " + when(r.updated_at) + "."; }
+    catch (e) { if (id === cur) saveMsg = "Not saved: " + e.message; if (e.status === 401) return signedOut(e); }
+    if (id === cur) setState();
+  });
+  return saveChain;
+}
+function setState() {
+  const s = document.getElementById("state"), b = document.getElementById("submit"), l = LABELS[cur] && LABELS[cur].label;
+  if (!s || !l) return;
+  s.className = "status " + (complete(l) ? "ok" : "warn");
+  s.textContent = (complete(l) ? "Complete. " : "Not complete yet: every criterion needs a status, the routing needs a choice, and a request needs its gap. ") + saveMsg;
+  if (b) b.disabled = !complete(l);
+}
+async function doSubmit() {
+  const id = cur;
+  clearTimeout(gapTimer);
+  await save(false);
+  try { const r = await api("/api/labels/" + id + "/submit", { method: "POST", body: {} }); LABELS[id].submitted_at = r.submitted_at; }
+  catch (e) { return alertMsg(e.message); }
+  ME = await api("/api/me"); renderForm(); renderNav();
+}
+async function refreshHome() { try { ME = await api("/api/me"); } catch (e) { return signedOut(e); } showHome(); }
+
+function modal(title, text, onOk) {
+  const m = document.getElementById("modal");
+  document.getElementById("mtitle").textContent = title; document.getElementById("mtext").textContent = text;
+  const ok = document.getElementById("mok"), cancel = document.getElementById("mcancel");
+  ok.style.display = onOk ? "" : "none"; cancel.textContent = onOk ? "Cancel" : "Close";
+  m.style.display = "flex";
+  ok.onclick = () => { m.style.display = "none"; onOk(); };
+  cancel.onclick = () => { m.style.display = "none"; };
+}
+function refHtml() {
+  const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split(/\n\s*\n/).map(p => "<p>" + p.replace(/\n\* /g, "<br>&bull; ").replace(/^\* /, "&bull; ").replace(/\n/g, "<br>") + "</p>").join("");
+  return "<h3>Criteria</h3>" + md(DATA.criteria) + "<h3>Routing outcomes</h3>" + md(DATA.outputs) + "<h3>Policy text, LCD L34220</h3><p class='status'>" + esc(DATA.policy_head).replace(/\n/g, "<br>") + "</p>" + md(DATA.policy_body);
+}
+document.getElementById("showref").onclick = () => { document.getElementById("refbody").innerHTML = refHtml(); document.getElementById("refdlg").style.display = "block"; };
+document.getElementById("closeref").onclick = () => { document.getElementById("refdlg").style.display = "none"; };
+document.getElementById("homebtn").onclick = () => refreshHome();
+start();
+</script>
+</body>
+</html>

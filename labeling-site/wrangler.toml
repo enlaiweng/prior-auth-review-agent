@@ -1,0 +1,18 @@
+# The online labeling site: one Cloudflare Worker and one D1 database (see README.md).
+# Deployed by .github/workflows/labeling-site-deploy.yml, which the owner approves.
+name = "prior-auth-labeling"
+main = "src/worker.js"
+compatibility_date = "2026-09-15"
+workers_dev = true
+preview_urls = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "prior-auth-labeling"
+# The deploy workflow finds or creates the database and writes its real id here before deploying,
+# so no account-specific id is kept in the repository. Local runs (wrangler dev --local) ignore it.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# ADMIN_KEY is a Worker secret, set by the deploy workflow from the release environment's
+# LABELING_ADMIN_KEY. Without it (or if it is shorter than 24 characters) the admin pages refuse every request.

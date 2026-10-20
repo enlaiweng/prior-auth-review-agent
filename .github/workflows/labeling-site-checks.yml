@@ -1,0 +1,41 @@
+# Checks the online labeling site without deploying it, on GitHub's computers.
+# What it uses: the repository's files only. No secrets, no environment, read-only permission.
+# When it runs: on pull requests and pushes that change the site, and by hand.
+# What it checks: the site's tests (labeling-site/test/api.test.mjs) against a local Worker and a local database:
+# sign-in by personal link, consent, assigned cases only, saving, submitting and locking, labelers never seeing each
+# other's labels, the admin key, reopening, turning links off, the audit trail, and the security headers.
+name: Labeling site checks
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "labeling-site/**"
+      - ".github/workflows/labeling-site-checks.yml"
+  pull_request:
+    paths:
+      - "labeling-site/**"
+      - ".github/workflows/labeling-site-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        working-directory: labeling-site
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install the pinned tools
+        run: npm ci --no-audit --no-fund
+      - name: Site tests
+        run: node --test test/api.test.mjs

@@ -3,8 +3,8 @@
 # When it runs: on pushes to main or a claude/ branch, and on pull requests, that change the golden set,
 # the tools that build it, or the documents whose text the case pages and prompts quote; also by hand.
 # Two checks:
-#   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, prompts, practice cases, and practice
-#      page from the committed specs, notes, answers, and baselines changes nothing, and every golden note is plain text.
+#   1. Up to date: rebuilding the pairs, bundles, case pages, labeling page, prompts, practice cases, practice page,
+#      and the labeling site's content from the committed specs, notes, answers, and baselines changes nothing, and every golden note is plain text.
 #   2. Valid: every bundle reports "Success: 0 errors" from the pinned HL7 validator (DATASHEET.md).
 name: Validate golden set
 
@@ -19,6 +19,9 @@ on:
       - "eval/tools/**"
       - "eval/fhir-defs/**"
       - "eval/labeling/**"
+      - "labeling-site/build_content.py"
+      - "labeling-site/pages/**"
+      - "labeling-site/src/content.generated.js"
       - "eval/third_reader/**"
       - "docs/EVAL_PLAN.md"
       - "docs/CHARTER.md"
@@ -32,6 +35,9 @@ on:
       - "eval/tools/**"
       - "eval/fhir-defs/**"
       - "eval/labeling/**"
+      - "labeling-site/build_content.py"
+      - "labeling-site/pages/**"
+      - "labeling-site/src/content.generated.js"
       - "eval/third_reader/**"
       - "docs/EVAL_PLAN.md"
       - "docs/CHARTER.md"
