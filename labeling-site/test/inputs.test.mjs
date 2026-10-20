@@ -823,6 +823,10 @@ for (const [what, c] of [["a case with nothing saved", "practice_b"], ["an unkno
 positive("removing a person also wipes what earlier clears recorded about their answers", async () => {
   const { p } = await submittedPerson();
   await act(p.id, "clear", { case: "practice_a", reason: "redo" });
+  const before = (await events(p.id)).find(e => e.action === "label cleared");
+  assert.ok(before && before.detail.reason === "redo" && before.detail.was, "the clear was logged against this person, with details");
   await act(p.id, "remove");
-  assert.ok((await events(p.id)).every(e => e.detail === null));
+  const after = await events(p.id);
+  assert.ok(after.some(e => e.action === "label cleared"), "the log still shows that a clear happened");
+  assert.ok(after.every(e => e.detail === null), "but none of its details");
 });
