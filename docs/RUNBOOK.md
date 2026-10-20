@@ -49,6 +49,9 @@ The online labeling site (labeling-site/README.md; ARCHITECTURE.md, ADR-13) is s
 
 - **Deploy or update:** run the "Deploy labeling site" workflow from main and approve it. It needs CLOUDFLARE_API_TOKEN (with D1 Edit), CLOUDFLARE_ACCOUNT_ID, and LABELING_ADMIN_KEY in the release environment. The run's summary gives the address.
 - **Invite, assign, replace or turn off a link, reopen a case:** the admin page, `/admin`, signed in with the admin key. Every change is in its activity log.
+- **Let someone redo a case:** before they submit, they can click **Clear this case** themselves. After they submit, use **Clear it** for that case on the admin page, with a reason (it starts again from not started), or **Reopen it** to let them change their answers.
+- **Redo a case of your own blind labels:** before uploading, click **Clear this case** on the labeling page. After the blind-labels pull request is merged they are locked; changes go in the final labels at settling.
+- **Step-by-step setup:** the Claude project's guide `claude/labeling-site-setup-2026-10-20.md` walks through deploying, testing, and inviting, one click at a time.
 - **Collect labels:** download submitted labels from the admin page; Claude adds them to the repository through a pull request.
 - **If a link leaks:** make a new link for that person on the admin page (the old one stops at once), and check the activity log for sign-ins.
 - **If the admin key leaks:** change LABELING_ADMIN_KEY in the release environment and run the deploy workflow again.

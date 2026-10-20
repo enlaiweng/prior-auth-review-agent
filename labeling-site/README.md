@@ -21,6 +21,7 @@ Your own blind labels don't go through this site. They stay on `eval/labeling/la
    - Changes save as they go, and the line under the form says whether the last change is saved.
    - If a save fails, it says so and offers **Try saving again**. Closing the tab with an unsaved change asks first.
    - **Submit** sends the answers exactly as shown and locks the case. If the last change isn't saved, it refuses.
+   - **Clear this case**, before submitting, empties that one case so they can start it again. It asks first, and their other cases are kept. After submitting, only you can clear or reopen it.
 
 A labeler never sees anyone else's labels. The site never holds your labels, Gemini's, or the locked intended answers. The practice cases' worked answers appear only inside the training, as in the repository.
 
@@ -38,7 +39,8 @@ Sign in with the admin key (the value of the release environment's `LABELING_ADM
   - each case's status: not started, started, ready to submit, or submitted, with the time.
 - **Change their cases.** A case with a saved label stays assigned.
 - **Make a new link** (the old one stops working at once), or **turn a link off.**
-- **Reopen a submitted case,** with a reason. The reason goes into the activity log.
+- **Reopen a submitted case,** with a reason. The reason goes into the activity log. Their answers stay, and they can change and submit them again.
+- **Clear one case** for one person, submitted or not, with a reason (**Clear it**, click twice to confirm). Their answers for that case are deleted so they can start it again; the case stays assigned and drops out of the download until they submit it again. The activity log keeps the reason and what was cleared.
 - **Remove a person's details**, only if they ask. This deletes their labels and details from the site; the activity log keeps what happened and when, with the details cleared.
 - **Download submitted labels.** One JSON file. Each label carries:
   - who labeled it: their credit name and role, and when they agreed;
@@ -50,7 +52,7 @@ Sign in with the admin key (the value of the release environment's `LABELING_ADM
   - sign-ins: Continue clicks only, never link-checkers;
   - consent and first saves;
   - submits, each with exactly what was locked;
-  - reopenings, link changes, and removals.
+  - reopenings, clears (with what was cleared), link changes, and removals.
 
   Each entry is written together with the change it records. The database refuses to delete or rewrite entries, except clearing a removed person's details.
 
