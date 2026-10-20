@@ -238,8 +238,10 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   await dabs.check("#trained");
   await shows(dabs, /I've done the training \(/, "main");
 
-  // Case 01 opens; Next case goes to Practice A.
+  // Case 01 opens and gets one answer, saved but not submitted; Next case goes to Practice A.
   await opensCase(dabs, "case_01");
+  await picks(dabs, "C1_red_flag", "undeterminable");
+  await saved(dabs);
   await dabs.click("#next");
   await shows(dabs, /Your labels, Practice A/, "#formcol");
   assert.ok(await dabs.isVisible("#prev"), "Previous case is offered");
@@ -286,7 +288,7 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   assert.match(box, /Credited as Dr\. Dabs, Cardiothoracic surgeon/);
   assert.match(box, /says they did the training/);
   assert.match(box, /dabs@example\.org; consult after Gemini/);
-  assert.match(box, /Case 01: not started/);
+  assert.match(box, /Case 01: started/);
   await shot(owner, "08-owner-progress");
 
   // The owner downloads the submitted labels: one file, holding exactly what Dr. Dabs submitted, with who and when.
@@ -294,7 +296,7 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   assert.match(download.suggestedFilename(), /^submitted-labels-\d{4}-\d{2}-\d{2}\.json$/);
   const file = JSON.parse(readFileSync(await download.path(), "utf8"));
   const rows = file.labels.filter(l => l.invited_name === "Dr. Dabs");
-  assert.equal(rows.length, 1, "only the submitted case is in the file");
+  assert.equal(rows.length, 1, "only the submitted case is in the file, not Case 01, which is only started");
   const row = rows[0];
   assert.equal(row.case, "practice_a"); assert.equal(row.kind, "practice");
   assert.equal(row.credit_name, "Dr. Dabs"); assert.equal(row.role, "Cardiothoracic surgeon");
