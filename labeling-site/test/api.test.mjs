@@ -3,36 +3,14 @@
 // The labels below are made-up test values; they describe no golden case.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawn, execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { CONTENT } from "../src/content.generated.js";
+import { startSite, SITE, ADMIN_KEY, ENV } from "./local-site.mjs";
 
-const SITE = dirname(dirname(fileURLToPath(import.meta.url)));
-const PORT = 18700 + Math.floor(Math.random() * 1000);
-const BASE = `http://127.0.0.1:${PORT}`;
-const ADMIN_KEY = "test-admin-key-0123456789-abcdefghij";
-const ENV = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "true" };
-let dev, persist;
+let site, BASE, persist;
 
-before(async () => {
-  persist = mkdtempSync(join(tmpdir(), "labeling-site-"));
-  execFileSync("npx", ["wrangler", "d1", "migrations", "apply", "prior-auth-labeling", "--local", "--persist-to", persist],
-    { cwd: SITE, env: ENV, stdio: "ignore" });
-  dev = spawn("npx", ["wrangler", "dev", "--local", "--ip", "127.0.0.1", "--port", String(PORT), "--persist-to", persist,
-    "--var", `ADMIN_KEY:${ADMIN_KEY}`], { cwd: SITE, env: ENV, stdio: "ignore", detached: true });
-  for (let i = 0; i < 120; i++) {
-    try { if ((await fetch(BASE + "/")).ok) return; } catch (e) {}
-    await new Promise(r => setTimeout(r, 500));
-  }
-  throw new Error("the local Worker did not start");
-});
-after(() => {
-  try { process.kill(-dev.pid); } catch (e) {}
-  rmSync(persist, { recursive: true, force: true });
-});
+before(async () => { site = await startSite(); BASE = site.base; persist = site.persist; });
+after(() => site && site.stop());
 
 const H = { "X-Labeling": "1", "Content-Type": "application/json" };
 const admin = (path, method = "GET", body) => fetch(BASE + path, { method, headers: { ...H, Authorization: "Bearer " + ADMIN_KEY }, body: body && JSON.stringify(body) });

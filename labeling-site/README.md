@@ -113,15 +113,50 @@ If a labeler asks to be removed, use **Remove this person's details** on the adm
 
 In the Cloudflare dashboard, delete the Worker `prior-auth-labeling`, then the D1 database `prior-auth-labeling`, after downloading anything you want to keep.
 
+## How it's tested
+
+Two sets of tests run on every change to the site, in the **Labeling site checks** workflow. Both use the real Worker code with an empty local database, so nothing touches Cloudflare.
+
+- **API tests** (`test/api.test.mjs`) send requests straight to the site and check its answers: who may see and change what, the locking, the audit trail, and the security headers.
+- **Scenarios** (`test/scenarios.test.mjs`) act out real situations from start to finish in a real browser (Chromium), clicking and typing as a person would. Each one plays the owner, one or more labelers, or both:
+  1. An invited clinician's first visit, from your invite to the downloaded file, with the activity log in order.
+  2. A documentation request, with the gap typed just before leaving the case.
+  3. Coming back later, in the same browser and on another device.
+  4. Two labelers on the same case, never seeing each other's answers, each credited separately.
+  5. Only assigned cases, even when someone types another case's address.
+  6. You change someone's cases; a case with saved answers stays.
+  7. A lost link replaced: the old one stops at once, and saved answers stay.
+  8. A link turned off while someone is labeling, then turned back on.
+  9. A submitted case reopened with a reason, fixed, and submitted again.
+  10. A person removed on request: their labels and details go, and the log keeps only what happened.
+  11. Two people on one shared computer.
+  12. Losing the internet while labeling: nothing is lost, Submit waits, and closing the tab warns.
+  13. The same case open in two tabs.
+  14. The cases updated while a page is open.
+  15. The whole path on a phone.
+  16. A whole case with the keyboard only.
+  17. Wrong addresses and wrong keys, and Sign out.
+  18. Names with accents, apostrophes, and symbols.
+  19. Closing the tab a moment after typing.
+  20. A site deployed without an admin key.
+
+  Every scenario also fails if any page has a script error, or a script the site's security policy blocks.
+
+The deploy workflow runs the API tests again before deploying.
+
 ## Working on it
 
 ```
 cd labeling-site
 npm ci
-npm test                      # local Worker and local database; nothing touches Cloudflare
+npm test                      # the API tests
+npx playwright install chromium   # once, for the scenarios
+npm run scenarios             # the scenarios; SCENARIO_SHOTS=<folder> also saves screenshots
 npx wrangler d1 migrations apply prior-auth-labeling --local
 npx wrangler dev --local --var ADMIN_KEY:a-local-admin-key-at-least-24-chars
 ```
+
+Playwright is pinned to 1.56.1, which drives Chromium build 1194. `CHROMIUM_PATH=<file>` points the scenarios at another copy of Chromium.
 
 `src/content.generated.js` is made by `build_content.py` (run by `bash eval/tools/rebuild_golden.sh`) from:
 - the cases;

@@ -48,7 +48,9 @@ function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...headers(null), ...extra } });
 }
 function fail(status, message, code = null) { return json(code ? { error: message, code } : { error: message }, status); }
-function landing(message, status = 200) { return html("landing", CONTENT.pages.landing.replace("__MESSAGE__", escapeHtml(message)), status); }
+// Fills a page's placeholder. A function, not a string, so "$&" or "$`" in a person's name is shown as typed.
+const fill = (page, slot, text) => page.replace(slot, () => text);
+function landing(message, status = 200) { return html("landing", fill(CONTENT.pages.landing, "__MESSAGE__", escapeHtml(message)), status); }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 const now = () => new Date().toISOString();
@@ -155,7 +157,7 @@ async function linkPage(request, env, token) {
   const current = await currentLabeler(request, env);
   const switching = current && current.id !== who.id
     ? `This browser is signed in as ${escapeHtml(current.credit_name || current.invited_name)}. Continuing switches it to ${escapeHtml(who.invited_name)}.` : "";
-  return html("continue", CONTENT.pages.continue.replace("__FOR__", escapeHtml(who.invited_name)).replace("__SWITCH__", switching));
+  return html("continue", fill(fill(CONTENT.pages.continue, "__FOR__", escapeHtml(who.invited_name)), "__SWITCH__", switching));
 }
 
 async function startSession(request, env) {
@@ -320,7 +322,7 @@ async function adminApi(request, env, path) {
       const cases = cleanCases(b.cases || []);
       const { results: has } = await env.DB.prepare("SELECT case_id FROM labels WHERE labeler_id = ?").bind(id).all();
       const keep = has.map(r => r.case_id).filter(c => !cases.includes(c));
-      if (keep.length) throw new BadRequest(`these cases already have saved labels and stay assigned: ${keep.join(", ")}`);
+      if (keep.length) throw new BadRequest(`these cases already have saved labels and stay assigned: ${keep.map(c => CONTENT.cases[c].name).join(", ")}`);
       const at = now();
       await env.DB.batch([env.DB.prepare("DELETE FROM assignments WHERE labeler_id = ?").bind(id),
         ...cases.map(c => env.DB.prepare("INSERT INTO assignments (labeler_id, case_id, assigned_at) VALUES (?, ?, ?)").bind(id, c, at)),

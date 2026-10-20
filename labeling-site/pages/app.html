@@ -8,6 +8,7 @@
 <style>
 __CSS__
 main.single{display:block;max-width:860px}
+.btn[disabled]{opacity:.4;cursor:default}
 .lead{font-size:16px}
 table.cases{width:100%;border-collapse:collapse;font-size:14px}
 table.cases td,table.cases th{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:middle}
@@ -41,7 +42,7 @@ a.btn{text-decoration:none;display:inline-block}
   <div style="display:flex;justify-content:space-between;align-items:center"><h2>Policy and criteria (reference)</h2><button class="btn ghost" id="closeref">Close</button></div>
   <div class="ref" id="refbody"></div>
 </div>
-<div id="modal"><div class="card"><h2 id="mtitle"></h2><p id="mtext"></p>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle" aria-describedby="mtext"><div class="card"><h2 id="mtitle"></h2><p id="mtext"></p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" id="mok">Submit</button><button class="btn ghost" id="mcancel">Cancel</button></div></div></div>
 <script>
 "use strict";
@@ -189,7 +190,7 @@ function renderCase() {
 function stateText(st) {
   if (st.error) return { cls: "warn", text: st.error };
   const base = complete(st.label) ? "Complete. " : INCOMPLETE + " ";
-  if (st.saved < st.edit) return { cls: complete(st.label) ? "ok" : "warn", text: base + "Saving..." };
+  if (st.saved < st.edit || (gapCase !== null && S[gapCase] === st)) return { cls: complete(st.label) ? "ok" : "warn", text: base + "Saving..." };
   return { cls: complete(st.label) ? "ok" : "warn", text: base + (st.updated_at ? "Saved " + when(st.updated_at) + "." : "") };
 }
 function renderForm() {
@@ -297,9 +298,10 @@ function flush() {
 window.addEventListener("beforeunload", e => { if (anyUnsaved()) { e.preventDefault(); e.returnValue = ""; } });
 window.addEventListener("pagehide", () => {
   // Best effort when the tab closes: send the current case's waiting change.
-  const st = S[cur];
+  const st = cur ? S[cur] : null;
+  if (!st) return;   // no case open (the home page): nothing to send
   if (gapCase === cur) { clearTimeout(gapTimer); gapCase = null; st.edit++; }
-  if (!cur || !st || st.submitted_at || st.saved >= st.edit) return;
+  if (st.submitted_at || st.saved >= st.edit) return;
   try { fetch("/api/labels/" + cur, { method: "PUT", keepalive: true, credentials: "same-origin", headers: { "X-Labeling": "1", "Content-Type": "application/json" },
     body: JSON.stringify({ label: st.label, rev: st.rev, content_sha: DATA.content_sha }) }); } catch (e) {}
 });
@@ -331,14 +333,23 @@ async function refreshHome() {
   showHomeWithNotice();
 }
 
+// A question over the page. It takes the keyboard focus (on its main button), keeps Tab inside it, closes with Escape,
+// and gives the focus back to where it was.
 function modal(title, text, onOk) {
-  const m = document.getElementById("modal");
+  const m = document.getElementById("modal"), back = document.activeElement;
   document.getElementById("mtitle").textContent = title; document.getElementById("mtext").textContent = text;
   const ok = document.getElementById("mok"), cancel = document.getElementById("mcancel");
   ok.style.display = onOk ? "" : "none"; cancel.textContent = onOk ? "Cancel" : "Close";
   m.style.display = "flex";
-  ok.onclick = () => { m.style.display = "none"; onOk(); };
-  cancel.onclick = () => { m.style.display = "none"; };
+  const keys = e => {
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+    if (e.key === "Tab") { const b = [ok, cancel].filter(x => x.style.display !== "none"); const i = b.indexOf(document.activeElement); e.preventDefault(); b[(i + (e.shiftKey ? b.length - 1 : 1)) % b.length].focus(); }
+  };
+  function close() { m.style.display = "none"; document.removeEventListener("keydown", keys, true); if (back && document.contains(back)) back.focus(); }
+  document.addEventListener("keydown", keys, true);
+  ok.onclick = () => { close(); onOk(); };
+  cancel.onclick = close;
+  (onOk ? ok : cancel).focus();
 }
 function refHtml() {
   const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split(/\n\s*\n/).map(p => "<p>" + p.replace(/\n\* /g, "<br>&bull; ").replace(/^\* /, "&bull; ").replace(/\n/g, "<br>") + "</p>").join("");
