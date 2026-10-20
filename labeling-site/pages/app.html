@@ -125,7 +125,7 @@ function showHome() {
   main.className = "single";
   let h = '<div class="card"><h2>Welcome, ' + esc(l.credit_name || l.invited_name) + '</h2>' +
     '<p>You have <b>' + ME.assignments.length + '</b> case' + (ME.assignments.length === 1 ? "" : "s") + ' to label. For each one you read the patient\'s record, answer four questions (C1 to C4) with the parts of the record your answer rests on, and choose the outcome: approve, request a document, or route to a physician.</p>' +
-    '<p>Your answers save as you go; the line under the form says when. You can leave and come back with your link at any time. When a case is finished, click <b>Submit</b>; after that it is locked.</p></div>';
+    '<p>Your answers save as you go; the line under the form says when. You can leave and come back with your link at any time. To start a case again before submitting it, click <b>Clear this case</b>. When a case is finished, click <b>Submit</b>; after that it is locked, and only the person who invited you can clear or reopen it.</p></div>';
   h += '<div class="card"><h2>Training (optional, recommended)</h2>' +
     '<p>New to this? The training explains the policy and every medical word, then walks you through a practice case step by step and lets you try a second one on your own. It takes about two hours, opens in a new tab, and has a note at the top on which parts apply to you. Practice answers stay in your browser and are never sent here.</p>' +
     '<p><a class="btn" href="/training" target="_blank" rel="noopener">Open the training</a></p>' +
@@ -217,7 +217,8 @@ function renderForm() {
     const s = stateText(st);
     h += '<p class="status ' + s.cls + '" id="state">' + esc(s.text) + '</p><div style="display:flex;gap:8px;flex-wrap:wrap">' +
       '<button class="btn" id="submit"' + (complete(l) && !locking && !st.error ? "" : " disabled") + '>' + (locking ? "Submitting..." : "Submit this case") + '</button>' +
-      (st.error ? '<button class="btn ghost" id="retry">Try saving again</button>' : "") + '</div>';
+      (st.error ? '<button class="btn ghost" id="retry">Try saving again</button>' : "") +
+      '<button class="btn ghost" id="clearcase"' + (locking ? " disabled" : "") + '>Clear this case</button></div>';
   }
   const i = DATA.cases.findIndex(x => x.case === cur);
   h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn ghost" id="back">Your cases</button>' +
@@ -244,6 +245,7 @@ function renderForm() {
   if (gm) gm.oninput = () => { l.gap_missing = gm.value; clearTimeout(gapTimer); gapCase = id; gapTimer = setTimeout(() => { gapCase = null; markAndQueue(id); if (id === cur) setState(); }, 700); setState(); };
   const retry = document.getElementById("retry"); if (retry) retry.onclick = () => { markAndQueue(id); renderForm(); };
   document.getElementById("submit").onclick = () => modal("Submit " + c.name + "?", "After you submit, this case is locked and your answers can't be changed. If you need to change something later, ask the person who invited you.", doSubmit);
+  document.getElementById("clearcase").onclick = () => modal("Clear " + c.name + "?", "This removes all your answers for this case so you can start it again. Your other cases are kept. This can't be undone.", doClear, "Clear");
 }
 function setState() {
   const el = document.getElementById("state"), b = document.getElementById("submit"), st = S[cur];
@@ -283,9 +285,11 @@ async function conflict(id, e) {
   if (e.code === "content_changed") { S[id].error = e.message; if (id === cur) renderForm(); return; }
   // Changed in another tab or device, or already submitted: show what the server holds now.
   try {
+    const had = S[id] ? S[id].rev : 0;
     const r = await api("/api/labels/" + id);
     S[id] = { label: r.label || blank(), rev: r.rev, updated_at: r.updated_at || null, submitted_at: r.submitted_at || null, edit: 0, saved: 0, error: "" };
     notice = e.code === "submitted" ? "This case was already submitted, in another tab or on another device. It now shows what was submitted."
+      : !r.label && had > 0 ? "This case was cleared, in another tab or by the person who invited you. It starts again from the beginning."
       : "This case was changed in another tab or on another device. It now shows the latest saved answers; please check them, then carry on.";
   } catch (x) { S[id].error = "Not saved: " + e.message; }
   if (id === cur) renderForm();
@@ -327,6 +331,25 @@ async function doSubmit() {
   try { ME = await api("/api/me"); } catch (e) {}
   renderNav();
 }
+// Clears this case's answers on the site, after any waiting save, so the labeler can start it again.
+async function doClear() {
+  const id = cur;
+  locking = true; renderForm();
+  await flush();
+  const st = S[id];
+  try {
+    await api("/api/labels/" + id, { method: "DELETE", body: { rev: st.rev } });
+  } catch (e) {
+    locking = false;
+    if (e.status === 401) { st.error = "Not cleared: your link was turned off or your session ended. Open your link again."; renderForm(); return; }
+    if (e.status === 409) return conflict(id, e);
+    renderForm(); return modal("Not cleared", e.message, null);
+  }
+  S[id] = { label: blank(), rev: 0, updated_at: null, submitted_at: null, edit: 0, saved: 0, error: "" };
+  notice = "Cleared. This case starts again from the beginning.";
+  locking = false; OPEN.clear(); renderForm(); renderNav();
+  try { ME = await api("/api/me"); } catch (e) {}
+}
 async function refreshHome() {
   await flush();
   try { ME = await api("/api/me"); } catch (e) { return loadError(e); }
@@ -335,11 +358,11 @@ async function refreshHome() {
 
 // A question over the page. It takes the keyboard focus (on its main button), keeps Tab inside it, closes with Escape,
 // and gives the focus back to where it was.
-function modal(title, text, onOk) {
+function modal(title, text, onOk, okLabel = "Submit") {
   const m = document.getElementById("modal"), back = document.activeElement;
   document.getElementById("mtitle").textContent = title; document.getElementById("mtext").textContent = text;
   const ok = document.getElementById("mok"), cancel = document.getElementById("mcancel");
-  ok.style.display = onOk ? "" : "none"; cancel.textContent = onOk ? "Cancel" : "Close";
+  ok.style.display = onOk ? "" : "none"; ok.textContent = okLabel; cancel.textContent = onOk ? "Cancel" : "Close";
   m.style.display = "flex";
   const keys = e => {
     if (e.key === "Escape") { e.preventDefault(); close(); }

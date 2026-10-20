@@ -91,6 +91,10 @@ function render() {
     const sub = l.cases.filter(c => c.status === "submitted");
     if (sub.length) h += '<div class="row"><select id="ro_' + l.id + '">' + sub.map(c => '<option value="' + esc(c.case) + '">' + esc(STATE.cases.find(x => x.case === c.case).name) + '</option>').join("") +
       '</select><input type="text" id="rr_' + l.id + '" maxlength="300" placeholder="Reason (kept in the activity log)" style="max-width:340px"><button class="btn ghost" data-act="reopen" data-id="' + l.id + '">Reopen it</button></div>';
+    const started = l.cases.filter(c => c.status !== "not started");
+    if (started.length) h += '<div class="row"><select id="cl_' + l.id + '">' + started.map(c => '<option value="' + esc(c.case) + '">' + esc(STATE.cases.find(x => x.case === c.case).name) + ' (' + esc(c.status) + ')</option>').join("") +
+      '</select><input type="text" id="cr_' + l.id + '" maxlength="300" placeholder="Why it is being cleared (kept in the activity log)" style="max-width:340px"><button class="btn ghost" data-act="clear" data-id="' + l.id + '">Clear it</button>' +
+      '<span class="status">Deletes their answers for that one case, even if submitted, so they can start it again. The case stays assigned.</span></div>';
     h += '<div id="out_' + l.id + '"></div></details></div>';
   });
   h += '</div><div class="card"><h2>Submitted labels</h2><p>Downloads every submitted label as one file, with who labeled it and when. Send the file to Claude to add the labels to the repository through a pull request.</p>' +
@@ -118,11 +122,15 @@ function showLink(box, link) {
 }
 async function act(b) {
   const id = b.dataset.id, what = b.dataset.act, out = document.getElementById("out_" + id);
-  if ((what === "link" || what === "revoke" || what === "remove") && b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = what === "remove" ? "Click again to remove for good" : "Click again to confirm"; return; }
+  if ((what === "link" || what === "revoke" || what === "remove" || what === "clear") && b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = what === "remove" ? "Click again to remove for good" : what === "clear" ? "Click again to clear for good" : "Click again to confirm"; return; }
   try {
     if (what === "cases") { await api("/api/admin/labelers/" + id + "/cases", { method: "POST", body: { cases: picked("cases_" + id) } }); await load(); }
     if (what === "revoke") { await api("/api/admin/labelers/" + id + "/revoke", { method: "POST", body: {} }); await load(); }
     if (what === "remove") { await api("/api/admin/labelers/" + id + "/remove", { method: "POST", body: {} }); await load(); return; }
+    if (what === "clear") {
+      await api("/api/admin/labelers/" + id + "/clear", { method: "POST", body: { case: document.getElementById("cl_" + id).value, reason: document.getElementById("cr_" + id).value } });
+      await load();
+    }
     if (what === "reopen") {
       await api("/api/admin/labelers/" + id + "/reopen", { method: "POST", body: { case: document.getElementById("ro_" + id).value, reason: document.getElementById("rr_" + id).value } });
       await load();

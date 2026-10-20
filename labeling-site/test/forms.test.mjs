@@ -377,3 +377,79 @@ negative("a submitted case's answers can't be changed from the form", async open
   });
   assert.ok(await page.isChecked("#formcol input[name=C1_red_flag][value=supported]"), "the answer shown is still the submitted one");
 });
+
+// ---- Clearing a case ------------------------------------------------------------------------------------------------------
+
+async function answered(page, caseId = "practice_a") {
+  await openCase(page, caseId);
+  for (const k of CRITS) await pick(page, k, "unsupported");
+  await page.check("#formcol input[name=routing][value=route]");
+  await settled(page);
+}
+positive("a labeler's Clear this case: after the question, the case is empty and not started", async open => {
+  const p = await invited();
+  const page = await labelerPage(open, p.link);
+  await answered(page);
+  await page.click("#clearcase");
+  await shows(page, "#modal", /Clear Practice A\?/);
+  assert.equal(await text(page, "#mok"), "Clear");
+  await page.click("#mok");
+  await shows(page, "#formcol", /Cleared\. This case starts again from the beginning\./);
+  assert.equal(await page.locator("#formcol input:checked").count(), 0);
+  await page.click("#back");
+  await shows(page, "table.cases", /Not started/);
+});
+negative("Cancel on the Clear question clears nothing", async open => {
+  const p = await invited();
+  const page = await labelerPage(open, p.link);
+  await answered(page);
+  await storesNothing(async () => { await page.click("#clearcase"); await page.click("#mcancel"); });
+  assert.ok(await page.isChecked("#formcol input[name=routing][value=route]"), "the answers are still there");
+});
+negative("a submitted case has no Clear button for the labeler", async open => {
+  const p = await invited();
+  const page = await labelerPage(open, p.link);
+  await answered(page);
+  await page.click("#submit"); await page.click("#mok");
+  await shows(page, "#formcol", /This case is locked\./);
+  assert.equal(await page.locator("#clearcase").count(), 0);
+});
+positive("the owner's Clear it, with a reason: the submitted case is back to not started", async open => {
+  const p = await invited();
+  await submittedFor(p);
+  const page = await ownerPage(open);
+  const box = await openChanges(page, p.name);
+  await box.locator("input[placeholder^=Why]").fill("asked to redo it");
+  await box.locator("button", { hasText: "Clear it" }).click();
+  await box.locator("button", { hasText: "Click again to clear for good" }).click();
+  await until(async () => /Practice A: not started/.test(await personBox(page, p.name).innerText()), "the case cleared");
+});
+negative("the owner's Clear it with no reason: a plain message, and the case stays submitted", async open => {
+  const p = await invited();
+  await submittedFor(p);
+  const page = await ownerPage(open);
+  await storesNothing(async () => {
+    const box = await openChanges(page, p.name);
+    await box.locator("button", { hasText: "Clear it" }).click();
+    await box.locator("button", { hasText: "Click again to clear for good" }).click();
+    await until(async () => /please give a reason/.test(await personBox(page, p.name).innerText()), "the request for a reason");
+  });
+  assert.match(await personBox(page, p.name).innerText(), /Practice A: submitted/);
+});
+negative("the owner's Clear it clicked once asks to confirm and clears nothing", async open => {
+  const p = await invited();
+  await submittedFor(p);
+  const page = await ownerPage(open);
+  await storesNothing(async () => {
+    const box = await openChanges(page, p.name);
+    await box.locator("input[placeholder^=Why]").fill("asked to redo it");
+    await box.locator("button", { hasText: "Clear it" }).click();
+    await box.locator("button", { hasText: "Click again to clear for good" }).waitFor();
+  });
+});
+negative("the owner sees no Clear row for someone with nothing saved", async open => {
+  const p = await invited();
+  const page = await ownerPage(open);
+  const box = await openChanges(page, p.name);
+  assert.equal(await box.locator("button", { hasText: "Clear it" }).count(), 0);
+});

@@ -383,8 +383,13 @@ CHANGES = [
      """let h='<div class="card"><h2>'+esc(LABEL(v.case))+'</h2><p class="practice-note">Practice case, not part of the golden set.</p>';"""),
     ("""let h='<div class="card"><h2>Your labels, '+esc(c.replace("case_","case "))+'</h2>';""",
      """let h='<div class="card"><h2>Your practice labels, '+esc(LABEL(c))+'</h2>';"""),
-    ("""h+='<details><summary>Preview labels_blind.yaml</summary><pre>'+esc(yaml(c))+'</pre></details>';""",
+    ("""h+='<details><summary>Preview labels_blind.yaml</summary><pre>'+esc(yaml(c))+'</pre></details><p style="margin:8px 0 0"><button class="btn ghost" id="clearcase">Clear this case</button></p>';""",
      """h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" id="check">Check my answers</button><button class="btn ghost" id="clear">Clear this case</button></div><p class="status" id="checkmsg"></p>';"""),
+    # The labeling page's own Clear button and its code; the practice page has its own (id "clear", above).
+    ("""  // Clears this one case's answers so it can be labeled again from the start; the other cases are kept.
+  const cl=document.getElementById("clearcase");
+  if(cl) cl.onclick=()=>{ if(!confirm("Clear all your answers for "+c.replace("case_","case ")+"? Your other cases are kept. This can't be undone.")) return; delete store[c]; save(); render(); };
+""", ""),
     ('document.getElementById("formcol").innerHTML=h;',
      'if(shown[c]) h+=checkHtml(c);\n  document.getElementById("formcol").innerHTML=walkHtml(c)+h; bindCheck(c); bindWalk(c);'),
     ("function render(){ renderNav(); renderCase(); renderForm(); }",

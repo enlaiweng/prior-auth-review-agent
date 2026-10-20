@@ -234,6 +234,7 @@ async function labelerApi(request, env, path, me) {
     if (!m[2] && method === "GET") {
       return json(row ? { label: JSON.parse(row.body), rev: row.rev, updated_at: row.updated_at, submitted_at: row.submitted_at } : { label: null, rev: 0 });
     }
+    if (!m[2] && method === "DELETE") return clearOwn(request, env, me, caseId, row);
     if (method !== (m[2] ? "POST" : "PUT")) return fail(404, "Not found.");
     // A save or a submit carries the label as the page shows it, the revision it was based on, and the content
     // fingerprint the page loaded, so nothing is saved over a newer copy or against content that has since changed.
@@ -263,6 +264,23 @@ async function labelerApi(request, env, path, me) {
     return json({ ok: true, rev: rev + 1, updated_at: at, submitted_at: submit ? at : null, complete: complete(label), label });
   }
   return fail(404, "Not found.");
+}
+
+// A labeler clears one of their own cases to start it again, before submitting it. The request names the version the
+// page holds, so a newer save made in another tab is never cleared unseen. The activity log keeps what was cleared.
+async function clearOwn(request, env, me, caseId, row) {
+  const b = await request.json().catch(() => null);
+  if (!isObject(b)) throw new BadRequest("the request must be an object");
+  if (row && row.submitted_at) return fail(409, "This case is already submitted. To start it again, ask the person who invited you.", "submitted");
+  const rev = Number.isInteger(b.rev) ? b.rev : -1;
+  if ((row ? row.rev : 0) !== rev) return fail(409, "This case was changed in another tab or on another device.", "stale");
+  if (!row) return json({ ok: true, rev: 0 });   // nothing saved yet: already clear
+  const results = await env.DB.batch([
+    env.DB.prepare("DELETE FROM labels WHERE labeler_id = ? AND case_id = ? AND rev = ? AND submitted_at IS NULL").bind(me.id, caseId, rev),
+    event(env, me.id, "label cleared by the labeler", { labeler: me.id, caseId, onlyIfChanged: true, detail: { was: JSON.parse(row.body) } }),
+  ]);
+  if (!results[0].meta.changes) return fail(409, "This case was changed in another tab or on another device.", "stale");
+  return json({ ok: true, rev: 0 });
 }
 
 // ---- Owner (admin) API ----------------------------------------------------------------------------------------------
@@ -325,7 +343,7 @@ async function adminApi(request, env, path) {
     const { results } = await env.DB.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 500").all();
     return json({ events: results.map(e => ({ ...e, detail: e.detail ? JSON.parse(e.detail) : null })) });
   }
-  const m = path.match(/^\/api\/admin\/labelers\/(lb_[0-9a-f]{16})\/(cases|link|revoke|reopen|remove)$/);
+  const m = path.match(/^\/api\/admin\/labelers\/(lb_[0-9a-f]{16})\/(cases|link|revoke|reopen|remove|clear)$/);
   if (m && method === "POST") {
     const [, id, what] = m;
     const l = await env.DB.prepare("SELECT * FROM labelers WHERE id = ?").bind(id).first();
@@ -361,6 +379,21 @@ async function adminApi(request, env, path) {
         env.DB.prepare("UPDATE labels SET submitted_at = NULL, rev = rev + 1 WHERE labeler_id = ? AND case_id = ? AND submitted_at IS NOT NULL").bind(id, caseId),
         event(env, "owner", "label reopened", { labeler: id, caseId, onlyIfChanged: true, detail: { reason } })]);
       if (!r[0].meta.changes) return fail(404, "That case is not submitted.");
+      return json({ ok: true });
+    }
+    if (what === "clear") {
+      // One case's answers, submitted or not, so the labeler can start it again. The case stays assigned. The reason,
+      // and what was cleared, go into the activity log.
+      const caseId = isCase(b.case) ? b.case : "";
+      const reason = clip(b.reason, "reason");
+      if (!reason) throw new BadRequest("please give a reason; it is kept in the activity log");
+      const row = caseId ? await env.DB.prepare("SELECT * FROM labels WHERE labeler_id = ? AND case_id = ?").bind(id, caseId).first() : null;
+      if (!row) return fail(404, "That case has no saved answers to clear.");
+      const r = await env.DB.batch([
+        env.DB.prepare("DELETE FROM labels WHERE labeler_id = ? AND case_id = ? AND rev = ?").bind(id, caseId, row.rev),
+        event(env, "owner", "label cleared", { labeler: id, caseId, onlyIfChanged: true, detail: { reason, was: JSON.parse(row.body), was_submitted_at: row.submitted_at } }),
+      ]);
+      if (!r[0].meta.changes) return fail(409, "The answers changed while you were clearing them. Click Refresh and try again.", "stale");
       return json({ ok: true });
     }
     if (what === "remove") {

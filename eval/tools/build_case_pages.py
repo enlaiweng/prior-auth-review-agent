@@ -315,7 +315,7 @@ function renderForm(){
   ROUTES.forEach(s=>{ h+='<label><input type="radio" name="routing" value="'+s+'"'+(r.routing===s?" checked":"")+'> '+s+'</label>'; });
   h+='</div><div id="gapbox" style="display:'+(r.routing==="request"?"block":"none")+'"><p class="status">For a documentation request: which criterion, and what is missing.</p><select id="gapc"><option value="">Criterion</option>'+["C1","C2","C3","C4"].map(g=>'<option'+(r.gap_criterion===g?" selected":"")+'>'+g+'</option>').join("")+'</select><div style="height:6px"></div><input type="text" id="gapm" placeholder="What is missing" value="'+esc(r.gap_missing)+'"></div></div>';
   h+='<p class="status '+(complete(c)?"ok":"warn")+'">'+(complete(c)?(storageOk?"Complete. Saved in this browser.":"Complete, but this browser is not saving it; download the labels before closing the page."):"Not complete yet. Every criterion needs a status, and a request needs its gap."+(storageOk?"":" This browser is not saving your work."))+'</p>';
-  h+='<details><summary>Preview labels_blind.yaml</summary><pre>'+esc(yaml(c))+'</pre></details>';
+  h+='<details><summary>Preview labels_blind.yaml</summary><pre>'+esc(yaml(c))+'</pre></details><p style="margin:8px 0 0"><button class="btn ghost" id="clearcase">Clear this case</button></p>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost" id="prev">Previous case</button><button class="btn ghost" id="next">Next case</button></div></div>';
   document.getElementById("formcol").innerHTML=h;
   document.querySelectorAll('#formcol input[type=radio]').forEach(el=>el.onchange=()=>{ if(el.name==="routing"){ r.routing=el.value; if(el.value!=="request"){r.gap_criterion="";r.gap_missing="";} } else { r.criteria[el.name].status=el.value; } r.labeled_on=today(); save(); render(); });
@@ -323,6 +323,9 @@ function renderForm(){
   const gc=document.getElementById("gapc"), gm=document.getElementById("gapm");
   if(gc) gc.onchange=()=>{ r.gap_criterion=gc.value; save(); renderNav(); };
   if(gm) gm.onchange=()=>{ r.gap_missing=gm.value; save(); render(); };
+  // Clears this one case's answers so it can be labeled again from the start; the other cases are kept.
+  const cl=document.getElementById("clearcase");
+  if(cl) cl.onclick=()=>{ if(!confirm("Clear all your answers for "+c.replace("case_","case ")+"? Your other cases are kept. This can't be undone.")) return; delete store[c]; save(); render(); };
   document.getElementById("prev").onclick=()=>{ cur=(cur+CASES.length-1)%CASES.length; render(); window.scrollTo(0,0); };
   document.getElementById("next").onclick=()=>{ cur=(cur+1)%CASES.length; render(); window.scrollTo(0,0); };
 }

@@ -870,6 +870,81 @@ scenario("19. Closing the tab a moment after typing the gap still saves it", asy
   await until(async () => (await serverCopy(later, "practice_b")).label.gap_missing === "typed, then the tab closed at once", "the typed gap to reach the site");
 });
 
+scenario("21. Starting over: the labeler clears a case, and later the owner clears a submitted one so it can be redone", async person => {
+  const { page: owner } = await person("owner");
+  await ownerSignsIn(owner);
+  const link = await ownerInvites(owner, { name: "Redo Person", cases: ["practice_a", "practice_b"] });
+  const { page } = await person("labeler");
+  await startsLabeling(page, link);
+
+  // A mistake on Practice A, cleared by the labeler before submitting.
+  await opensCase(page, "practice_a");
+  for (const k of CRITS) await picks(page, k, "undeterminable");
+  await routes(page, "route");
+  await saved(page);
+  await page.click("#clearcase");
+  await shows(page, /Clear Practice A\?/, "#modal");
+  await page.click("#mok");
+  await shows(page, /Cleared\. This case starts again from the beginning\./, "#formcol");
+  assert.equal(await page.locator("#formcol input:checked").count(), 0);
+  await page.click("#back");
+  assert.match(await homeRow(page, "Practice A"), /Not started/);
+
+  // Labeled again and submitted.
+  await opensCase(page, "practice_a");
+  for (const k of CRITS) await picks(page, k, "supported");
+  await routes(page, "approve");
+  await saved(page);
+  await submits(page);
+
+  // The labeler asks to redo it. The owner clears the submitted case, with a reason.
+  await owner.click("#refresh");
+  const box = await ownerOpensChanges(owner, "Redo Person");
+  await box.locator("select[id^=cl_]").selectOption("practice_a");
+  await box.locator("input[placeholder^=Why]").fill("asked to redo it after rereading C3");
+  await box.locator("button", { hasText: "Clear it" }).click();
+  await box.locator("button", { hasText: "Click again to clear for good" }).click();
+  await until(async () => /Practice A: not started/.test(await personBox(owner, "Redo Person").innerText()), "the owner to see Practice A cleared");
+  assert.ok(!(await exported()).some(l => l.invited_name === "Redo Person"), "the cleared answers are out of the download");
+
+  // The labeler's page, still on the locked case: back to the list, and the case is open again.
+  await page.click("#back");
+  assert.match(await homeRow(page, "Practice A"), /Not started/);
+  await opensCase(page, "practice_a");
+  assert.ok(await page.isEnabled("#formcol input[name=C1_red_flag][value=supported]"));
+  for (const k of CRITS) await picks(page, k, "supported");
+  await picks(page, "C3_informs_management", "unsupported");
+  await routes(page, "route");
+  await saved(page);
+  await submits(page);
+  const rows = (await exported()).filter(l => l.invited_name === "Redo Person");
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].label.criteria.C3_informs_management.status, "unsupported", "the download holds the redone answer");
+
+  // Practice B is open on the labeler's page when the owner clears it: the page says so at the next change.
+  await page.click("#back");
+  await opensCase(page, "practice_b");
+  await picks(page, "C1_red_flag", "supported");
+  await saved(page);
+  await owner.click("#refresh");
+  const box2 = await ownerOpensChanges(owner, "Redo Person");
+  await box2.locator("select[id^=cl_]").selectOption("practice_b");
+  await box2.locator("input[placeholder^=Why]").fill("assigned by mistake");
+  await box2.locator("button", { hasText: "Clear it" }).click();
+  await box2.locator("button", { hasText: "Click again to clear for good" }).click();
+  await until(async () => /Practice B: not started/.test(await personBox(owner, "Redo Person").innerText()), "Practice B cleared");
+  await picks(page, "C2_conservative_4wk", "supported");
+  await shows(page, /This case was cleared, in another tab or by the person who invited you/, "#formcol");
+  assert.equal(await page.locator("#formcol input:checked").count(), 0, "it shows the case empty");
+
+  // The log keeps every step, with the reasons.
+  const log = await ownerLog(owner);
+  assert.ok(log.some(r => r.includes("label cleared by the labeler") && r.includes("practice_a")));
+  assert.ok(log.some(r => r.includes("label cleared") && r.includes("asked to redo it after rereading C3")));
+  assert.ok(log.some(r => r.includes("label cleared") && r.includes("assigned by mistake")));
+  await shot(page, "21-cleared-elsewhere");
+});
+
 scenario("20. A site deployed without an admin key says so on the admin page", async person => {
   const bare = await startSite({ adminKey: null });
   try {

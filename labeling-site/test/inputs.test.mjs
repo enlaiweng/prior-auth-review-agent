@@ -433,7 +433,7 @@ negative("saving without the site's own header", async () => {
   await refused(() => p.send("PUT", "/api/labels/practice_a", { label: label(), rev: 0, content_sha: CONTENT.content_sha }, { header: false }), 403, /Missing request header/, { person: p, caseId: "practice_a" });
 });
 negative("saving without signing in", () => refused(() => send("PUT", "/api/labels/practice_a", { body: { label: label(), rev: 0, content_sha: CONTENT.content_sha } }), 401, /open your personal link/));
-for (const [method, path] of [["POST", "/api/labels/practice_a"], ["PUT", "/api/labels/practice_a/submit"], ["DELETE", "/api/labels/practice_a"], ["PATCH", "/api/labels/practice_a"]]) {
+for (const [method, path] of [["POST", "/api/labels/practice_a"], ["PUT", "/api/labels/practice_a/submit"], ["DELETE", "/api/labels/practice_a/submit"], ["PATCH", "/api/labels/practice_a"]]) {
   negative(`${method} ${path.replace("/api/labels/", "a label ")} (a method the site doesn't offer)`, async () => {
     const p = await labeler();
     await refused(() => p.send(method, path, { label: label(), rev: 0, content_sha: CONTENT.content_sha }), 404, /Not found/, { person: p, caseId: "practice_a" });
@@ -624,7 +624,7 @@ negative("changing cases to an unknown case", async () => {
   const p = await labeler(["case_01"]);
   await refused(() => act(p.id, "cases", { cases: ["case_00"] }), 400, /unknown case/);
 });
-for (const what of ["cases", "link", "revoke", "reopen", "remove"]) {
+for (const what of ["cases", "link", "revoke", "reopen", "remove", "clear"]) {
   negative(`"${what}" for a person who doesn't exist`, () => refused(() => act("lb_0000000000000000", what, { cases: [], case: "case_01", reason: "x" }), 404, /No such labeler/));
   negative(`"${what}" with a badly formed person id`, () => refused(() => act("someone", what, { cases: [] }), 404, /Not found/));
 }
@@ -712,3 +712,117 @@ positive("the activity log lists the newest entry first, at most 500", async () 
 for (const [method, path] of [["GET", "/api/admin/labelers"], ["POST", "/api/admin/state"], ["POST", "/api/admin/export"], ["GET", "/api/admin/nothing"], ["DELETE", "/api/admin/events"]]) {
   negative(`${method} ${path} (not something the owner's page does)`, () => refused(() => owner(method, path, method === "GET" ? undefined : {}), 404, /Not found/));
 }
+
+// ---- 18. A labeler clears one of their cases (DELETE /api/labels/<case>) --------------------------------------------
+
+const clearOwn = (p, caseId, body) => p.send("DELETE", "/api/labels/" + caseId, body);
+positive("a labeler clears a saved case: it reads as empty and not started, and the log keeps what was cleared", async () => {
+  const p = await labeler(["practice_a", "practice_b"]);
+  const r1 = await save(p, "practice_a", label());
+  await save(p, "practice_b", label("practice_b"));
+  const r = await clearOwn(p, "practice_a", { rev: r1.json.rev });
+  assert.equal(r.status, 200); assert.equal(r.json.rev, 0);
+  assert.deepEqual(await stored(p, "practice_a"), { label: null, rev: 0 });
+  const me = (await p.send("GET", "/api/me")).json.assignments;
+  assert.equal(me.find(a => a.case === "practice_a").status, "not started", "still assigned, back to not started");
+  assert.equal(me.find(a => a.case === "practice_b").status, "complete", "the other case is untouched");
+  const e = (await events(p.id)).find(x => x.action === "label cleared by the labeler");
+  assert.equal(e.case_id, "practice_a"); assert.deepEqual(e.detail.was, label());
+});
+positive("a cleared case can be labeled and submitted again, starting from version 0", async () => {
+  const p = await labeler();
+  const r1 = await save(p, "practice_a", label());
+  await clearOwn(p, "practice_a", { rev: r1.json.rev });
+  const r2 = await save(p, "practice_a", blankLabel(), 0);
+  assert.equal(r2.status, 200); assert.equal(r2.json.rev, 1);
+  assert.equal((await submit(p, "practice_a", label("practice_a", "route"), 1)).status, 200);
+  assert.equal((await owner("GET", "/api/admin/export")).json.labels.find(l => l.labeler_id === p.id).label.routing, "route");
+});
+positive("clearing a case with nothing saved is allowed and changes nothing", async () => {
+  const p = await labeler();
+  const before = await world();
+  assert.equal((await clearOwn(p, "practice_a", { rev: 0 })).status, 200);
+  assert.deepEqual(await world(), before);
+});
+negative("a labeler clearing a submitted case", async () => {
+  const { p, rev } = await submittedPerson();
+  await refused(() => clearOwn(p, "practice_a", { rev }), 409, /already submitted.*ask the person who invited you.*submitted/, { person: p, caseId: "practice_a" });
+});
+negative("a labeler clearing from an older copy (another tab saved since)", async () => {
+  const p = await labeler();
+  await save(p, "practice_a", blankLabel());
+  await save(p, "practice_a", label(), 1);
+  await refused(() => clearOwn(p, "practice_a", { rev: 1 }), 409, /changed in another tab.*stale/, { person: p, caseId: "practice_a" });
+});
+for (const [what, body] of [["no version", {}], ["the version as text", { rev: "1" }]]) {
+  negative(`a labeler clearing with ${what}`, async () => {
+    const p = await labeler();
+    await save(p, "practice_a", label());
+    await refused(() => clearOwn(p, "practice_a", body), 409, /stale/, { person: p, caseId: "practice_a" });
+  });
+}
+negative("a labeler clearing with a body that isn't JSON", async () => {
+  const p = await labeler();
+  await save(p, "practice_a", label());
+  await refused(() => p.send("DELETE", "/api/labels/practice_a", undefined, { raw: "rev=1" }), 400, /must be an object/, { person: p, caseId: "practice_a" });
+});
+negative("a labeler clearing a case that isn't assigned", async () => {
+  const p = await labeler();
+  await refused(() => clearOwn(p, "practice_b", { rev: 0 }), 404, /not assigned to you/);
+});
+negative("a labeler clearing without the site's own header", async () => {
+  const p = await labeler();
+  const r = await save(p, "practice_a", label());
+  await refused(() => p.send("DELETE", "/api/labels/practice_a", { rev: r.json.rev }, { header: false }), 403, /Missing request header/, { person: p, caseId: "practice_a" });
+});
+negative("clearing without signing in", () => refused(() => send("DELETE", "/api/labels/practice_a", { body: { rev: 1 } }), 401, /open your personal link/));
+negative("clearing before agreeing on the welcome page", async () => {
+  const p = await labeler(["practice_a"], { consent: false });
+  await refused(() => clearOwn(p, "practice_a", { rev: 0 }), 403, /complete the welcome page first/);
+});
+
+// ---- 19. The owner clears one case for a labeler (POST /api/admin/labelers/<id>/clear) -------------------------------
+
+positive("the owner clears a submitted case with a reason: out of the download, still assigned, and it can be redone", async () => {
+  const { p } = await submittedPerson();
+  const r = await act(p.id, "clear", { case: "practice_a", reason: "wants to redo it" });
+  assert.equal(r.status, 200);
+  assert.ok(!(await owner("GET", "/api/admin/export")).json.labels.some(l => l.labeler_id === p.id));
+  assert.deepEqual(await stored(p, "practice_a"), { label: null, rev: 0 });
+  assert.equal((await p.send("GET", "/api/me")).json.assignments[0].status, "not started");
+  const e = (await events(p.id)).find(x => x.action === "label cleared");
+  assert.equal(e.actor, "owner"); assert.equal(e.detail.reason, "wants to redo it");
+  assert.deepEqual(e.detail.was, label()); assert.ok(e.detail.was_submitted_at);
+  assert.equal((await submit(p, "practice_a", label("practice_a", "route"), 0)).status, 200, "the labeler can submit it again");
+});
+positive("the owner clears a case that was saved but not submitted", async () => {
+  const p = await labeler();
+  await save(p, "practice_a", blankLabel());
+  assert.equal((await act(p.id, "clear", { case: "practice_a", reason: "assigned by mistake" })).status, 200);
+  assert.deepEqual(await stored(p, "practice_a"), { label: null, rev: 0 });
+});
+negative("a labeler's open page saving over a case the owner just cleared", async () => {
+  const p = await labeler();
+  const r = await save(p, "practice_a", label());
+  await act(p.id, "clear", { case: "practice_a", reason: "start again" });
+  await refused(() => save(p, "practice_a", label(), r.json.rev), 409, /stale/, { person: p, caseId: "practice_a" });
+});
+for (const [what, reason, why] of [["no reason", undefined, /please give a reason/], ["a reason of only spaces", "   ", /please give a reason/], ["a reason of 301 characters", long(301), /longer than 300/]]) {
+  negative(`the owner clearing with ${what}`, async () => {
+    const { p } = await submittedPerson();
+    await refused(() => act(p.id, "clear", { case: "practice_a", reason }), 400, why, { person: p, caseId: "practice_a" });
+  });
+}
+for (const [what, c] of [["a case with nothing saved", "practice_b"], ["an unknown case", "case_99"], ["a case that isn't text", 7], ["no case", undefined]]) {
+  negative(`the owner clearing ${what}`, async () => {
+    const p = await labeler(["practice_a", "practice_b"]);
+    await save(p, "practice_a", label());
+    await refused(() => act(p.id, "clear", { case: c, reason: "x" }), 404, /no saved answers to clear/, { person: p, caseId: "practice_a" });
+  });
+}
+positive("removing a person also wipes what earlier clears recorded about their answers", async () => {
+  const { p } = await submittedPerson();
+  await act(p.id, "clear", { case: "practice_a", reason: "redo" });
+  await act(p.id, "remove");
+  assert.ok((await events(p.id)).every(e => e.detail === null));
+});
