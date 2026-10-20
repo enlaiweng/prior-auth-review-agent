@@ -91,7 +91,7 @@ leak.test(data) ? fail("answer-like wording in the case data: " + data.match(lea
 d.querySelector("#casecol h2").textContent === "Case 03" ? ok("still on the third case") : fail("expected case 03");
 const stored = () => JSON.parse(w.localStorage.getItem("golden-set-labels-v1"));
 w.confirm = () => false; d.getElementById("clearcase").onclick();
-stored().case_03.routing === "request" && d.querySelectorAll("#nav button")[2].className.includes("done")
+(stored().case_03 || {}).routing === "request" && d.querySelectorAll("#nav button")[2].className.includes("done")
   ? ok("negative: cancelling Clear keeps the case's answers") : fail("cancelling Clear changed the case");
 w.confirm = () => true; d.getElementById("clearcase").onclick();
 const c3 = stored().case_03;
@@ -106,4 +106,4 @@ const pre7 = d.querySelector("#formcol pre").textContent;
   ? ok("positive: the preview shows case 03 empty") : fail("preview after Clear: " + pre7);
 CRITS.every(k => !d.querySelector(`#formcol input[name="${k}"]:checked`)) ? ok("positive: the form shows no answers") : fail("form still shows answers");
 setRadio("C1_red_flag", "supported");
-stored().case_03.criteria.C1_red_flag.status === "supported" ? ok("positive: a cleared case can be labeled again") : fail("relabeling after Clear");
+((stored().case_03 || {}).criteria || {}).C1_red_flag?.status === "supported" ? ok("positive: a cleared case can be labeled again") : fail("relabeling after Clear");
