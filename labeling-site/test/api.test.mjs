@@ -9,8 +9,12 @@ import { startSite, SITE, ADMIN_KEY, ENV } from "./local-site.mjs";
 
 let site, BASE, persist;
 
-before(async () => { site = await startSite(); BASE = site.base; persist = site.persist; });
-after(() => site && site.stop());
+// Cleanup waits for setup to finish. When a name filter leaves this file with no test to run, Node's test runner
+// starts the cleanup while setup is still going; without the wait, the local site (and browser) would be left
+// running and the run would never end.
+let ready;
+before(() => (ready = (async () => { site = await startSite(); BASE = site.base; persist = site.persist; })()));
+after(async () => { await ready.catch(() => {}); if (site) site.stop(); });
 
 const H = { "X-Labeling": "1", "Content-Type": "application/json" };
 const admin = (path, method = "GET", body) => fetch(BASE + path, { method, headers: { ...H, Authorization: "Bearer " + ADMIN_KEY }, body: body && JSON.stringify(body) });

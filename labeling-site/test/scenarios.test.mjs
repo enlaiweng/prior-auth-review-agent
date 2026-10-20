@@ -22,13 +22,17 @@ const CRITS = ["C1_red_flag", "C2_conservative_4wk", "C3_informs_management", "C
 let site, browser, BASE;
 const ownDialogs = new WeakSet();   // pages whose scenario answers "leave this page?" questions itself
 
-before(async () => {
+// Cleanup waits for setup to finish. When a name filter leaves this file with no test to run, Node's test runner
+// starts the cleanup while setup is still going; without the wait, the local site (and browser) would be left
+// running and the run would never end.
+let ready;
+before(() => (ready = (async () => {
   site = await startSite();
   BASE = `http://localhost:${site.port}`;   // localhost counts as a secure address, as the real https site is
   browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   if (SHOTS) mkdirSync(SHOTS, { recursive: true });
-});
-after(async () => { if (browser) await browser.close(); if (site) site.stop(); });
+})()));
+after(async () => { await ready.catch(() => {}); if (browser) await browser.close(); if (site) site.stop(); });
 
 // ---- Helpers ----------------------------------------------------------------------------------------------------------
 

@@ -14,8 +14,12 @@ import { CONTENT } from "../src/content.generated.js";
 import { startSite, ADMIN_KEY } from "./local-site.mjs";
 
 let site, BASE;
-before(async () => { site = await startSite(); BASE = site.base; });
-after(() => site && site.stop());
+// Cleanup waits for setup to finish. When a name filter leaves this file with no test to run, Node's test runner
+// starts the cleanup while setup is still going; without the wait, the local site (and browser) would be left
+// running and the run would never end.
+let ready;
+before(() => (ready = (async () => { site = await startSite(); BASE = site.base; })()));
+after(async () => { await ready.catch(() => {}); if (site) site.stop(); });
 
 const positive = (name, fn) => test("positive: " + name, fn);
 const negative = (name, fn) => test("negative: " + name, fn);

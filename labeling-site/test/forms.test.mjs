@@ -13,12 +13,16 @@ import { chromium } from "playwright";
 import { startSite, ADMIN_KEY } from "./local-site.mjs";
 
 let site, browser, BASE;
-before(async () => {
+// Cleanup waits for setup to finish. When a name filter leaves this file with no test to run, Node's test runner
+// starts the cleanup while setup is still going; without the wait, the local site (and browser) would be left
+// running and the run would never end.
+let ready;
+before(() => (ready = (async () => {
   site = await startSite();
   BASE = `http://localhost:${site.port}`;
   browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
-});
-after(async () => { if (browser) await browser.close(); if (site) site.stop(); });
+})()));
+after(async () => { await ready.catch(() => {}); if (browser) await browser.close(); if (site) site.stop(); });
 
 // Each test gets fresh browsers and fails on any script error or blocked script.
 function formTest(kind, name, fn) {
