@@ -108,25 +108,37 @@ function adminAllowed(request, env) {
   return auth.startsWith("Bearer ") && sameText(auth.slice(7).trim(), key);
 }
 
+const isObject = v => v !== null && typeof v === "object" && !Array.isArray(v);
+// An answer that may not be chosen yet: missing, null, or "" mean "not chosen"; anything else must be text.
+// Badly shaped input is refused, never read as "not chosen", so it can't erase an answer.
+function choice(value, field) {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value !== "string") throw new BadRequest(`${field} must be text`);
+  return value;
+}
+
 // Checks a label body against the case: known statuses and routings, cited ids that exist in the case.
 function cleanLabel(caseId, body) {
-  if (!body || typeof body !== "object") throw new BadRequest("the label must be an object");
+  if (!isObject(body)) throw new BadRequest("the label must be an object");
+  if (body.criteria !== undefined && !isObject(body.criteria)) throw new BadRequest("criteria must be an object");
   const ok = CASE_IDS[caseId];
   const criteria = {};
   for (const k of CRIT_KEYS) {
-    const c = (body.criteria && Object.hasOwn(body.criteria, k) ? body.criteria[k] : null) || {};
-    const status = c.status || "";
+    const c = body.criteria && Object.hasOwn(body.criteria, k) ? body.criteria[k] : {};
+    if (!isObject(c)) throw new BadRequest(`${k} must be an object with a status and evidence`);
+    const status = choice(c.status, `${k}: status`);
     if (status && !STATUSES.has(status)) throw new BadRequest(`${k}: unknown status`);
-    const evidence = Array.isArray(c.evidence) ? c.evidence : [];
+    if (c.evidence !== undefined && !Array.isArray(c.evidence)) throw new BadRequest(`${k}: evidence must be a list`);
+    const evidence = c.evidence || [];
     if (evidence.length > 60) throw new BadRequest(`${k}: too many evidence ids`);
     for (const id of evidence) if (typeof id !== "string" || !ok.has(id)) throw new BadRequest(`${k}: ${String(id).slice(0, 60)} is not an id in this case`);
     criteria[k] = { status, evidence: [...new Set(evidence)] };
   }
-  const routing = body.routing || "";
+  const routing = choice(body.routing, "routing");
   if (routing && !ROUTES.has(routing)) throw new BadRequest("unknown routing");
   let gap_criterion = "", gap_missing = "";
   if (routing === "request") {
-    gap_criterion = body.gap_criterion || "";
+    gap_criterion = choice(body.gap_criterion, "gap_criterion");
     if (gap_criterion && !GAP_CRITERIA.has(gap_criterion)) throw new BadRequest("unknown gap criterion");
     gap_missing = clip(body.gap_missing, "gap_missing");
   }
@@ -198,10 +210,11 @@ async function labelerApi(request, env, path, me) {
   if (!me.consent_at) return fail(403, "Please complete the welcome page first.");
   if (path === "/api/training" && method === "POST") {
     const b = await request.json().catch(() => ({}));
-    const at = b.done === true ? now() : null;
+    if (typeof b.done !== "boolean") throw new BadRequest("done must be true or false");
+    const at = b.done ? now() : null;
     await env.DB.batch([
       env.DB.prepare("UPDATE labelers SET training_done_at = ? WHERE id = ?").bind(at, me.id),
-      event(env, me.id, b.done === true ? "training marked done" : "training unmarked", { labeler: me.id }),
+      event(env, me.id, b.done ? "training marked done" : "training unmarked", { labeler: me.id }),
     ]);
     return json({ ok: true, training_done_at: at });
   }
@@ -225,7 +238,7 @@ async function labelerApi(request, env, path, me) {
     // A save or a submit carries the label as the page shows it, the revision it was based on, and the content
     // fingerprint the page loaded, so nothing is saved over a newer copy or against content that has since changed.
     const b = await request.json().catch(() => null);
-    if (!b || typeof b !== "object") throw new BadRequest("the request must be an object");
+    if (!isObject(b)) throw new BadRequest("the request must be an object");
     if (b.content_sha !== CONTENT.content_sha) return fail(409, "The cases were updated since this page was opened. Reload the page; your saved answers are kept.", "content_changed");
     if (row && row.submitted_at) return fail(409, "This case is already submitted.", "submitted");
     const rev = Number.isInteger(b.rev) ? b.rev : -1;
@@ -319,7 +332,7 @@ async function adminApi(request, env, path) {
     if (!l) return fail(404, "No such labeler.");
     const b = await request.json().catch(() => ({}));
     if (what === "cases") {
-      const cases = cleanCases(b.cases || []);
+      const cases = cleanCases(b.cases);   // required: a missing list must not clear someone's cases
       const { results: has } = await env.DB.prepare("SELECT case_id FROM labels WHERE labeler_id = ?").bind(id).all();
       const keep = has.map(r => r.case_id).filter(c => !cases.includes(c));
       if (keep.length) throw new BadRequest(`these cases already have saved labels and stay assigned: ${keep.map(c => CONTENT.cases[c].name).join(", ")}`);

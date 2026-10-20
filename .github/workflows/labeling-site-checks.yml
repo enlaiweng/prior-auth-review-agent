@@ -5,8 +5,11 @@
 # - site: the API tests (labeling-site/test/api.test.mjs): sign-in by personal link, consent, assigned cases only,
 #   saving, submitting and locking, labelers never seeing each other's labels, the admin key, reopening, turning links
 #   off, the audit trail, and the security headers.
+#   Also positive and negative tests of every input and action (labeling-site/test/inputs.test.mjs): valid input is
+#   accepted, invalid input is refused for the right reason and changes nothing.
 # - scenarios: twenty situations acted out in a real browser (labeling-site/test/scenarios.test.mjs), from the owner's
-#   invite to the downloaded labels, including losing the internet, two tabs, a phone, and keyboard-only use.
+#   invite to the downloaded labels, including losing the internet, two tabs, a phone, and keyboard-only use; and
+#   positive and negative tests of each form (labeling-site/test/forms.test.mjs).
 name: Labeling site checks
 
 on:
@@ -43,8 +46,8 @@ jobs:
           node-version: "22"
       - name: Install the pinned tools
         run: npm ci --no-audit --no-fund
-      - name: Site tests
-        run: node --test test/api.test.mjs
+      - name: Site tests, and positive and negative tests of every input
+        run: node --test --test-reporter=spec test/api.test.mjs test/inputs.test.mjs
 
   scenarios:
     runs-on: ubuntu-24.04
@@ -66,5 +69,5 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Install the browser the pinned Playwright drives
         run: npx playwright install --with-deps chromium
-      - name: Scenarios in a real browser
-        run: node --test --test-reporter=spec test/scenarios.test.mjs
+      - name: Scenarios and form tests in a real browser
+        run: node --test --test-reporter=spec test/scenarios.test.mjs test/forms.test.mjs

@@ -55,7 +55,7 @@ jobs:
 
       - name: Tests on a local copy (nothing touches Cloudflare)
         working-directory: labeling-site
-        run: node --test test/api.test.mjs
+        run: node --test test/api.test.mjs test/inputs.test.mjs
 
       - name: Check the release settings are present
         env:

@@ -115,9 +115,27 @@ In the Cloudflare dashboard, delete the Worker `prior-auth-labeling`, then the D
 
 ## How it's tested
 
-Two sets of tests run on every change to the site, in the **Labeling site checks** workflow. Both use the real Worker code with an empty local database, so nothing touches Cloudflare.
+Four sets of tests run on every change to the site, in the **Labeling site checks** workflow. All use the real Worker code with an empty local database, so nothing touches Cloudflare.
 
 - **API tests** (`test/api.test.mjs`) send requests straight to the site and check its answers: who may see and change what, the locking, the audit trail, and the security headers.
+- **Positive and negative tests of every input** (`test/inputs.test.mjs`, 209 tests). A positive test sends something valid and checks it's accepted and does what it should. A negative test sends something invalid and checks three things: it's refused, the refusal gives the right reason, and nothing changed. Nothing changed means the people, their cases, the download, and the activity log all look exactly as before, and so does the labeler's own copy of the label. They cover:
+  - every address;
+  - signing in;
+  - the welcome page;
+  - the training checkbox;
+  - reading, saving, and submitting a label, including every field's allowed values, wrong types, and length limits, plus saves or submits sent at the same moment;
+  - the admin key;
+  - every owner action.
+- **Positive and negative tests of each form** (`test/forms.test.mjs`, 31 tests), in a real browser. Each form gets filled in correctly, then wrongly or halfway. The tests check that the person sees a plain message or a greyed-out button and that nothing is stored. The forms are:
+  - the admin sign-in;
+  - inviting;
+  - changing cases;
+  - the confirm-twice buttons;
+  - reopening;
+  - the Continue page;
+  - the welcome page;
+  - the training checkbox;
+  - the case form and its gap box.
 - **Scenarios** (`test/scenarios.test.mjs`) act out real situations from start to finish in a real browser (Chromium), clicking and typing as a person would. Each one plays the owner, one or more labelers, or both:
   1. An invited clinician's first visit, from your invite to the downloaded file, with the activity log in order.
   2. A documentation request, with the gap typed just before leaving the case.
@@ -142,16 +160,16 @@ Two sets of tests run on every change to the site, in the **Labeling site checks
 
   Every scenario also fails if any page has a script error, or a script the site's security policy blocks.
 
-The deploy workflow runs the API tests again before deploying.
+The deploy workflow runs the API tests and the input tests again before deploying.
 
 ## Working on it
 
 ```
 cd labeling-site
 npm ci
-npm test                      # the API tests
-npx playwright install chromium   # once, for the scenarios
-npm run scenarios             # the scenarios; SCENARIO_SHOTS=<folder> also saves screenshots
+npm test                      # the API tests, and the positive and negative tests of every input
+npx playwright install chromium   # once, for the browser tests
+npm run scenarios             # the scenarios and the form tests; SCENARIO_SHOTS=<folder> also saves screenshots
 npx wrangler d1 migrations apply prior-auth-labeling --local
 npx wrangler dev --local --var ADMIN_KEY:a-local-admin-key-at-least-24-chars
 ```
