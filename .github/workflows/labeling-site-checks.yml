@@ -1,0 +1,75 @@
+# Checks the online labeling site without deploying it, on GitHub's computers.
+# What it uses: the repository's files only. No secrets, no environment, read-only permission.
+# When it runs: on pull requests and pushes that change the site, and by hand.
+# What it checks, against a local Worker and a local database:
+# - site: the API tests (labeling-site/test/api.test.mjs): sign-in by personal link, consent, assigned cases only,
+#   saving, submitting and locking, labelers never seeing each other's labels, the admin key, reopening, turning links
+#   off, the audit trail, and the security headers.
+#   Also positive and negative tests of every input and action (labeling-site/test/inputs.test.mjs): valid input is
+#   accepted, invalid input is refused for the right reason and changes nothing.
+# - scenarios: twenty situations acted out in a real browser (labeling-site/test/scenarios.test.mjs), from the owner's
+#   invite to the downloaded labels, including losing the internet, two tabs, a phone, and keyboard-only use; and
+#   positive and negative tests of each form (labeling-site/test/forms.test.mjs).
+# The test files run one after another (each starts its own local copy of the site), and each failing test also
+# appears as an error note on the run's page (labeling-site/test/github-annotations.mjs).
+name: Labeling site checks
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "labeling-site/**"
+      - ".github/workflows/labeling-site-checks.yml"
+  pull_request:
+    paths:
+      - "labeling-site/**"
+      - ".github/workflows/labeling-site-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        working-directory: labeling-site
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install the pinned tools
+        run: npm ci --no-audit --no-fund
+      - name: Site tests, and positive and negative tests of every input
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/api.test.mjs test/inputs.test.mjs
+
+  scenarios:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        working-directory: labeling-site
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install the pinned tools
+        run: npm ci --no-audit --no-fund
+      - name: Install the browser the pinned Playwright drives
+        run: npx playwright install --with-deps chromium
+      - name: Scenarios and form tests in a real browser
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/scenarios.test.mjs test/forms.test.mjs

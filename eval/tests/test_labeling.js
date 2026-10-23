@@ -1,5 +1,5 @@
 // Test of the labeling page, eval/labeling/labeling.html: a simulated labeler fills two cases, then the test checks
-// the YAML the page writes, that progress is saved in the browser, the zip download, and that the case data carries no
+// the YAML the page writes, that progress is saved in the browser, the zip download, Clear this case, and that the case data carries no
 // answer-like words.
 // Run from the repository root: npm ci --prefix eval/tests ; node eval/tests/test_labeling.js eval/labeling/labeling.html
 // The statuses, evidence, and routings chosen below are arbitrary test inputs, picked only to exercise the page.
@@ -86,3 +86,24 @@ fr.readAsArrayBuffer(blobs[0]);
 const leak = /(expected_routing:\s*(approve|request|route)|held[- ]out|red flag:|adversarial|intended answer)/i;
 const data = html.slice(html.indexOf("const CASES"), html.indexOf("const POLICY_HEAD"));
 leak.test(data) ? fail("answer-like wording in the case data: " + data.match(leak)[0]) : ok("no answer-like wording in the case data");
+
+// 7. Clear this case (case 03 is open). Cancelled: nothing changes. Confirmed: only this case is emptied.
+d.querySelector("#casecol h2").textContent === "Case 03" ? ok("still on the third case") : fail("expected case 03");
+const stored = () => JSON.parse(w.localStorage.getItem("golden-set-labels-v1"));
+w.confirm = () => false; d.getElementById("clearcase").onclick();
+(stored().case_03 || {}).routing === "request" && d.querySelectorAll("#nav button")[2].className.includes("done")
+  ? ok("negative: cancelling Clear keeps the case's answers") : fail("cancelling Clear changed the case");
+w.confirm = () => true; d.getElementById("clearcase").onclick();
+const c3 = stored().case_03;
+!c3 || (c3.routing === "" && CRITS.every(k => !c3.criteria[k].status && !c3.criteria[k].evidence.length))
+  ? ok("positive: Clear empties this case's answers") : fail("case 03 after Clear: " + JSON.stringify(c3));
+stored().case_01 && stored().case_01.routing === "route" && stored().case_01.criteria.C2_conservative_4wk.evidence.length === 2
+  ? ok("positive: Clear keeps every other case") : fail("Clear changed case 01");
+const marks = [...d.querySelectorAll("#nav button")].map(b => b.className.includes("done"));
+marks[0] && !marks[2] ? ok("positive: the check marks follow (case 01 kept, case 03 cleared)") : fail("check marks after Clear: " + marks);
+const pre7 = d.querySelector("#formcol pre").textContent;
+/C1_red_flag:\s+\{status: , evidence: \[\]\}/.test(pre7) && /named_gap: null/.test(pre7)
+  ? ok("positive: the preview shows case 03 empty") : fail("preview after Clear: " + pre7);
+CRITS.every(k => !d.querySelector(`#formcol input[name="${k}"]:checked`)) ? ok("positive: the form shows no answers") : fail("form still shows answers");
+setRadio("C1_red_flag", "supported");
+((stored().case_03 || {}).criteria || {}).C1_red_flag?.status === "supported" ? ok("positive: a cleared case can be labeled again") : fail("relabeling after Clear");

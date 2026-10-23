@@ -1,0 +1,144 @@
+# Deploys the online labeling site (labeling-site/README.md; docs/ARCHITECTURE.md, ADR-13) to Cloudflare.
+# How it starts: by hand, from the Actions page, on main only. It uses the "release" environment, which holds
+# CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and LABELING_ADMIN_KEY, so GitHub waits for the owner to approve the run.
+# What it does: checks that the site's content matches the repository, runs the site's tests on a local copy, finds or
+# creates the D1 database, applies its migrations, deploys the Worker, sets the admin key as a Worker secret, and checks
+# that the site answers as expected. The site's address appears in the run's summary.
+# Keys: it prints none. The admin key reaches only `wrangler secret put`, on standard input.
+# Data: the site holds the twelve synthetic golden cases and the two practice cases, never any label other than those
+# outside labelers enter, and never the locked intended answers.
+name: Deploy labeling site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labeling-site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash   # bash -eo pipefail: a failed command in a pipe fails the step
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: The site's content matches the repository
+        run: |
+          python3 labeling-site/build_content.py
+          if ! git diff --quiet -- labeling-site/src/content.generated.js; then
+            echo "::error title=Content out of date::labeling-site/src/content.generated.js differs from the repository. Run bash eval/tools/rebuild_golden.sh and commit the result."
+            exit 1
+          fi
+
+      - name: Install the pinned tools
+        working-directory: labeling-site
+        run: npm ci --no-audit --no-fund
+
+      - name: Tests on a local copy (nothing touches Cloudflare)
+        working-directory: labeling-site
+        run: node --test --test-concurrency=1 test/api.test.mjs test/inputs.test.mjs
+
+      - name: Check the release settings are present
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LABELING_ADMIN_KEY: ${{ secrets.LABELING_ADMIN_KEY }}
+        run: |
+          missing=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [ -n "$LABELING_ADMIN_KEY" ] || missing="$missing LABELING_ADMIN_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error title=Missing settings::Add these secrets to the release environment:$missing. Nothing was deployed."
+            exit 1
+          fi
+          if [ "${#LABELING_ADMIN_KEY}" -lt 24 ]; then
+            echo "::error title=Admin key too short::LABELING_ADMIN_KEY must be at least 24 characters. Nothing was deployed."
+            exit 1
+          fi
+
+      - name: Find or create the database, and apply its migrations
+        working-directory: labeling-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          find_id() {
+            npx wrangler d1 list --json | python3 -c "import json, sys; d = [x for x in json.load(sys.stdin) if x.get('name') == 'prior-auth-labeling']; print(d[0]['uuid'] if d else '')"
+          }
+          id=$(find_id)
+          if [ -z "$id" ]; then
+            npx wrangler d1 create prior-auth-labeling > /dev/null
+            id=$(find_id)
+          fi
+          if ! printf '%s' "$id" | grep -Eq '^[0-9a-f-]{36}$'; then
+            echo "::error title=No database::Could not find or create the D1 database prior-auth-labeling. Check the token has D1 Edit permission."
+            exit 1
+          fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$id/" wrangler.toml
+          npx wrangler d1 migrations apply prior-auth-labeling --remote
+
+      - name: Deploy the Worker
+        id: deploy
+        working-directory: labeling-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deploy | tee deploy.log
+          url=$(grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          if [ -z "$url" ]; then
+            echo "::error title=No address::The deploy did not report a workers.dev address. If it says to register a workers.dev subdomain, set one in the Cloudflare dashboard (labeling-site/README.md) and run this again."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Set the admin key
+        working-directory: labeling-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LABELING_ADMIN_KEY: ${{ secrets.LABELING_ADMIN_KEY }}
+        run: printf '%s' "$LABELING_ADMIN_KEY" | npx wrangler secret put ADMIN_KEY
+
+      - name: Check the site answers
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          LABELING_ADMIN_KEY: ${{ secrets.LABELING_ADMIN_KEY }}
+        run: |
+          code() { curl -s -o /dev/null -w "%{http_code}" "$1"; }
+          for i in $(seq 1 30); do [ "$(code "$URL/")" = "200" ] && break; sleep 4; done
+          fail=""
+          [ "$(code "$URL/")" = "200" ] || fail="$fail landing"
+          [ "$(code "$URL/admin")" = "200" ] || fail="$fail admin page"
+          [ "$(code "$URL/app")" = "401" ] || fail="$fail app-without-link"
+          [ "$(code "$URL/api/me")" = "401" ] || fail="$fail api-without-link"
+          admin=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $LABELING_ADMIN_KEY" "$URL/api/admin/state")
+          [ "$admin" = "200" ] || fail="$fail admin-key(answered $admin)"
+          if [ -n "$fail" ]; then echo "::error title=Site check failed::Unexpected answer from:$fail"; exit 1; fi
+          {
+            echo "## Labeling site deployed"
+            echo ""
+            echo "- Site: $URL"
+            echo "- Admin page: $URL/admin (sign in with the admin key)"
+            echo "- The landing page answers, the app and its data stay closed without a personal link, and the admin key works."
+          } >> "$GITHUB_STEP_SUMMARY"

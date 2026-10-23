@@ -1,0 +1,16 @@
+{
+  "name": "prior-auth-labeling-site",
+  "private": true,
+  "description": "The online labeling site for outside labelers: a Cloudflare Worker with a D1 database (see README.md).",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "test": "node --test --test-concurrency=1 test/api.test.mjs test/inputs.test.mjs",
+    "scenarios": "node --test --test-concurrency=1 test/scenarios.test.mjs test/forms.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "undici": "6.23.0",
+    "wrangler": "4.147.0"
+  }
+}

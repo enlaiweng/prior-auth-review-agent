@@ -43,6 +43,21 @@ Single operator: Enlai Weng,  234715621+enlaiweng@users.noreply.github.com . For
 
 If this were deployed to a UM team: pilot with one team on lumbar MRI requests only; a fifteen-minute walkthrough of the three outputs and the citation display; a feedback button on the request screen; the audit sample of approvals reviewed weekly for the first month. Metrics that would say adoption is real: reviewer reversal rate on system approvals, override rate on documentation requests, and time from request receipt to decision against the pre-pilot baseline. None of this is measured in this build; it is written so the release has an adoption plan with a shape a program office would recognize.
 
+## Labeling site (outside labelers)
+
+The online labeling site (labeling-site/README.md; ARCHITECTURE.md, ADR-13) is separate from the demo Worker and holds no agent.
+
+- **Deploy or update:** run the "Deploy labeling site" workflow from main and approve it. It needs CLOUDFLARE_API_TOKEN (with D1 Edit), CLOUDFLARE_ACCOUNT_ID, and LABELING_ADMIN_KEY in the release environment. The run's summary gives the address.
+- **Invite, assign, replace or turn off a link, reopen a case:** the admin page, `/admin`, signed in with the admin key. Every change is in its activity log.
+- **Let someone redo a case:** before they submit, they can click **Clear this case** themselves. After they submit, use **Clear it** for that case on the admin page, with a reason (it starts again from not started), or **Reopen it** to let them change their answers.
+- **Redo a case of your own blind labels:** before uploading, click **Clear this case** on the labeling page. After the blind-labels pull request is merged they are locked; changes go in the final labels at settling.
+- **Step-by-step setup:** the Claude project's guide `claude/labeling-site-setup-2026-10-20.md` walks through deploying, testing, and inviting, one click at a time.
+- **Collect labels:** download submitted labels from the admin page; Claude adds them to the repository through a pull request.
+- **If a link leaks:** make a new link for that person on the admin page (the old one stops at once), and check the activity log for sign-ins.
+- **If the admin key leaks:** change LABELING_ADMIN_KEY in the release environment and run the deploy workflow again.
+- **Remove a person's details on request:** the admin page's "Remove this person's details" (labeling-site/README.md); record it in the decision log.
+- **Shut down:** delete the Worker and the D1 database named prior-auth-labeling in the Cloudflare dashboard, after downloading anything to keep.
+
 ## Demo path
 
 [Three lines: which case to submit for an approve, which for a documentation request, which for a physician route, and what the viewer should see on screen for each.]
