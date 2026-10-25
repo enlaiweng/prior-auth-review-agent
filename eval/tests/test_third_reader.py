@@ -57,6 +57,13 @@ class ThirdReaderTest(unittest.TestCase):
             shutil.copytree(os.path.join(ROOT, d), os.path.join(cls.tmp, d), ignore=shutil.ignore_patterns("node_modules"))
         cls.old = os.getcwd()
         os.chdir(cls.tmp)
+        # The real third reader's labels and runs, once committed, would make the script skip these cases. The test
+        # needs a repository copy where Gemini has not run yet, so they are removed from the temporary copy only.
+        import glob
+        for p in glob.glob("data/golden/case_*/labels_gemini.yaml"):
+            os.remove(p)
+        for d in glob.glob("eval/third_reader/runs/*/"):
+            shutil.rmtree(d)
         import check_labels
         cls.ids = {c: sorted(check_labels.citable_ids(f"data/golden/{c}")) for c in ["case_01", "case_02", "case_03"]}
         claim = lambda c: next(i for i in cls.ids[c] if i.startswith("Claim/"))

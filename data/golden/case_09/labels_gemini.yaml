@@ -1,0 +1,12 @@
+# Third reader's labels for one case: Gemini through its API (EVAL_PLAN.md, How the answer key is made). Never edited after commit.
+# Written by eval/third_reader/run_third_reader.py from the reply saved in eval/third_reader/runs/40166566266/case_09.response.json.
+# Model requested: gemini-3.8-flash. Model version Gemini reported: gemini-3.8-flash. Prompt sha256: 71e80597b95eb1c38bf741de7e7fa27db1bd344bac6d01e1722d2f85b0b7fe07.
+case_id: case_09
+labeled_on: 2026-10-25
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Condition/case09-cond-01, Encounter/case09-enc-01, Encounter/case09-enc-02, Encounter/case09-enc-03, Encounter/case09-enc-04, MedicationRequest/case09-med-01, Procedure/case09-pt-01, note:p1, note:p2]}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case09-enc-04, note:p5]}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: approve
+named_gap: null
