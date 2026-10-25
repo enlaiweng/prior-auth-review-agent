@@ -1,0 +1,12 @@
+# Blind labels for one case (Amendment 2): your answers before seeing any other reader's. Never edited after upload.
+# status is supported, unsupported, or undeterminable. evidence lists resource ids (for example Procedure/case01-pt-01) or note paragraphs (note:p2).
+# expected_routing is approve, request, or route. named_gap is null, or {criterion: C2, missing: what is missing}.
+case_id: case_07
+labeled_on: 2026-10-24
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Procedure/case07-pt-01]}
+  C3_informs_management:   {status: unsupported, evidence: []}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: route
+named_gap: null

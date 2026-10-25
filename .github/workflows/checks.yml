@@ -8,7 +8,9 @@
 #      (eval/tests/test_third_reader.py). Nothing is sent to Google. (The scoring tests run in Agent checks.)
 #   3. Label files: every labels_blind.yaml, labels_gemini.yaml, and labels.yaml has the template's form and cites only
 #      ids on its case page (eval/tools/check_labels.py); every labels_gemini.yaml is exactly what the third reader's
-#      script writes from Gemini's saved reply (run_third_reader.py --verify), so none can be edited by hand. On a pull
+#      script writes from Gemini's saved reply (run_third_reader.py --verify), and every label file made from a labeling
+#      site export is exactly what that committed export produces (labeling-site/export_to_label_files.py --verify),
+#      so none can be edited by hand. On a pull
 #      request, no blind or Gemini label file already on main may be changed, renamed, or deleted.
 name: Checks
 
@@ -64,16 +66,18 @@ jobs:
         run: python3 eval/tools/check_labels.py
       - name: Check that every Gemini label file matches Gemini's saved reply
         run: python3 eval/third_reader/run_third_reader.py --verify
+      - name: Check that every label file made from a labeling site export matches that export
+        run: python3 labeling-site/export_to_label_files.py --verify
       - name: Check that no blind or Gemini label file already on main is changed
         if: github.event_name == 'pull_request'
         env:
           BASE: ${{ github.base_ref }}
         run: |
           changed=$(git diff --name-status --diff-filter=MDR "origin/${BASE}...HEAD" -- \
-            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml')
+            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml' 'data/golden/site_exports/*.json')
           if [ -n "$changed" ]; then
             echo "$changed"
-            echo "::error title=Label file edited::Blind and Gemini label files are never edited after they arrive. Final labels go in labels.yaml instead."
+            echo "::error title=Label file edited::Blind and Gemini label files, and labeling site exports, are never edited after they arrive. Final labels go in labels.yaml instead."
             exit 1
           fi
-          echo "No blind or Gemini label file on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No blind or Gemini label file, or site export, on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"
