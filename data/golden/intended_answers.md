@@ -1,8 +1,8 @@
 # Locked intended answers
 
-`intended_answers.yaml.enc` holds Claude's intended answers for the 12 golden cases, encrypted. Nobody can read it until the key is published.
+`intended_answers.yaml.enc` holds Claude's intended answers for the 12 golden cases, encrypted. The key was published at the reveal (below), so anyone can now read it.
 
-## The reveal (2026-10-25)
+## The reveal (2026-10-24, 23:47 Pacific)
 
 Enlai Weng's blind labels were merged on 2026-10-24 at 22:38 Pacific (pull request #12), and the third reader's labels
 were committed by its workflow at 23:08 Pacific (run 40166566266). After both, the key was published here:
@@ -12,7 +12,7 @@ INF2rPa3Lpu22p7rLsvQiFZDEe7O2yGEpMt6nRh7Le8
 ```
 
 The decrypted file is committed beside the locked one as `intended_answers.yaml`, byte for byte as it came out of the
-command below. The Checks workflow decrypts the locked file with this key on every pull request and fails if the result
+decryption command in "How to check it after the key is published" below. The Checks workflow decrypts the locked file with this key on every pull request and fails if the result
 differs from `intended_answers.yaml` or if the locked file's fingerprint differs from the one below. The three readers
 are compared in `disagreements.md`.
 

@@ -1,7 +1,7 @@
 # Checks the labeling page, the third reader's script, and every label file, on GitHub's computers.
 # What it uses: the repository's files only. No secrets, no environment, read-only permission.
 # When it runs: on every pull request, on pushes to main or a claude/ branch, and by hand.
-# Three checks:
+# Checks:
 #   1. Labeling page: a simulated labeler fills two cases on eval/labeling/labeling.html and downloads the zip
 #      (eval/tests/test_labeling.js). The values it picks are arbitrary test inputs, not labels.
 #   2. Tests for the third reader's script and the label checker, with a fake Gemini server on the runner
@@ -10,8 +10,10 @@
 #      ids on its case page (eval/tools/check_labels.py); every labels_gemini.yaml is exactly what the third reader's
 #      script writes from Gemini's saved reply (run_third_reader.py --verify), and every label file made from a labeling
 #      site export is exactly what that committed export produces (labeling-site/export_to_label_files.py --verify),
-#      so none can be edited by hand. On a pull
-#      request, no blind or Gemini label file already on main may be changed, renamed, or deleted.
+#      so none can be edited by hand. After the reveal, the decrypted intended answers must be exactly the locked file
+#      opened with the published key, and data/golden/disagreements.md must be what eval/tools/compare_readers.py makes.
+#      On a pull request, no blind or Gemini label file, site export, or intended answers file already on main may be
+#      changed, renamed, or deleted.
 name: Checks
 
 on:

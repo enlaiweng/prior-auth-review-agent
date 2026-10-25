@@ -85,8 +85,8 @@ def report(data):
              "with the reason, in each case's `labels.yaml`.")
     L.append("")
     L.append("- **Enlai**: blind labels (`labels_blind.yaml`), entered on the labeling site on 2026-10-24.")
-    L.append("- **Gemini**: the third reader (`labels_gemini.yaml`), gemini-3.8-flash through its API, run 40166566266 on 2026-10-24.")
-    L.append("- **Intended**: Claude's intended answers, locked on 2026-10-15 and revealed on 2026-10-25 (`intended_answers.yaml`).")
+    L.append("- **Gemini**: the third reader (`labels_gemini.yaml`), gemini-3.8-flash through its API, run 40166566266 on 2026-10-24 (Pacific).")
+    L.append("- **Intended**: Claude's intended answers, locked on 2026-10-15 and revealed on 2026-10-24 at 23:47 Pacific (`intended_answers.yaml`).")
     L.append("")
     L.append("## Agreement")
     L.append("")
@@ -99,8 +99,9 @@ def report(data):
     alls = sum(len({data[c][x]["status"][k] for x, _ in READERS}) == 1 for c in CASES for k, _ in CRIT)
     L.append(f"| All three | {allr} | {alls} |")
     L.append("")
-    L.append("Evidence is listed below but not counted: the readers were asked to cite what supports each status, and "
-             "how much to cite was left to each, so a shorter list is not by itself a disagreement.")
+    L.append("Evidence is listed below but not counted: the readers were asked to cite the ids their answer is based on, "
+             "and the instructions did not fix how many, so a shorter list is not by itself a disagreement. An evidence "
+             "row is marked when one reader cites nothing where another cites something; those are worth a look.")
     L.append("")
     L.append("## Cases to settle")
     L.append("")
@@ -108,14 +109,24 @@ def report(data):
              or len({data[c][x]["routing"] for x, _ in READERS}) > 1
              or len({data[c][x]["gap"][0] if data[c][x]["gap"] else None for x, _ in READERS}) > 1]
     same = [c for c in CASES if c not in split]
+    wording = [c for c in same if len({data[c][x]["gap"] for x, _ in READERS}) > 1]
     L.append("Cases where the readers differ on a status, the routing, or the criterion named in a gap: "
              + (", ".join(c.replace("case_", "") for c in split) if split else "none") + ".")
     L.append("Cases where all three agree on all of those: "
              + (", ".join(c.replace("case_", "") for c in same) if same else "none") + ".")
+    if wording:
+        L.append("Of those, cases where the gap names the same criterion but the readers describe what is missing "
+                 "differently (the final label needs one description): " + ", ".join(c.replace("case_", "") for c in wording) + ".")
     L.append("")
     for c in CASES:
         d = data[c]
-        L.append(f"## {c.replace('case_', 'Case ')}" + ("" if c in split else " (all three agree)"))
+        if c in split:
+            note = ""
+        elif len({d0["gap"] for d0 in data[c].values()}) > 1:
+            note = " (statuses, routing and gap criterion agree; gap wording differs)"
+        else:
+            note = " (all three agree)"
+        L.append(f"## {c.replace('case_', 'Case ')}" + note)
         L.append("")
         L.append("| | Enlai | Gemini | Intended | |")
         L.append("|---|---|---|---|---|")
@@ -140,7 +151,8 @@ def report(data):
             parts = []
             for x, label in READERS:
                 parts.append(f"{label} " + (", ".join(f"`{e}`" for e in ev[x]) if ev[x] else "none"))
-            L.append(f"- {name}: " + "; ".join(parts))
+            mark = " (one reader cites nothing here)" if any(ev.values()) and not all(ev.values()) else ""
+            L.append(f"- {name}: " + "; ".join(parts) + mark)
         L.append("")
     return "\n".join(L).rstrip() + "\n"
 
