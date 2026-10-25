@@ -1,0 +1,559 @@
+{
+  "exported_at": "2026-10-25T05:15:39.607Z",
+  "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+  "note": "Submitted labels only. case_sha is the fingerprint of the case record the labeler's page showed; content_sha, of all the site's case content then. kind is golden or practice.",
+  "labels": [
+    {
+      "labeler_id": "lb_4f815bec5176b16c",
+      "invited_name": "Enlai (test)",
+      "credit_name": "Enlai (test)",
+      "role": "",
+      "consent_at": "2026-10-25T00:02:50.416Z",
+      "training_done_at": "2026-10-25T04:00:17.486Z",
+      "case": "practice_a",
+      "kind": "practice",
+      "submitted_at": "2026-10-25T04:02:01.015Z",
+      "updated_at": "2026-10-25T04:02:01.015Z",
+      "revision": 9,
+      "case_sha": "43cea25c5da8321f3f429473e048f5c15f015be54dc261a183ede3adb463c0b9",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Procedure/practicea-pt-01",
+              "note:p2"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/practicea-enc-03"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "approve",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_01",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:23:50.036Z",
+      "updated_at": "2026-10-25T04:23:50.036Z",
+      "revision": 9,
+      "case_sha": "41c85f1a62dec0fdc73fe9009dd2347f5b6782b1fed3be78d1df21350570e03b",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Procedure/case01-pt-01"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case01-enc-04",
+              "note:p5"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "approve",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_02",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:26:43.293Z",
+      "updated_at": "2026-10-25T04:26:43.293Z",
+      "revision": 6,
+      "case_sha": "463f66e8412a95e1bc3742aacc690496b80e9f651bd279ca04232c10c88c5823",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C3_informs_management": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "route",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_03",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:35:24.634Z",
+      "updated_at": "2026-10-25T04:35:24.634Z",
+      "revision": 12,
+      "case_sha": "c7fb93e85c5b9b712924a982e5f66aa97bd41b7cf80db34fae4a00c3e2455f21",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "undeterminable",
+            "evidence": []
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case03-enc-02",
+              "note:p5"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "request",
+        "gap_criterion": "C2",
+        "gap_missing": "4 weeks of treatment required"
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_04",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:39:00.902Z",
+      "updated_at": "2026-10-25T04:39:00.902Z",
+      "revision": 14,
+      "case_sha": "6b274e1586205f7fd807355a789072c8c68dcb138aeeaa1a4c28804cc34aff50",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "undeterminable",
+            "evidence": [
+              "Encounter/case04-enc-02",
+              "note:p5"
+            ]
+          },
+          "C2_conservative_4wk": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case04-enc-02",
+              "note:p5"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "request",
+        "gap_criterion": "C1",
+        "gap_missing": "need further information on urgency."
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_05",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:44:21.860Z",
+      "updated_at": "2026-10-25T04:44:21.860Z",
+      "revision": 15,
+      "case_sha": "f3c7386018f8312425c0192f7cfba1f70b130f0153e7ba72e88c198f4d9b9399",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Procedure/case05-pt-01",
+              "note:p2"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case05-enc-04",
+              "note:p5"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "undeterminable",
+            "evidence": [
+              "DiagnosticReport/case05-dr-01",
+              "note:p5"
+            ]
+          }
+        },
+        "routing": "request",
+        "gap_criterion": "C4",
+        "gap_missing": "not determined if duplicate MRI is needed. need confirmation."
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_06",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:51:42.249Z",
+      "updated_at": "2026-10-25T04:51:42.249Z",
+      "revision": 13,
+      "case_sha": "9bc3afb32d2c6abb531deee41eab98f30bd4e7113256e99df1dfde084b38afa0",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "undeterminable",
+            "evidence": [
+              "Condition/case06-cond-02",
+              "note:p2",
+              "note:p5"
+            ]
+          },
+          "C2_conservative_4wk": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": []
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "request",
+        "gap_criterion": "C1",
+        "gap_missing": "Clarification of history of cancer."
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_07",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:54:32.810Z",
+      "updated_at": "2026-10-25T04:54:32.810Z",
+      "revision": 7,
+      "case_sha": "243ebf1e5a485a4123ad22e8efc09e93ad383fce67b0c2702dc548f76533db05",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Procedure/case07-pt-01"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "route",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_08",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T04:57:31.875Z",
+      "updated_at": "2026-10-25T04:57:31.875Z",
+      "revision": 9,
+      "case_sha": "e749b410e471f03402e3730004f1b19092bd1805bdaf878449dc29b449669416",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "unsupported",
+            "evidence": [
+              "Procedure/case08-pt-01"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case08-enc-02",
+              "note:p9"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "route",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_09",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T05:02:01.238Z",
+      "updated_at": "2026-10-25T05:02:01.238Z",
+      "revision": 9,
+      "case_sha": "ff8d705b73e0f9f56d4b071b9231f96d9787132319ce2cc3ccac02ed7e2fc213",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case09-enc-04",
+              "Procedure/case09-pt-01"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case09-enc-04",
+              "note:p5"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "approve",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_10",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T05:07:08.182Z",
+      "updated_at": "2026-10-25T05:07:08.182Z",
+      "revision": 9,
+      "case_sha": "c3ec0732b01de079a3ef67fe36826d4b1559bef71006269a7c9d12d307f8cbca",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "supported",
+            "evidence": [
+              "Procedure/case10-pt-01"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "Encounter/case10-enc-03",
+              "note:p7"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "approve",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_11",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T05:10:39.277Z",
+      "updated_at": "2026-10-25T05:10:39.277Z",
+      "revision": 8,
+      "case_sha": "6ce682d7733c43ba31ffb3b56b847d2fdeef2f014837cb93d11987665808e19c",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C2_conservative_4wk": {
+            "status": "undeterminable",
+            "evidence": [
+              "note:p2"
+            ]
+          },
+          "C3_informs_management": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "route",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    },
+    {
+      "labeler_id": "lb_d86cfa4745831c52",
+      "invited_name": "Enlai",
+      "credit_name": "Enlai",
+      "role": "Creator",
+      "consent_at": "2026-10-25T04:06:27.479Z",
+      "training_done_at": "2026-10-25T04:06:30.512Z",
+      "case": "case_12",
+      "kind": "golden",
+      "submitted_at": "2026-10-25T05:14:43.764Z",
+      "updated_at": "2026-10-25T05:14:43.764Z",
+      "revision": 10,
+      "case_sha": "94041d1a773e77a128ecf957cb3bd36f61bc3e4028441a679bf4900db11df53e",
+      "content_sha": "63811d644c55864c1c5e0aade97e90675a25f470f6789ec70220b527702c2e92",
+      "label": {
+        "criteria": {
+          "C1_red_flag": {
+            "status": "supported",
+            "evidence": [
+              "Observation/case12-obs-02",
+              "note:p3",
+              "note:p7"
+            ]
+          },
+          "C2_conservative_4wk": {
+            "status": "unsupported",
+            "evidence": []
+          },
+          "C3_informs_management": {
+            "status": "supported",
+            "evidence": [
+              "note:p10"
+            ]
+          },
+          "C4_no_duplicate_imaging": {
+            "status": "supported",
+            "evidence": []
+          }
+        },
+        "routing": "approve",
+        "gap_criterion": "",
+        "gap_missing": ""
+      }
+    }
+  ]
+}
