@@ -1,0 +1,12 @@
+# Third reader's labels for one case: Gemini through its API (EVAL_PLAN.md, How the answer key is made). Never edited after commit.
+# Written by eval/third_reader/run_third_reader.py from the reply saved in eval/third_reader/runs/40166566266/case_10.response.json.
+# Model requested: gemini-3.8-flash. Model version Gemini reported: gemini-3.8-flash. Prompt sha256: 354aa1b110afa3efcf916c31b7c98e64e58787d08f63985fbf68414f692ad399.
+case_id: case_10
+labeled_on: 2026-10-25
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Condition/case10-cond-01, MedicationRequest/case10-med-01, Procedure/case10-pt-01, note:p4]}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case10-enc-03, note:p7]}
+  C4_no_duplicate_imaging: {status: undeterminable, evidence: [Procedure/case10-img-01]}
+expected_routing: request
+named_gap: {criterion: C4, missing: "lumbar CT report"}

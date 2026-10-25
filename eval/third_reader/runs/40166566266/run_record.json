@@ -1,0 +1,338 @@
+{
+ "reader": "Gemini, through the Gemini API (generateContent)",
+ "model_requested": "gemini-3.8-flash",
+ "request_settings": "the prompt as the only content; no generationConfig, so the model's default temperature and thinking level",
+ "started_utc": "2026-10-25T05:44:02+00:00",
+ "workflow_run": "https://github.com/enlaiweng/prior-auth-review-agent/actions/runs/40166566266",
+ "run_id": "40166566266",
+ "cases": {
+  "case_01": {
+   "prompt_sha256": "8968dbffbe5020d521a7b58f9048718799e3345fde2453026dd425b5e66220b9",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "b511e06b5e423c79475114cdc44bbb10ecdec6b83271be700bdc9576262c1795",
+   "response_file": "eval/third_reader/runs/40166566266/case_01.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "IpfdaoSmMKSY6dkPmbLSyQM",
+   "usage": {
+    "promptTokenCount": 4107,
+    "candidatesTokenCount": 163,
+    "totalTokenCount": 9860,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 4107
+     }
+    ],
+    "thoughtsTokenCount": 5590,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_01/labels_gemini.yaml",
+   "labels_sha256": "126db5f42114b98e662381168f4eb88da605d5bb0f447b8e5b7e9635d469c522"
+  },
+  "case_02": {
+   "prompt_sha256": "ab138ea81bd45efdef564c95f10800fe6c8c46b69c656765bcfcb532da4950c7",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "35cd8af2a86dfa59efd8e854519c2d1d0563c4098738cdefb16a23390476cb86",
+   "response_file": "eval/third_reader/runs/40166566266/case_02.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "uZfdavKFN7aY6dkPnO_-6A0",
+   "usage": {
+    "promptTokenCount": 3905,
+    "candidatesTokenCount": 149,
+    "totalTokenCount": 13320,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3905
+     }
+    ],
+    "thoughtsTokenCount": 9266,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_02/labels_gemini.yaml",
+   "labels_sha256": "4e4538a9811c787267ee2a8e0025470d74d80a5723101d88c49a3ca779cbe712"
+  },
+  "case_03": {
+   "prompt_sha256": "ec238538ce34369384949e906a5f055da5a23f548bb43617302ade7224d1b056",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "8b13afca34fa4b96a2ebd19cfeb9eb4c936e7d1a4ff307adb16613e9bd5087b4",
+   "response_file": "eval/third_reader/runs/40166566266/case_03.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "T5jdauawJPqdqtsPjqbD2Ao",
+   "usage": {
+    "promptTokenCount": 3675,
+    "candidatesTokenCount": 156,
+    "totalTokenCount": 8837,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3675
+     }
+    ],
+    "thoughtsTokenCount": 5006,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_03/labels_gemini.yaml",
+   "labels_sha256": "d395e9322a00cdc4280a6da1004574a72649e86d6aea8df05bb9f517e6255dc8"
+  },
+  "case_04": {
+   "prompt_sha256": "26166075d9efc6c419fdb9a42f719cd0607cbcfeaa5f8616758970dc4a1d100b",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "97c3a4ff913015e65f8dac450325e128143379a970b97bf764e7bbeba4d37a35",
+   "response_file": "eval/third_reader/runs/40166566266/case_04.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "2JjdatjkGtjUz7IPiZHzuQI",
+   "usage": {
+    "promptTokenCount": 3892,
+    "candidatesTokenCount": 176,
+    "totalTokenCount": 6038,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3892
+     }
+    ],
+    "thoughtsTokenCount": 1970,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_04/labels_gemini.yaml",
+   "labels_sha256": "5522f1f8b6b9aa4498bbce10a461c4edcda6260e93704cd84d821e59d9301586"
+  },
+  "case_05": {
+   "prompt_sha256": "ef0060654794c937b97de45bafc3e83e9d976dd733dcccbc4b9ece398a183e71",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "53a69834959c00b9cfa8a554ed9b9796aee775c133148511ba8304464654edcb",
+   "response_file": "eval/third_reader/runs/40166566266/case_05.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "Vpndaq2TGuarqtsPkJSQ-AM",
+   "usage": {
+    "promptTokenCount": 4282,
+    "candidatesTokenCount": 209,
+    "totalTokenCount": 6685,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 4282
+     }
+    ],
+    "thoughtsTokenCount": 2194,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_05/labels_gemini.yaml",
+   "labels_sha256": "10c0ab53a7e0d18ff8920c1ae80cea60ea64150541ddb5759a42ba03d11e1d71"
+  },
+  "case_06": {
+   "prompt_sha256": "415c421ae6d6293712e6fdb8dc94f7d8a282ce0f38ff169e7fca44e6d4e174a1",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "e0915b626b878f9808edb42fceb226670812aa1a656e249c49db98f82f16cf1c",
+   "response_file": "eval/third_reader/runs/40166566266/case_06.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "mJndavKoBdeyqtsP6pLMyAk",
+   "usage": {
+    "promptTokenCount": 3694,
+    "candidatesTokenCount": 171,
+    "totalTokenCount": 7402,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3694
+     }
+    ],
+    "thoughtsTokenCount": 3537,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_06/labels_gemini.yaml",
+   "labels_sha256": "d7d550f638039219975b1a6afdbae1828b82e3ff7105f7cd9e97f3bca34d9546"
+  },
+  "case_07": {
+   "prompt_sha256": "a9189a5ff1785f10851023acea71d6cfb97e0742d38613e6ebb863d555202174",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "40e03e4f1329ad59c7162d5ba50787392ba3efac0086dc131b116ce0c3ee43b2",
+   "response_file": "eval/third_reader/runs/40166566266/case_07.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "IJrdaun-H-W6qtsP27Oj0QM",
+   "usage": {
+    "promptTokenCount": 3708,
+    "candidatesTokenCount": 162,
+    "totalTokenCount": 24934,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3708
+     }
+    ],
+    "thoughtsTokenCount": 21064,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_07/labels_gemini.yaml",
+   "labels_sha256": "ef15b23cf38a23283dfd8fde1670d12129b668e1d05f240aa47b0ad356ff392a"
+  },
+  "case_08": {
+   "prompt_sha256": "11d24dd568c3381e905c3bc89d997af7f744d576c3da55ea1813dafc9a35592a",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "bf107b86156fdc5f488140470d505debaaebedecc3ac929835a6b574e5d7008a",
+   "response_file": "eval/third_reader/runs/40166566266/case_08.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "75rdaqTKKeSeqtsPh4jA0Ao",
+   "usage": {
+    "promptTokenCount": 4018,
+    "candidatesTokenCount": 152,
+    "totalTokenCount": 6971,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 4018
+     }
+    ],
+    "thoughtsTokenCount": 2801,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_08/labels_gemini.yaml",
+   "labels_sha256": "faf6661124daa29440d4b38e0fc14a21867d242123f2f978925d8ec61a9da0a9"
+  },
+  "case_09": {
+   "prompt_sha256": "71e80597b95eb1c38bf741de7e7fa27db1bd344bac6d01e1722d2f85b0b7fe07",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "8a7533ae0fc4a0973c1627ce2263d0d4d64c7bb854037aba306a2b1fe2d49706",
+   "response_file": "eval/third_reader/runs/40166566266/case_09.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "UZvdarTbO5a_qtsPwMPgwQk",
+   "usage": {
+    "promptTokenCount": 4046,
+    "candidatesTokenCount": 210,
+    "totalTokenCount": 8809,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 4046
+     }
+    ],
+    "thoughtsTokenCount": 4553,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_09/labels_gemini.yaml",
+   "labels_sha256": "8fceed858be4e351afe97bf46e45fad25857fbca3e4ad45cffec5df477369091"
+  },
+  "case_10": {
+   "prompt_sha256": "354aa1b110afa3efcf916c31b7c98e64e58787d08f63985fbf68414f692ad399",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "0cf35173093f0de14f5912afc22765a6ac8060985e029a768ef29c620c3365e0",
+   "response_file": "eval/third_reader/runs/40166566266/case_10.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "yZvdavq7Bf2tz7IP6IiZ6AI",
+   "usage": {
+    "promptTokenCount": 3904,
+    "candidatesTokenCount": 184,
+    "totalTokenCount": 17930,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3904
+     }
+    ],
+    "thoughtsTokenCount": 13842,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_10/labels_gemini.yaml",
+   "labels_sha256": "e59c9b481509dee85ff692c9ebef47bfe2b309a14d7e3003a7e0da37bac92a4a"
+  },
+  "case_11": {
+   "prompt_sha256": "f30a60fea58d981b7b5ae09743c9c28e5c30addd91f6f23b37d7a23f9cc7a264",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "4dfe2634e46eb53c5deed66c73ca5ea4e65f493243a7d1396d81f6c400cb141a",
+   "response_file": "eval/third_reader/runs/40166566266/case_11.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "XZzdauXnE_mRmtkPuL7msAk",
+   "usage": {
+    "promptTokenCount": 3768,
+    "candidatesTokenCount": 131,
+    "totalTokenCount": 7614,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 3768
+     }
+    ],
+    "thoughtsTokenCount": 3715,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_11/labels_gemini.yaml",
+   "labels_sha256": "01481987dcd0b3446e22c7a814e109ebe794dd488be4d4aa938bc476f578e951"
+  },
+  "case_12": {
+   "prompt_sha256": "c132c87d3351ae6cb928955c1d3f23793a1c90be823b44b5ec76868a437a4034",
+   "http_status": 200,
+   "attempts": 1,
+   "response_sha256": "c3b75e7bf5ff3b59a8a4d17a31968ed2e39888694a01728b59adbf77a5b5062a",
+   "response_file": "eval/third_reader/runs/40166566266/case_12.response.json",
+   "model_version": "gemini-3.8-flash",
+   "response_id": "pJzdasK3GrSY6dkPlvPL4Qc",
+   "usage": {
+    "promptTokenCount": 4200,
+    "candidatesTokenCount": 196,
+    "totalTokenCount": 6636,
+    "promptTokensDetails": [
+     {
+      "modality": "TEXT",
+      "tokenCount": 4200
+     }
+    ],
+    "thoughtsTokenCount": 2240,
+    "serviceTier": "standard"
+   },
+   "finish_reason": "STOP",
+   "parse_note": "a ``` fence around the YAML was removed",
+   "outcome": "labeled",
+   "labels_file": "data/golden/case_12/labels_gemini.yaml",
+   "labels_sha256": "3600a020b890abf13d515101b399ecd7c8432895045af3ace57e573d8c99ddcd"
+  }
+ },
+ "finished_utc": "2026-10-25T06:08:48+00:00",
+ "model_versions_returned": [
+  "gemini-3.8-flash"
+ ]
+}
