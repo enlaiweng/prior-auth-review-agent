@@ -2,6 +2,20 @@
 
 `intended_answers.yaml.enc` holds Claude's intended answers for the 12 golden cases, encrypted. Nobody can read it until the key is published.
 
+## The reveal (2026-10-25)
+
+Enlai Weng's blind labels were merged on 2026-10-24 at 22:38 Pacific (pull request #12), and the third reader's labels
+were committed by its workflow at 23:08 Pacific (run 40166566266). After both, the key was published here:
+
+```
+INF2rPa3Lpu22p7rLsvQiFZDEe7O2yGEpMt6nRh7Le8
+```
+
+The decrypted file is committed beside the locked one as `intended_answers.yaml`, byte for byte as it came out of the
+command below. The Checks workflow decrypts the locked file with this key on every pull request and fails if the result
+differs from `intended_answers.yaml` or if the locked file's fingerprint differs from the one below. The three readers
+are compared in `disagreements.md`.
+
 ## What it holds
 
 For each case: the scenario in plain language, the case's role (for example held out or adversarial), the intended status and evidence for each criterion, the intended routing and, for a documentation gap, the missing item, and the C1 check under both readings (EVAL_PLAN.md, Golden set composition).
@@ -36,7 +50,7 @@ OpenSSL 3.0.13, AES-256-CBC, with the key stretched by PBKDF2 (SHA-256, 600,000 
 openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -salt -in intended_answers.yaml -out intended_answers.yaml.enc -pass file:key.txt
 ```
 
-The key is a random string of 43 characters, made by a computer. It stays outside this repository until the reveal, after Enlai Weng's blind labels and the third reader's labels are committed. Not using it before then is an honor rule (DATASHEET.md).
+The key is a random string of 43 characters, made by a computer. It stayed outside this repository until the reveal, after Enlai Weng's blind labels and the third reader's labels were committed. Not using it before then is an honor rule (DATASHEET.md).
 
 ## How to check it after the key is published
 

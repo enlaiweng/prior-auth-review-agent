@@ -68,16 +68,29 @@ jobs:
         run: python3 eval/third_reader/run_third_reader.py --verify
       - name: Check that every label file made from a labeling site export matches that export
         run: python3 labeling-site/export_to_label_files.py --verify
+      - name: Check that the revealed answers are the locked file, decrypted with the published key
+        run: |
+          echo "2c589479019153fda8ba02020da9f6ce29d982e76221143ece8dd7739ccbcae8  data/golden/intended_answers.yaml.enc" | sha256sum --check
+          if [ -f data/golden/intended_answers.yaml ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -in data/golden/intended_answers.yaml.enc \
+              -out "$RUNNER_TEMP/intended_answers.yaml" -pass pass:INF2rPa3Lpu22p7rLsvQiFZDEe7O2yGEpMt6nRh7Le8
+            cmp "$RUNNER_TEMP/intended_answers.yaml" data/golden/intended_answers.yaml
+            echo "The revealed answers match the locked file." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Check that the three-reader comparison is up to date
+        if: hashFiles('data/golden/disagreements.md') != ''
+        run: python3 eval/tools/compare_readers.py --check
       - name: Check that no blind or Gemini label file already on main is changed
         if: github.event_name == 'pull_request'
         env:
           BASE: ${{ github.base_ref }}
         run: |
           changed=$(git diff --name-status --diff-filter=MDR "origin/${BASE}...HEAD" -- \
-            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml' 'data/golden/site_exports/*.json')
+            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml' 'data/golden/site_exports/*.json' \
+            'data/golden/intended_answers.yaml.enc' 'data/golden/intended_answers.yaml')
           if [ -n "$changed" ]; then
             echo "$changed"
-            echo "::error title=Label file edited::Blind and Gemini label files, and labeling site exports, are never edited after they arrive. Final labels go in labels.yaml instead."
+            echo "::error title=Label file edited::Blind and Gemini label files, labeling site exports, and the locked and revealed intended answers are never edited after they arrive. Final labels go in labels.yaml instead."
             exit 1
           fi
-          echo "No blind or Gemini label file, or site export, on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No blind or Gemini label file, site export, or intended answers file on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"
