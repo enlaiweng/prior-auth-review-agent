@@ -74,10 +74,10 @@ jobs:
           BASE: ${{ github.base_ref }}
         run: |
           changed=$(git diff --name-status --diff-filter=MDR "origin/${BASE}...HEAD" -- \
-            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml')
+            'data/golden/*/labels_blind.yaml' 'data/golden/*/labels_gemini.yaml' 'data/golden/site_exports/*.json')
           if [ -n "$changed" ]; then
             echo "$changed"
-            echo "::error title=Label file edited::Blind and Gemini label files are never edited after they arrive. Final labels go in labels.yaml instead."
+            echo "::error title=Label file edited::Blind and Gemini label files, and labeling site exports, are never edited after they arrive. Final labels go in labels.yaml instead."
             exit 1
           fi
-          echo "No blind or Gemini label file on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No blind or Gemini label file, or site export, on ${BASE} was changed." >> "$GITHUB_STEP_SUMMARY"

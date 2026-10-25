@@ -119,13 +119,25 @@ def manifest_entries():
 
 
 def verify():
-    entries = manifest_entries()
-    if not entries:
-        print("no site exports listed")
+    on_disk = sorted(n for n in os.listdir(EXPORTS_DIR) if n.lower().endswith(".json")) if os.path.isdir(EXPORTS_DIR) else []
+    if not on_disk:
+        print("no site exports in the repository")
         return 0
+    entries = manifest_entries()
     failed = False
+    if not entries:
+        print(f"FAIL {MANIFEST} lists no exports, but {len(on_disk)} export file(s) are in {EXPORTS_DIR}")
+        return 1
+    unlisted = sorted(set(on_disk) - {e[0] for e in entries})
+    for n in unlisted:
+        print(f"FAIL {os.path.join(EXPORTS_DIR, n)} is not listed in {MANIFEST}")
+        failed = True
     for name, digest, labeler, outname in entries:
         path = os.path.join(EXPORTS_DIR, name)
+        if not os.path.isfile(path):
+            print(f"FAIL {path} is listed in {MANIFEST} but is not in the repository")
+            failed = True
+            continue
         if sha256(path) != digest:
             print(f"FAIL {path} was changed after it was committed (sha256 differs from the manifest)")
             failed = True

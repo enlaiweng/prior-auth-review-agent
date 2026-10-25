@@ -5,9 +5,11 @@ downloaded. The label files listed beside it were made from it by `labeling-site
 the answers without judging them, in the same layout the labeling page writes.
 
 The Checks workflow runs `python3 labeling-site/export_to_label_files.py --verify` on every pull request. It fails if an
-export below was changed after it was committed (its sha256 no longer matches), if a case the labeler saw on the site
-differs from the case record in the repository, or if any listed label file differs by a single byte from what the
-export produces. So a label file that came from the site cannot be edited by hand without the check turning red.
+export below was changed after it was committed (its sha256 no longer matches), if a `.json` file in this folder is not
+listed in the table, if the table lists nothing, if a case the labeler saw on the site differs from the case record in
+the repository, or if any listed label file differs by a single byte from what its listed export produces. Once merged,
+the export files are also covered by the Checks rule that no locked label file on main is changed, renamed, or deleted.
+New exports (another labeler's, say) are added as new files with a new row.
 
 An export may hold other labelers' submissions too (for example a setup test on a practice case). Only the labeler id
 in the table is used.
