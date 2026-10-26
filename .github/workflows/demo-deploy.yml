@@ -1,0 +1,143 @@
+# Deploys the public demo (demo/README.md; docs/ARCHITECTURE.md, ADR-7, ADR-9, ADR-14) to Cloudflare.
+# How it starts: by hand, from the Actions page, on main or on a v* release tag (a code rollback). It uses the "release"
+# environment, so GitHub waits for the owner to approve the run.
+# What it does: builds the demo's content from this commit, runs the demo's tests on a local copy, finds or creates the
+# demo's D1 database, and deploys the Worker together with its secrets in one upload. Every deploy is in checklist
+# mode: CHECKLIST_MODE is "true" in the same upload as the code, so new code never runs with approvals on. Approvals
+# are switched on only by the "Demo switch" workflow, after the release decision is signed.
+# Keys: it prints none. The demo key and the passcode go into a secrets file readable only by the runner's user, which
+# is deleted straight after the upload.
+name: Deploy demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash   # bash -eo pipefail: a failed command in a pipe fails the step
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Build the demo's content from this commit
+        id: build
+        run: |
+          python3 demo/build_demo.py | tee "$RUNNER_TEMP/build.txt"
+          echo "line=$(cat "$RUNNER_TEMP/build.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Install the pinned tools
+        working-directory: demo
+        run: npm ci --no-audit --no-fund
+
+      - name: Tests on a local copy (nothing touches Cloudflare or Anthropic)
+        working-directory: demo
+        run: node --test --test-concurrency=1 test/decide.test.mjs test/api.test.mjs
+
+      - name: Check the release settings are present
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANTHROPIC_DEMO_KEY: ${{ secrets.ANTHROPIC_DEMO_KEY }}
+          DEMO_PASSCODE: ${{ secrets.DEMO_PASSCODE }}
+        run: |
+          missing=""
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ANTHROPIC_DEMO_KEY DEMO_PASSCODE; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Missing settings::Add these secrets to the release environment:$missing. Nothing was deployed."
+            exit 1
+          fi
+          if [ "${#DEMO_PASSCODE}" -lt 12 ]; then
+            echo "::error title=Passcode too short::DEMO_PASSCODE must be at least 12 characters. Nothing was deployed."
+            exit 1
+          fi
+
+      - name: Find or create the database, and apply its migrations
+        working-directory: demo
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          find_id() {
+            npx wrangler d1 list --json | python3 -c "import json, sys; d = [x for x in json.load(sys.stdin) if x.get('name') == 'prior-auth-demo']; print(d[0]['uuid'] if d else '')"
+          }
+          id=$(find_id)
+          if [ -z "$id" ]; then
+            npx wrangler d1 create prior-auth-demo > /dev/null
+            id=$(find_id)
+          fi
+          if ! printf '%s' "$id" | grep -Eq '^[0-9a-f-]{36}$'; then
+            echo "::error title=No database::Could not find or create the D1 database prior-auth-demo. Check the token has D1 Edit permission."
+            exit 1
+          fi
+          sed -i "s/00000000-0000-0000-0000-000000000000/$id/" wrangler.toml
+          npx wrangler d1 migrations apply prior-auth-demo --remote
+
+      - name: Deploy the Worker and its secrets together, in checklist mode
+        id: deploy
+        working-directory: demo
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANTHROPIC_DEMO_KEY: ${{ secrets.ANTHROPIC_DEMO_KEY }}
+          DEMO_PASSCODE: ${{ secrets.DEMO_PASSCODE }}
+        run: |
+          secrets="$RUNNER_TEMP/demo-secrets.json"
+          umask 077
+          trap 'rm -f "$secrets"' EXIT
+          python3 -c "import json, os; json.dump({'CHECKLIST_MODE': 'true', 'ANTHROPIC_API_KEY': os.environ['ANTHROPIC_DEMO_KEY'], 'DEMO_PASSCODE': os.environ['DEMO_PASSCODE']}, open('$secrets', 'w'))"
+          npx wrangler deploy --secrets-file "$secrets" | tee deploy.log
+          rm -f "$secrets"
+          url=$(grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          if [ -z "$url" ]; then
+            echo "::error title=No address::The deploy did not report a workers.dev address. If it says to register a workers.dev subdomain, set one in the Cloudflare dashboard and run this again."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Check the demo answers, in checklist mode, with live runs set up
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
+          for i in $(seq 1 30); do [ "$(code "$URL/api/status")" = "200" ] && break; sleep 4; done
+          fail=""
+          [ "$(code "$URL/")" = "200" ] || fail="$fail page"
+          status=$(curl -s "$URL/api/status")
+          echo "$status" | python3 -c "import json, sys; s = json.load(sys.stdin); assert s['mode'] == 'checklist', s['mode']; assert s['live']['problem'] is None, s['live']['problem']" || fail="$fail status"
+          curl -s "$URL/api/cases" | python3 -c "import json, sys; c = json.load(sys.stdin)['cases']; assert len(c) == 12 and [x['case'] for x in c] == ['case_%02d' % i for i in range(1, 13)]" || fail="$fail twelve-cases"
+          # Free checks of the guards: nothing here reaches the model.
+          [ "$(code -X POST "$URL/api/run/case_01" -H 'Content-Type: application/json' -d '{}')" = "403" ] || fail="$fail run-without-header"
+          [ "$(code -X POST "$URL/api/run/case_10" -H 'X-Demo: 1' -H 'Content-Type: application/json' -d '{"passcode":"x"}')" = "409" ] || fail="$fail held-out-refused"
+          if [ -n "$fail" ]; then echo "::error title=Demo check failed::Unexpected answer from:$fail"; exit 1; fi
+          {
+            echo "## Demo deployed, in checklist mode"
+            echo ""
+            echo "- Viewer: $URL"
+            echo "- Mode: checklist (approvals and document requests off). Approvals are switched on only by the Demo switch workflow, after the release decision is signed."
+            echo "- Built: ${{ steps.build.outputs.line }}"
+            echo "- Next (RUNBOOK.md, Deploy): open the viewer, check all twelve cases are listed and every stored decision shows as routed, then run case 01 live with the passcode. It should answer route, with its criteria and citations."
+          } >> "$GITHUB_STEP_SUMMARY"

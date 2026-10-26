@@ -1,0 +1,105 @@
+# Switches the deployed demo between checklist mode and approvals (RUNBOOK.md, Kill switch; ADR-14).
+# How it starts: by hand, from the Actions page, on main only. It uses the "release" environment, so GitHub waits for the
+# owner to approve the run.
+# What it does: changes only the Worker's CHECKLIST_MODE secret. The code stays exactly as deployed; Cloudflare makes a
+# new version with the same code and the new setting. Then it reads the demo's status to confirm the mode changed.
+#   off: checklist mode, the kill switch. Always allowed.
+#   on:  approvals and document requests on. Refused unless docs/RELEASE_DECISION.md on main records a Go decision and
+#        the owner's typed signature, because the approve output is enabled only after the release decision is signed.
+name: Demo switch
+
+on:
+  workflow_dispatch:
+    inputs:
+      approvals:
+        description: "Approvals: off (checklist mode, the kill switch) or on (only after the release decision is signed)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: false
+
+jobs:
+  switch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+
+      - name: Approvals on only after a signed Go decision
+        if: inputs.approvals == 'on'
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          d = open("docs/RELEASE_DECISION.md", encoding="utf-8").read()
+          go = re.search(r"^Go for release \S", d, re.M)
+          signed = re.search(r"^Signed: (?!\[)\S.*\d{4}", d, re.M)
+          if not (go and signed):
+              print("::error title=Release decision not signed::docs/RELEASE_DECISION.md on main must start its decision with "
+                    "\"Go for release\" and carry your typed \"Signed:\" line with a date. Approvals stay off.")
+              sys.exit(1)
+          print("Release decision: " + go.group(0).strip() + " / " + signed.group(0).strip())
+          PY
+
+      - name: Install the pinned tools
+        working-directory: demo
+        run: npm ci --no-audit --no-fund
+
+      - name: Change the setting
+        working-directory: demo
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WANT: ${{ inputs.approvals }}
+        run: |
+          value=true; [ "$WANT" = "on" ] && value=false
+          printf '%s' "$value" | npx wrangler secret put CHECKLIST_MODE
+
+      - name: Confirm the demo reports the new mode
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WANT: ${{ inputs.approvals }}
+        run: |
+          sub=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+                | python3 -c "import json, sys; print(json.load(sys.stdin)['result']['subdomain'])" 2>/dev/null || true)
+          if [ -z "$sub" ]; then
+            echo "::error title=Could not confirm::The setting was changed, but the demo's address could not be found to confirm it. Open the viewer and check the banner."
+            exit 1
+          fi
+          url="https://prior-auth-demo.$sub.workers.dev"
+          expected=checklist; [ "$WANT" = "on" ] && expected=approve
+          for i in $(seq 1 30); do
+            mode=$(curl -s "$url/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['mode'])" 2>/dev/null || true)
+            [ "$mode" = "$expected" ] && break
+            sleep 4
+          done
+          if [ "$mode" != "$expected" ]; then
+            echo "::error title=Mode not confirmed::The demo reports mode '$mode', expected '$expected'. Open the viewer and check the banner; run this again if needed."
+            exit 1
+          fi
+          {
+            echo "## Demo switched"
+            echo ""
+            echo "- Viewer: $url"
+            echo "- Mode now: $expected ($([ "$expected" = checklist ] && echo 'approvals and document requests off; every case routes' || echo 'approvals and document requests on'))"
+            echo "- Record it in docs/GOVERNANCE.md (decision log; the model inventory says Suspended while in checklist mode after a trip)."
+          } >> "$GITHUB_STEP_SUMMARY"

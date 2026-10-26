@@ -1,0 +1,94 @@
+# Checks the public demo (demo/README.md; docs/ARCHITECTURE.md, ADR-14) on every change that could affect it.
+# Nothing here touches Cloudflare or Anthropic: the tests run the real Worker in Cloudflare's local runtime against a
+# fake model, and the bundle check builds the Worker without uploading it.
+name: Demo checks
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "demo/**"
+      - "agent/**"
+      - "data/golden/**"
+      - "docs/EVAL_PLAN.md"
+      - "eval/run_agent.mjs"
+      - "eval/tools/build_case_pages.py"
+      - ".github/workflows/demo-*.yml"
+  pull_request:
+    paths:
+      - "demo/**"
+      - "agent/**"
+      - "data/golden/**"
+      - "docs/EVAL_PLAN.md"
+      - "eval/run_agent.mjs"
+      - "eval/tools/build_case_pages.py"
+      - ".github/workflows/demo-*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Build the demo's content from the repository
+        run: python3 demo/build_demo.py
+      - name: Install the pinned tools
+        working-directory: demo
+        run: npm ci --no-audit --no-fund
+      - name: The Worker builds, within Cloudflare's size limit
+        working-directory: demo
+        run: |
+          npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/demo-bundle" > /dev/null
+          size=$(gzip -c "$RUNNER_TEMP/demo-bundle/worker.js" | wc -c)
+          echo "Worker bundle: $size bytes compressed (the free plan allows 3 MB)."
+          [ "$size" -lt 3000000 ] || { echo "::error title=Worker too large::$size bytes compressed"; exit 1; }
+      - name: Re-deciding stored decisions, the build's refusals, and every route of the Worker
+        working-directory: demo
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/decide.test.mjs test/api.test.mjs
+
+  viewer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Build the demo's content from the repository
+        run: python3 demo/build_demo.py
+      - name: Install the pinned tools
+        working-directory: demo
+        run: npm ci --no-audit --no-fund
+      - name: Install the browser the pinned Playwright drives
+        working-directory: demo
+        run: npx playwright install --with-deps chromium
+      - name: The viewer in a real browser
+        working-directory: demo
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/viewer.test.mjs
