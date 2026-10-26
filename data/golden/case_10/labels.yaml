@@ -1,0 +1,29 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_10
+settled_on: 2026-10-26
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Procedure/case10-pt-01]}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case10-enc-03, note:p7]}
+  C4_no_duplicate_imaging: {status: undeterminable, evidence: [Encounter/case10-enc-01, Procedure/case10-img-01]}
+expected_routing: request
+named_gap: {criterion: C4, missing: "the report of the lumbar CT done on 2026-04-15"}
+changes_from_blind:
+  - field: C4_no_duplicate_imaging.status
+    from: supported
+    to: undeterminable
+    reason: "A lumbar CT from the April 15 emergency visit is in Procedures, with no result in the record and no stated reason for both studies. I missed it in the blind labels and answered as if there were no earlier imaging. A CT can define the target for a lumbar facet joint injection and may even be preferred for it, so without the CT report the record does not show why an MRI is needed as well."
+  - field: C4_no_duplicate_imaging.evidence
+    from: []
+    to: [Encounter/case10-enc-01, Procedure/case10-img-01]
+    reason: "Cite the earlier CT and the visit it came from."
+  - field: expected_routing
+    from: approve
+    to: request
+    reason: "Everything else supports approval; one document, the CT report, would settle C4."
+  - field: named_gap
+    from: "null"
+    to: "{criterion: C4, missing: \"the report of the lumbar CT done on 2026-04-15\"}"
+    reason: "The one document that would settle C4."

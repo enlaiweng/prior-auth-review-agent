@@ -1,0 +1,13 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_02
+settled_on: 2026-10-26
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: unsupported, evidence: []}
+  C3_informs_management:   {status: unsupported, evidence: []}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: route
+named_gap: null
+changes_from_blind: []
