@@ -9,7 +9,7 @@ Usage (from the repository root):
 Label files: labels_blind.yaml (the owner's blind labels), labels_gemini.yaml (the third reader's), and labels.yaml
 (final labels). The format is the one in data/golden/_template/. This script checks form only: every criterion has a
 status, every evidence id is on the case page, the routing is one of the three outputs, and a request names its gap.
-It never compares labels with each other or with anything else, so it reveals nothing about any answer.
+For blind and Gemini labels it never compares labels with each other or with anything else, so it reveals nothing\nabout any answer. For final labels (labels.yaml, written after the reveal) it also checks that the routing is one the\nagent's routing rule can produce from the statuses, and that changes_from_blind lists exactly what differs from the\nblind labels.
 Exit code 0 when every file passes, 1 otherwise.
 """
 import datetime, glob, os, sys
@@ -94,6 +94,80 @@ def problems(data, case_dir, filename):
     return out
 
 
+def _record_entry(ids):
+    """True when the evidence includes something other than the visit note (a note paragraph or the note itself)."""
+    return any(not str(e).startswith(("note:", "DocumentReference/")) for e in ids or [])
+
+
+def approvable(crit):
+    s = {k: (crit.get(k) or {}).get("status") for k in CRITERIA}
+    ev = {k: (crit.get(k) or {}).get("evidence") for k in CRITERIA}
+    carried = (s["C1_red_flag"] == "supported" and _record_entry(ev["C1_red_flag"])) or \
+              (s["C2_conservative_4wk"] == "supported" and _record_entry(ev["C2_conservative_4wk"]))
+    return s["C3_informs_management"] == "supported" and s["C4_no_duplicate_imaging"] == "supported" and carried
+
+
+def routing_problems(data):
+    """Final labels only: the routing must be one the agent's fixed routing rule can produce from these statuses
+    (EVAL_PLAN.md, Criterion inventory; TRAINING.md, Routing the case; ARCHITECTURE.md, ADR-10 and ADR-12). Otherwise
+    the agent would be scored wrong for following its own rule."""
+    crit = data.get("criteria") or {}
+    routing, gap = data.get("expected_routing"), data.get("named_gap")
+    s = {k: (crit.get(k) or {}).get("status") for k in CRITERIA}
+    if approvable(crit):
+        return [] if routing == "approve" else [f"the statuses make the case approvable, so the routing must be approve, not {routing}"]
+    if routing == "approve":
+        return ["approve needs C3 and C4 supported and C1 or C2 supported with a cited record entry other than the note"]
+    if routing == "request":
+        out = []
+        g = gap.get("criterion") if isinstance(gap, dict) else None
+        key = {"C1": "C1_red_flag", "C2": "C2_conservative_4wk", "C3": "C3_informs_management", "C4": "C4_no_duplicate_imaging"}.get(g)
+        if g == "C1":
+            out.append("a request is never for C1; a red flag question routes")
+        if s["C1_red_flag"] == "undeterminable":
+            out.append("C1 is undeterminable and the case can't be approved, so it routes rather than requesting")
+        if key and s[key] != "undeterminable":
+            out.append(f"a request's criterion must be undeterminable; {g} is {s[key]}")
+        if key and g != "C1":
+            trial = {k: dict(v) for k, v in crit.items()}
+            trial[key]["status"] = "supported"
+            if key in ("C1_red_flag", "C2_conservative_4wk") and not _record_entry(trial[key].get("evidence")):
+                trial[key]["evidence"] = ["Procedure/placeholder"]
+            if not approvable(trial):
+                out.append(f"even if the requested document settled {g}, the case could not be approved, so it routes")
+        return out
+    return []
+
+
+def change_problems(data, blind):
+    """Final labels only: changes_from_blind must list exactly the fields that differ from labels_blind.yaml, each
+    with a reason."""
+    def val(d, field):
+        if field in ("expected_routing", "named_gap"):
+            v = d.get(field)
+            return {"criterion": v["criterion"], "missing": str(v["missing"]).strip()} if isinstance(v, dict) else v
+        k, part = field.split(".")
+        v = (d.get("criteria") or {}).get(k, {}).get(part)
+        return sorted(v or []) if part == "evidence" else v
+    fields = [f"{k}.{p}" for k in CRITERIA for p in ("status", "evidence")] + ["expected_routing", "named_gap"]
+    actual = {f for f in fields if val(data, f) != val(blind, f)}
+    listed = data.get("changes_from_blind")
+    if not isinstance(listed, list):
+        return ["changes_from_blind is missing (use [] when nothing changed)"]
+    out = []
+    names = [c.get("field") if isinstance(c, dict) else None for c in listed]
+    for c in listed:
+        if not isinstance(c, dict) or not str(c.get("reason") or "").strip():
+            out.append(f"a change has no reason: {c!r}")
+    for f in sorted(actual - set(names)):
+        out.append(f"{f} differs from labels_blind.yaml but is not listed in changes_from_blind")
+    for f in sorted(set(names) - actual):
+        out.append(f"changes_from_blind lists {f}, which does not differ from labels_blind.yaml")
+    if len(names) != len(set(names)):
+        out.append("changes_from_blind lists a field twice")
+    return out
+
+
 def check_file(path):
     case_dir = os.path.dirname(path)
     try:
@@ -101,7 +175,15 @@ def check_file(path):
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
         return [f"not valid YAML: {e}"]
-    return problems(data, case_dir, os.path.basename(path))
+    found = problems(data, case_dir, os.path.basename(path))
+    blind_path = os.path.join(case_dir, "labels_blind.yaml")
+    if os.path.basename(path) == "labels.yaml" and os.path.exists(blind_path) and isinstance(data, dict):
+        if not is_date(data.get("settled_on")):
+            found.append("settled_on is missing or not a date (YYYY-MM-DD)")
+        found += routing_problems(data)
+        with open(blind_path, encoding="utf-8") as f:
+            found += change_problems(data, yaml.safe_load(f))
+    return found
 
 
 def main(argv):

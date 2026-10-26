@@ -1,0 +1,17 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_03
+settled_on: 2026-10-26
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: undeterminable, evidence: []}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case03-enc-02, note:p5]}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: request
+named_gap: {criterion: C2, missing: "dates, duration, and response of the physical therapy and anti-inflammatory treatment"}
+changes_from_blind:
+  - field: named_gap
+    from: "{criterion: C2, missing: \"4 weeks of treatment required\"}"
+    to: "{criterion: C2, missing: \"dates, duration, and response of the physical therapy and anti-inflammatory treatment\"}"
+    reason: "Same criterion as all three readers. A request names a document the office could send; this wording names the therapy records rather than the rule."

@@ -1,0 +1,29 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_04
+settled_on: 2026-10-26
+criteria:
+  C1_red_flag:             {status: supported, evidence: [Observation/case04-obs-01, Observation/case04-obs-02, note:p3]}
+  C2_conservative_4wk:     {status: unsupported, evidence: []}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case04-enc-02, note:p5]}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: approve
+named_gap: null
+changes_from_blind:
+  - field: C1_red_flag.status
+    from: undeterminable
+    to: supported
+    reason: "Two structured exam findings, July 30 and August 7, show left ankle and toe strength falling from 4/5 to 2/5 with new sensory loss over the top of the foot. Progressive weakness and sensory loss in a nerve root pattern are on the project's C1 list, and they are in Observations, not only the note."
+  - field: C1_red_flag.evidence
+    from: [Encounter/case04-enc-02, note:p5]
+    to: [Observation/case04-obs-01, Observation/case04-obs-02, note:p3]
+    reason: "Cite the exam findings that show the red flag, not the plan."
+  - field: expected_routing
+    from: request
+    to: approve
+    reason: "With C1 supported by structured findings and C3 and C4 supported, the approve rule is met. My blind request on C1 was against the rule that a request is never for C1."
+  - field: named_gap
+    from: "{criterion: C1, missing: \"need further information on urgency.\"}"
+    to: "null"
+    reason: "No gap once the case is approved."

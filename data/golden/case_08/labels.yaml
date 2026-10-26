@@ -1,0 +1,21 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_08
+settled_on: 2026-10-26
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: undeterminable, evidence: [Procedure/case08-pt-01, MedicationRequest/case08-med-01, note:p6]}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case08-enc-02, note:p9]}
+  C4_no_duplicate_imaging: {status: supported, evidence: []}
+expected_routing: route
+named_gap: null
+changes_from_blind:
+  - field: C2_conservative_4wk.status
+    from: unsupported
+    to: undeterminable
+    reason: "The note says six weeks of therapy and medication; the structured record shows nine days of therapy and ten days of ibuprofen. The C2 rule labels care that the structured record contradicts as undeterminable. Routing is route either way."
+  - field: C2_conservative_4wk.evidence
+    from: [Procedure/case08-pt-01]
+    to: [Procedure/case08-pt-01, MedicationRequest/case08-med-01, note:p6]
+    reason: "Cite both sides of the contradiction."
