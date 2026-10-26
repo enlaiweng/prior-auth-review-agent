@@ -42,7 +42,8 @@ export function reportFrom(labels, { missing = null, contradictions = [] } = {})
   return { criteria, contradictions, missing_document: missing, case_summary: "A neutral summary.", confidence: "moderate" };
 }
 
-// A fake Messages API. `fake.reply` decides each answer: { report } | { status, body } | { hang: true } | { delayMs, report }.
+// A fake Messages API. `fake.reply` decides each answer: { report } | { text } (the model's raw text) | { status, body } |
+// { hang: true } | { delayMs, report }; any of them may add { headers } (for example retry-after).
 export async function startFakeModel() {
   const fake = { calls: [], reply: () => ({ report: reportFrom(finalLabels("case_01")) }) };
   const server = createServer((req, res) => {
@@ -54,9 +55,10 @@ export async function startFakeModel() {
       if (r.hang) return;   // never answers
       if (r.delayMs) await new Promise(x => setTimeout(x, r.delayMs));
       res.setHeader("content-type", "application/json"); res.setHeader("request-id", "req_fake");
+      for (const [k, v] of Object.entries(r.headers || {})) res.setHeader(k, v);
       if (r.status) { res.statusCode = r.status; return res.end(JSON.stringify(r.body || { error: { message: "fake failure" } })); }
       res.end(JSON.stringify({ model: "claude-sonnet-5-fake", stop_reason: "end_turn",
-        content: [{ type: "text", text: JSON.stringify(r.report) }], usage: { input_tokens: 10, output_tokens: 10 } }));
+        content: [{ type: "text", text: r.text !== undefined ? r.text : JSON.stringify(r.report) }], usage: { input_tokens: 10, output_tokens: 10 } }));
     });
   });
   await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -92,6 +94,15 @@ export async function startDemo(vars = {}) {
   }
   stop();
   throw new Error("the local demo did not start");
+}
+
+// Runs SQL against a running local demo's database (the same file the Worker uses), for tests that need time to pass:
+// moving rows into the past stands in for waiting ten minutes or a day. Returns the last statement's rows.
+export function sql(demo, command) {
+  const out = execFileSync("npx", ["wrangler", "d1", "execute", "prior-auth-demo", "--local", "--persist-to", demo.persist, "--json", "--command", command],
+    { cwd: DEMO, env: ENV, stdio: ["ignore", "pipe", "ignore"] }).toString();
+  const all = JSON.parse(out);
+  return all.at(-1).results;
 }
 
 // Sends a live run and reads the streamed lines. Returns { status, json } for a refusal, or { status, lines }.

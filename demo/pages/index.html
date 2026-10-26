@@ -104,10 +104,15 @@ const OUTCOME = { approve: "Approve", request: "Request one document", route: "S
 const STATUS = { supported: "Met", unsupported: "Not met", undeterminable: "Can't tell from the record" };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-let STATUS_INFO = null, LIST = [], CURRENT = null, PASSCODE = "";
+let STATUS_INFO = null, LIST = [], CURRENT = null, WANTED = null, PASSCODE = "";
+// One live run at a time per page. LIVE keeps each case's last live-run message and result, so moving between cases
+// never shows one case's result on another, and a result is still there on coming back.
+let RUNNING = null;
+const LIVE = {};
+const OFFLINE = "The demo can't be reached right now. Check your connection, then try again.";
 
 async function getJson(url) {
-  const r = await fetch(url, { headers: { Accept: "application/json" } });
+  const r = await fetch(url, { headers: { Accept: "application/json" } }).catch(() => { throw new Error(OFFLINE); });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || "The demo didn't answer (" + r.status + ").");
   return j;
@@ -187,8 +192,11 @@ function liveHtml(c) {
   if (STATUS_INFO.live.problem) return h + '<p class="note">' + esc(STATUS_INFO.live.problem) + "</p></div>";
   h += '<p class="lead">Sends this record to the agent now. It takes a minute or two. Live runs need the passcode the project\'s owner gives out, and are limited to ' +
        esc(STATUS_INFO.live.per_day) + " a day.</p>";
+  const mine = LIVE[c.case] || {};
+  const other = RUNNING && RUNNING !== c.case ? esc("A live run on " + RUNNING.replace("case_", "Case ") + " is still going; this one can start when it finishes.") : "";
   h += '<div class="row"><label for="pc" class="sr">Passcode</label><input type="password" id="pc" autocomplete="off" placeholder="Passcode" value="' + esc(PASSCODE) + '">' +
-       '<button type="button" class="go" id="run">Run the agent</button></div><p id="livestate" class="note" role="status" aria-live="polite"></p></div><div id="liveresult"></div>';
+       '<button type="button" class="go" id="run"' + (RUNNING ? " disabled" : "") + '>Run the agent</button></div><p id="livestate" class="note" role="status" aria-live="polite">' +
+       (other || mine.state || "") + '</p></div><div id="liveresult">' + (mine.result || "") + "</div>";
   return h;
 }
 
@@ -211,24 +219,30 @@ function renderCase(c) {
 }
 
 async function openCase(id, focus) {
+  WANTED = id;
   try {
     const c = await getJson("/api/cases/" + encodeURIComponent(id));
+    if (WANTED !== id) return;   // another case was chosen while this one loaded
     renderCase(c);
     if (focus) $("main").focus();
   } catch (e) { $("main").innerHTML = '<p class="err">' + esc(e.message) + "</p>"; }
 }
 
 async function liveRun(id) {
-  const btn = $("run"), state = $("livestate"), out = $("liveresult");
+  if (RUNNING) return;   // a second Enter or click while a run is going does nothing
+  // Messages and results are kept per case and shown only while that case is open.
+  const setState = html => { LIVE[id] = { ...LIVE[id], state: html }; if (CURRENT === id && $("livestate")) $("livestate").innerHTML = html; };
+  const setResult = html => { LIVE[id] = { ...LIVE[id], result: html }; if (CURRENT === id && $("liveresult")) $("liveresult").innerHTML = html; };
   PASSCODE = $("pc").value;
-  if (!PASSCODE) { state.innerHTML = '<span class="err">Type the passcode first.</span>'; return; }
-  btn.disabled = true; out.innerHTML = ""; state.textContent = "Sending the record to the agent…";
+  if (!PASSCODE) { setState('<span class="err">Type the passcode first.</span>'); return; }
+  RUNNING = id;
+  $("run").disabled = true; setResult(""); setState(esc("Sending the record to the agent…"));
   const started = Date.now();
-  const tick = setInterval(() => { state.textContent = "The agent is reading the record… " + Math.round((Date.now() - started) / 1000) + " s"; }, 1000);
+  const tick = setInterval(() => { setState(esc("The agent is reading the record… " + Math.round((Date.now() - started) / 1000) + " s")); }, 1000);
   try {
     const r = await fetch("/api/run/" + encodeURIComponent(id), {
       method: "POST", headers: { "Content-Type": "application/json", "X-Demo": "1" }, body: JSON.stringify({ passcode: PASSCODE }),
-    });
+    }).catch(() => { throw new Error(OFFLINE); });
     if (!r.ok) {
       const j = await r.json().catch(() => ({}));
       if (j.code === "bad_passcode") PASSCODE = "";
@@ -237,7 +251,7 @@ async function liveRun(id) {
     const reader = r.body.getReader(), dec = new TextDecoder();
     let buf = "", done = false;
     while (!done) {
-      const part = await reader.read();
+      const part = await reader.read().catch(() => ({ done: true }));   // the connection dropped
       if (part.done) break;
       buf += dec.decode(part.value, { stream: true });
       let i;
@@ -246,8 +260,9 @@ async function liveRun(id) {
         if (!line.trim()) continue;
         const msg = JSON.parse(line);
         if (msg.type === "decision") {
-          if (CURRENT === id) out.innerHTML = decisionHtml(msg.decision, "Live run, just now");
-          state.textContent = "Done in " + Math.round((Date.now() - started) / 1000) + " s.";
+          clearInterval(tick);
+          setResult(decisionHtml(msg.decision, "Live run, just now"));
+          setState(esc("Done in " + Math.round((Date.now() - started) / 1000) + " s."));
           done = true;
         } else if (msg.type === "error") {
           throw new Error(msg.message);
@@ -256,10 +271,14 @@ async function liveRun(id) {
     }
     if (!done) throw new Error("The connection closed before the agent finished. Try again.");
   } catch (e) {
-    state.innerHTML = '<span class="err">' + esc(e.message) + "</span>";
+    clearInterval(tick);
+    setState('<span class="err">' + esc(e.message) + "</span>");
   } finally {
     clearInterval(tick);
+    RUNNING = null;
     if ($("run")) $("run").disabled = false;
+    // Another case open now: clear its "a run is still going" note.
+    if (CURRENT !== id && $("livestate")) $("livestate").innerHTML = (LIVE[CURRENT] || {}).state || "";
     loadStatus().catch(() => {});
   }
 }
@@ -291,7 +310,17 @@ async function start() {
       const sub = c.stored ? (OUTCOME[c.stored.routing] || c.stored.routing) : (c.held_out ? "Held out" : c.live_refusal ? "Not live yet" : "Can run live");
       return '<li><button type="button" data-case="' + esc(c.case) + '" aria-current="false">' + esc(c.name) + '<span class="sub">' + esc(sub) + "</span></button></li>";
     }).join("");
-    document.querySelectorAll(".cases button").forEach(b => b.onclick = () => { history.replaceState(null, "", "#" + b.dataset.case); openCase(b.dataset.case, true); });
+    // Each case has its own address (#case_04), so links can be shared and the browser's back button moves between cases.
+    document.querySelectorAll(".cases button").forEach(b => b.onclick = () => {
+      const id = b.dataset.case;
+      // The case already open stays as it is (reloading it would clear a passcode being typed); it only gets its address.
+      if (id === CURRENT) { history.replaceState(null, "", "#" + id); $("main").focus(); return; }
+      if (location.hash === "#" + id) openCase(id, true); else location.hash = id;
+    });
+    window.addEventListener("hashchange", () => {
+      const id = location.hash.slice(1);
+      if (LIST.some(c => c.case === id)) openCase(id, true);
+    });
     const want = (location.hash || "").slice(1);
     openCase(LIST.some(c => c.case === want) ? want : LIST[0].case, false);
   } catch (e) {

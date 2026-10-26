@@ -105,7 +105,17 @@ Roll back only with the workflows (RUNBOOK.md, Roll back).
   (with no model call and no count), both modes and eight near-misses of "false", the caps (including four requests
   at the same moment), the wrong-passcode pause, failed and hung model calls, the progress lines, and stored decisions
   (`test/api.test.mjs`);
+- positive and negative tests of every way in (`test/inputs.test.mjs`): every case's record, all three outcomes
+  (case 01 approves, 03 asks for one document, 02 goes to a physician) with approvals on and all routed in checklist
+  mode, settings with bad values, odd addresses and methods, about forty kinds of malformed request, made-up evidence
+  and other bad answers from the model, and time passing (the wrong-passcode pause lifting, the day's cap resetting,
+  old rows deleted), done by moving the local database's rows into the past;
 - the viewer in a real browser, on a laptop screen and a phone screen (`test/viewer.test.mjs`);
+- eighteen end-to-end scenarios of a visitor's journeys in a real browser (`test/scenarios.test.mjs`): browsing every
+  case, shared links and the back button, live runs in both modes, wrong passcodes and the pause, the limits, a failing
+  and a slow model, a double Enter, switching cases mid-run, keyboard only, phone size, text contrast in light and dark
+  mode, the passcode never stored, the page refusing to be framed by another site, stored decisions, and the demo
+  going offline;
 - the release gate the switch uses, on good and bad decision files (`test/test_release_gate.py`).
 
 Nothing in the checks touches Cloudflare or Anthropic.

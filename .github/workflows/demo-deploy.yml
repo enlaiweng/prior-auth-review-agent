@@ -60,7 +60,7 @@ jobs:
 
       - name: Tests on a local copy (nothing touches Cloudflare or Anthropic)
         working-directory: demo
-        run: node --test --test-concurrency=1 test/decide.test.mjs test/api.test.mjs
+        run: node --test --test-concurrency=1 test/decide.test.mjs test/api.test.mjs test/inputs.test.mjs
 
       - name: Check the release settings are present
         env:

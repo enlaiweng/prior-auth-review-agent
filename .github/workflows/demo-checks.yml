@@ -67,9 +67,9 @@ jobs:
           size=$(gzip -c "$RUNNER_TEMP/demo-bundle/worker.js" | wc -c)
           echo "Worker bundle: $size bytes compressed (the free plan allows 3 MB)."
           [ "$size" -lt 3000000 ] || { echo "::error title=Worker too large::$size bytes compressed"; exit 1; }
-      - name: Re-deciding stored decisions, the build's refusals, and every route of the Worker
+      - name: Re-deciding stored decisions, the build's refusals, every route of the Worker, and positive and negative tests of every input
         working-directory: demo
-        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/decide.test.mjs test/api.test.mjs
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/decide.test.mjs test/api.test.mjs test/inputs.test.mjs
 
   viewer:
     runs-on: ubuntu-24.04
@@ -97,6 +97,6 @@ jobs:
       - name: Install the browser the pinned Playwright drives
         working-directory: demo
         run: npx playwright install --with-deps chromium
-      - name: The viewer in a real browser
+      - name: The viewer in a real browser, and a visitor's journeys end to end
         working-directory: demo
-        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/viewer.test.mjs
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/github-annotations.mjs --test-reporter-destination=stdout test/viewer.test.mjs test/scenarios.test.mjs
