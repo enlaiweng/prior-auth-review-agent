@@ -11,6 +11,10 @@ Reads:
   data/golden/case_NN/labels.yaml: only whether it exists, never its content. A case runs live only once its final
     labels are in place (the labels-first rule in eval/run_agent.mjs).
   docs/EVAL_PLAN.md and eval/run_agent.mjs: the held-out cases, which never run live; the two must agree
+  eval/dev_subset.txt: the development cases (01 to 05)
+  demo/live_scope.json: "scope" is "dev" until run 1 (live runs only on the development cases, so run 1 stays the
+    first look at the others, EVAL_PLAN.md) and "nine" after it; "outside_reader_open" lists the cases an outside
+    clinician is still reading, which neither run live nor show a stored decision until their labels are merged
   demo/stored_run.txt: "none", or the folder under eval/runs/ whose decisions the viewer shows
   agent/agent.js and agent/spec.generated.js: the agent version and spec fingerprint the stored decisions must match
   demo/pages/index.html: the viewer
@@ -35,6 +39,33 @@ STORED_FIELDS = ("case_id", "agent_version", "spec_sha256", "routing", "named_ga
                  "stop_reason", "seconds")
 
 
+REFUSALS = ("held_out", "unlabeled", "outside_reader", "before_run1")
+
+
+def live_scope():
+    s = json.load(open("demo/live_scope.json", encoding="utf-8"))
+    if set(s) != {"scope", "outside_reader_open"} or s["scope"] not in ("dev", "nine"):
+        raise SystemExit('demo/live_scope.json needs exactly "scope" ("dev" or "nine") and "outside_reader_open"; nothing built')
+    bad = [c for c in s["outside_reader_open"] if not re.fullmatch(r"case_(0[1-9]|1[0-2])", str(c))]
+    if bad or not isinstance(s["outside_reader_open"], list):
+        raise SystemExit(f"demo/live_scope.json: outside_reader_open has entries that are not golden cases: {bad}; nothing built")
+    dev = [l.strip() for l in open("eval/dev_subset.txt", encoding="utf-8") if l.strip() and not l.startswith("#")]
+    return s["scope"], set(s["outside_reader_open"]), set(dev)
+
+
+def refusal(cid, case, scope, outside, dev):
+    """Why a case does not run live, or None. The first reason that applies is given."""
+    if case["held_out"]:
+        return "held_out"
+    if not case["labeled"]:
+        return "unlabeled"
+    if cid in outside:
+        return "outside_reader"
+    if scope == "dev" and cid not in dev:
+        return "before_run1"
+    return None
+
+
 def held_out():
     plan = open("docs/EVAL_PLAN.md", encoding="utf-8").read()
     m = PLAN_SENTENCE.search(plan)
@@ -57,7 +88,7 @@ def agent_identity():
     return version, sha
 
 
-def stored(run_dir, cases, version, sha):
+def stored(run_dir, cases, version, sha, outside):
     """The decisions of one finished run, checked against the agent being deployed. Returns (run, decisions)."""
     if run_dir in (None, "", "none"):
         return None, {}
@@ -67,6 +98,8 @@ def stored(run_dir, cases, version, sha):
     run = json.load(open(os.path.join(run_dir, "run.json"), encoding="utf-8"))
     if "finished_utc" not in run:
         raise SystemExit(f"{run_dir}: the run did not finish (no finished_utc); nothing built")
+    if run.get("budget") != "release":
+        raise SystemExit(f"{run_dir}: not a run on the release budget (budget {run.get('budget')!r}); nothing built")
     if run.get("agent_version") != version or run.get("spec_sha256") != sha:
         raise SystemExit(f"{run_dir}: made by {run.get('agent_version')} (spec {str(run.get('spec_sha256'))[:12]}), but this "
                          f"commit's agent is {version} (spec {sha[:12]}). Point demo/stored_run.txt at a run of this agent.")
@@ -76,7 +109,12 @@ def stored(run_dir, cases, version, sha):
             continue  # the smoke case or a fairness pair: not shown in the viewer
         if not cases[case_id]["labeled"]:
             raise SystemExit(f"{run_dir}: holds a decision for {case_id}, which has no final labels yet; nothing built")
+        if case_id in outside:
+            raise SystemExit(f"{run_dir}: holds a decision for {case_id}, which an outside clinician is still reading "
+                             "(demo/live_scope.json); nothing built")
         d = json.load(open(os.path.join(run_dir, case_id + ".json"), encoding="utf-8"))
+        if d.get("case_id") != case_id or d.get("agent_version") != version or d.get("spec_sha256") != sha:
+            raise SystemExit(f"{run_dir}/{case_id}.json: its case id, agent version, or spec does not match the run; nothing built")
         decisions[case_id] = {k: d.get(k) for k in STORED_FIELDS}
     meta = {"folder": run_dir, "case_set": run.get("case_set"), "budget": run.get("budget"), "started_utc": run.get("started_utc"),
             "finished_utc": run.get("finished_utc"), "workflow_run": run.get("workflow_run"),
@@ -97,6 +135,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     version, sha = agent_identity()
     held = held_out()
+    scope, outside, dev = live_scope()
     cases, order = {}, []
     for d in sorted(glob.glob(b.CASE_GLOB)):
         v = b.case_view(d)
@@ -107,10 +146,12 @@ def main(argv=None):
         order.append(cid)
     if len(order) != 12:
         raise SystemExit(f"expected 12 golden cases, found {len(order)}; nothing built")
+    for cid in order:
+        cases[cid]["refusal"] = refusal(cid, cases[cid], scope, outside, dev)
     run_dir = args.stored_run if args.stored_run is not None else open("demo/stored_run.txt", encoding="utf-8").read().strip()
-    run_meta, decisions = stored(run_dir, cases, version, sha)
+    run_meta, decisions = stored(run_dir, cases, version, sha, outside)
     page = open("demo/pages/index.html", encoding="utf-8").read()
-    body = {"agent": {"version": version, "spec_sha256": sha}, "held_out": held, "order": order, "cases": cases,
+    body = {"agent": {"version": version, "spec_sha256": sha}, "held_out": held, "live_scope": scope, "order": order, "cases": cases,
             "stored_run": run_meta, "stored": decisions}
     content_sha = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     content = dict(body, content_sha256=content_sha, page=page, page_script_hash=script_hash(page))
@@ -119,9 +160,9 @@ def main(argv=None):
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         f.write(text)
-    live = [c for c in order if cases[c]["labeled"] and not cases[c]["held_out"]]
+    live = [c for c in order if cases[c]["refusal"] is None]
     print(f"wrote {args.out}: 12 cases; live runs allowed on {', '.join(live) or 'none'}; held out {', '.join(held)}; "
-          f"stored decisions: {len(decisions)} ({run_dir}); content {content_sha[:12]}")
+          f"scope {scope}; stored decisions: {len(decisions)} ({run_dir}); content {content_sha}")
     return 0
 
 

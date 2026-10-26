@@ -288,7 +288,7 @@ async function start() {
     await loadStatus();
     LIST = (await getJson("/api/cases")).cases;
     $("cases").innerHTML = LIST.map(c => {
-      const sub = c.stored ? (OUTCOME[c.stored.routing] || c.stored.routing) : (c.held_out ? "Held out" : c.live_refusal ? "Labels not final yet" : "Can run live");
+      const sub = c.stored ? (OUTCOME[c.stored.routing] || c.stored.routing) : (c.held_out ? "Held out" : c.live_refusal ? "Not live yet" : "Can run live");
       return '<li><button type="button" data-case="' + esc(c.case) + '" aria-current="false">' + esc(c.name) + '<span class="sub">' + esc(sub) + "</span></button></li>";
     }).join("");
     document.querySelectorAll(".cases button").forEach(b => b.onclick = () => { history.replaceState(null, "", "#" + b.dataset.case); openCase(b.dataset.case, true); });

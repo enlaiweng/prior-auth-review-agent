@@ -3,9 +3,12 @@
 # owner to approve the run.
 # What it does: changes only the Worker's CHECKLIST_MODE secret. The code stays exactly as deployed; Cloudflare makes a
 # new version with the same code and the new setting. Then it reads the demo's status to confirm the mode changed.
-#   off: checklist mode, the kill switch. Always allowed.
-#   on:  approvals and document requests on. Refused unless docs/RELEASE_DECISION.md on main records a Go decision and
-#        the owner's typed signature, because the approve output is enabled only after the release decision is signed.
+#   off: checklist mode, the kill switch. Allowed whenever the demo exists.
+#   on:  approvals and document requests on. Refused unless demo/tools/release_gate.py finds, on main, a signed Go in
+#        docs/RELEASE_DECISION.md for the exact agent version the demo is running, the hard gate met, and no open
+#        kill-switch trip in docs/GOVERNANCE.md.
+# Its own queue (not shared with "Deploy demo"), so a deploy waiting for approval can never hold up or cancel the
+# kill switch. Don't approve a deploy and a switch at the same time.
 name: Demo switch
 
 on:
@@ -22,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: demo-deploy
+  group: demo-switch
   cancel-in-progress: false
 
 jobs:
@@ -44,20 +47,30 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Approvals on only after a signed Go decision
-        if: inputs.approvals == 'on'
+      - name: Find the deployed demo
+        id: find
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          python3 - <<'PY'
-          import re, sys
-          d = open("docs/RELEASE_DECISION.md", encoding="utf-8").read()
-          go = re.search(r"^Go for release \S", d, re.M)
-          signed = re.search(r"^Signed: (?!\[)\S.*\d{4}", d, re.M)
-          if not (go and signed):
-              print("::error title=Release decision not signed::docs/RELEASE_DECISION.md on main must start its decision with "
-                    "\"Go for release\" and carry your typed \"Signed:\" line with a date. Approvals stay off.")
-              sys.exit(1)
-          print("Release decision: " + go.group(0).strip() + " / " + signed.group(0).strip())
-          PY
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers"
+          exists=$(curl -s --max-time 20 -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/scripts/prior-auth-demo/settings")
+          if [ "$exists" != "200" ]; then
+            echo "::error title=No demo deployed::Cloudflare has no Worker named prior-auth-demo (answered $exists). Run Deploy demo first; nothing was changed."
+            exit 1
+          fi
+          sub=$(curl -s --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/subdomain" | python3 -c "import json, sys; print(json.load(sys.stdin)['result']['subdomain'])" 2>/dev/null || true)
+          [ -n "$sub" ] && echo "url=https://prior-auth-demo.$sub.workers.dev" >> "$GITHUB_OUTPUT"
+          [ -n "$sub" ] || echo "::warning title=Address not found::The Worker exists, but its workers.dev address could not be read; the new mode can't be confirmed automatically."
+
+      - name: Approvals on only after a signed Go for the version the demo is running
+        if: inputs.approvals == 'on'
+        env:
+          URL: ${{ steps.find.outputs.url }}
+        run: |
+          if [ -z "$URL" ]; then echo "::error title=Can't check the version::The demo's address is unknown, so its agent version can't be checked. Approvals stay off."; exit 1; fi
+          version=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['agent']['version'])" 2>/dev/null || true)
+          python3 demo/tools/release_gate.py "$version"
 
       - name: Install the pinned tools
         working-directory: demo
@@ -75,31 +88,32 @@ jobs:
 
       - name: Confirm the demo reports the new mode
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          URL: ${{ steps.find.outputs.url }}
           WANT: ${{ inputs.approvals }}
         run: |
-          sub=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
-                | python3 -c "import json, sys; print(json.load(sys.stdin)['result']['subdomain'])" 2>/dev/null || true)
-          if [ -z "$sub" ]; then
-            echo "::error title=Could not confirm::The setting was changed, but the demo's address could not be found to confirm it. Open the viewer and check the banner."
+          if [ -z "$URL" ]; then
+            echo "::error title=Could not confirm::The setting was changed, but the demo's address is unknown. Open the viewer and check the banner."
             exit 1
           fi
-          url="https://prior-auth-demo.$sub.workers.dev"
           expected=checklist; [ "$WANT" = "on" ] && expected=approve
+          mode=""
           for i in $(seq 1 30); do
-            mode=$(curl -s "$url/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['mode'])" 2>/dev/null || true)
+            mode=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['mode'])" 2>/dev/null || true)
             [ "$mode" = "$expected" ] && break
             sleep 4
           done
           if [ "$mode" != "$expected" ]; then
-            echo "::error title=Mode not confirmed::The demo reports mode '$mode', expected '$expected'. Open the viewer and check the banner; run this again if needed."
+            echo "::error title=Mode not confirmed::The demo reports mode '${mode:-nothing}', expected '$expected'. Open the viewer and check the banner; run this again if needed."
             exit 1
           fi
           {
             echo "## Demo switched"
             echo ""
-            echo "- Viewer: $url"
-            echo "- Mode now: $expected ($([ "$expected" = checklist ] && echo 'approvals and document requests off; every case routes' || echo 'approvals and document requests on'))"
-            echo "- Record it in docs/GOVERNANCE.md (decision log; the model inventory says Suspended while in checklist mode after a trip)."
+            echo "- Viewer: $URL"
+            if [ "$expected" = checklist ]; then
+              echo "- Mode now: checklist (approvals and document requests off; every case routes)."
+            else
+              echo "- Mode now: approvals on."
+            fi
+            echo "- Record it in docs/GOVERNANCE.md: a decision-log row, and the model inventory's lifecycle state (Suspended after a trip)."
           } >> "$GITHUB_STEP_SUMMARY"

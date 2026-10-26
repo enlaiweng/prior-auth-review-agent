@@ -27,8 +27,8 @@ The word "deny" never appears as an outcome. The agent has no deny output.
 
 Approvals are on only when the Worker's `CHECKLIST_MODE` setting is exactly `false`. Missing, mistyped or anything
 else means checklist mode. Every deploy sets it to checklist mode. Only the **Demo switch** workflow turns approvals
-on, and it refuses unless `docs/RELEASE_DECISION.md` on main says "Go for release" and carries your typed, dated
-"Signed:" line.
+on, and it refuses unless `docs/RELEASE_DECISION.md` on main says "Go for release" for the agent version the demo is
+running and carries your typed, dated "Signed:" line.
 
 Stored decisions follow the mode too. The demo never shows the outcome written in a stored file; it applies the fixed
 rule again to the stored criteria, under the current mode. So the off switch covers everything on screen.
@@ -38,15 +38,28 @@ rule again to the stored criteria, under the current mode. So the off switch cov
 | Guard | What it does |
 | --- | --- |
 | Passcode | At least 12 characters, set by you. A wrong one is refused without reaching the model. |
-| Caps | 2 live runs a minute and 20 a day, across all visitors (about $2 a day at most). Settings `LIVE_PER_MINUTE` and `LIVE_PER_DAY` in `wrangler.toml`. |
-| Wrong passcodes | After 10 wrong passcodes in ten minutes, live runs pause for everyone for a few minutes, so guessing doesn't pay. |
+| Wrong passcodes | After 5 wrong passcodes in ten minutes from one visitor, live runs pause for that visitor; after 50 from everyone together, for everyone. Each check is counted in one database step, so many guesses sent at once can't slip past. |
+| Caps | 2 live runs a minute and 20 a day, across all visitors (roughly $2 a day, at about $0.10 a run; a run that has to retry costs more). Settings `LIVE_PER_MINUTE` and `LIVE_PER_DAY` in `wrangler.toml`. |
 | Held-out cases | 08, 10 and 12 never run live. They're scored only in the release evaluation. |
 | Unsettled cases | A case runs live only once its final labels are in place, the same rule the evaluation runs follow. |
+| Before run 1 | Live runs are limited to the development cases, 01 to 05, so run 1 stays the first look at the others (EVAL_PLAN.md). |
+| Outside reader | Cases an outside clinician is still reading neither run live nor show a stored decision, so nothing here can shape their reading. |
 | Time limit | A live run gives up after four minutes and routes, with the error shown. |
 | The key | The demo's own key, in its own Anthropic workspace with a spend limit. It never appears in any page or answer. |
 
 The Worker keeps no request logs. Its database holds one row per live-run attempt (time, case, outcome), deleted
-after three days. No address, passcode or browser detail is stored.
+after three days. On wrong-passcode rows only, it also keeps a fingerprint of the visitor's address and the day,
+made with the passcode as a key, so it can't be turned back into an address and changes daily. No address,
+passcode or browser detail is stored.
+
+## Which cases run live: `live_scope.json`
+
+| Setting | Now | Change it when |
+| --- | --- | --- |
+| `scope` | `dev`: only cases 01 to 05 | Run 1 is done: set it to `nine` (every case not held out). |
+| `outside_reader_open` | 04, 05, 07, 10 | Dr. Dabs's labels are merged: remove his cases (an empty list is `[]`). |
+
+With today's settings, cases 01, 02 and 03 run live. Each change reaches the demo at its next deploy.
 
 ## Stored decisions
 
@@ -64,9 +77,16 @@ You need two secrets you already have in the GitHub **release** environment (`CL
 | `DEMO_PASSCODE` | The passcode you give people for live runs. At least 12 characters. Something you can read out loud helps, for example three or four random words joined by hyphens from your password manager's generator. Keep it in your password manager. |
 
 Then, on the **Actions** tab: **Deploy demo**, **Run workflow** (Branch: main), and approve it. The run's summary
-gives the viewer's address and the smoke test to do next (RUNBOOK.md, Deploy).
+gives the viewer's address and the smoke test to do next (RUNBOOK.md, Deploy). Changing the passcode needs a new
+deploy, and every deploy turns approvals off.
 
 To switch approvals on or off: **Actions** tab, **Demo switch**, **Run workflow**, choose `off` or `on`, and approve.
+`on` is refused unless `docs/RELEASE_DECISION.md` has your signed Go for the exact agent version the demo is
+running, with the hard gate met (`demo/tools/release_gate.py`).
+
+Never use the **Rollback** or version buttons in Cloudflare's dashboard for this Worker. Each Cloudflare version
+carries its own settings, so going back to an older version could turn approvals back on without the release gate.
+Roll back only with the workflows (RUNBOOK.md, Roll back).
 
 ## How it's checked
 
@@ -79,7 +99,8 @@ To switch approvals on or off: **Actions** tab, **Demo switch**, **Run workflow*
   (with no model call and no count), both modes and eight near-misses of "false", the caps (including four requests
   at the same moment), the wrong-passcode pause, failed and hung model calls, the progress lines, and stored decisions
   (`test/api.test.mjs`);
-- the viewer in a real browser, on a laptop screen and a phone screen (`test/viewer.test.mjs`).
+- the viewer in a real browser, on a laptop screen and a phone screen (`test/viewer.test.mjs`);
+- the release gate the switch uses, on good and bad decision files (`test/test_release_gate.py`).
 
 Nothing in the checks touches Cloudflare or Anthropic.
 

@@ -104,7 +104,11 @@ test("the release budget refuses held-out cases outside all12", () => {
   assert.match(r.stderr, /held-out/);
 });
 
-test("a fake-model address that is not local is ignored", () => {
-  const src = readFileSync("eval/run_agent.mjs", "utf8");
-  assert.match(src, /startsWith\("http:\/\/127\.0\.0\.1:"\)/);
+test("a fake-model address that is not local is ignored, however it is written", async () => {
+  const { localTestUrl } = await import("../../eval/run_agent.mjs");
+  assert.equal(localTestUrl("http://127.0.0.1:8787/v1/messages"), "http://127.0.0.1:8787/v1/messages");
+  for (const bad of ["http://127.0.0.1:@evil.example/", "http://127.0.0.1@evil.example/", "http://user:pw@127.0.0.1:8787/",
+                     "https://127.0.0.1:8787/", "http://127.0.0.1.evil.example/", "http://localhost:8787/", "http://10.0.0.1/",
+                     "https://api.example.com/", "", null, undefined, 42, "not a url"])
+    assert.equal(localTestUrl(bad), null, String(bad));
 });

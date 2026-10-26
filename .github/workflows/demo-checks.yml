@@ -13,6 +13,9 @@ on:
       - "docs/EVAL_PLAN.md"
       - "eval/run_agent.mjs"
       - "eval/tools/build_case_pages.py"
+      - "eval/dev_subset.txt"
+      - "docs/RELEASE_DECISION.md"
+      - "docs/GOVERNANCE.md"
       - ".github/workflows/demo-*.yml"
   pull_request:
     paths:
@@ -22,6 +25,9 @@ on:
       - "docs/EVAL_PLAN.md"
       - "eval/run_agent.mjs"
       - "eval/tools/build_case_pages.py"
+      - "eval/dev_subset.txt"
+      - "docs/RELEASE_DECISION.md"
+      - "docs/GOVERNANCE.md"
       - ".github/workflows/demo-*.yml"
   workflow_dispatch:
 
@@ -49,6 +55,8 @@ jobs:
           python-version: "3.12"
       - name: Build the demo's content from the repository
         run: python3 demo/build_demo.py
+      - name: The release gate the Demo switch uses
+        run: python3 -m unittest demo/test/test_release_gate.py
       - name: Install the pinned tools
         working-directory: demo
         run: npm ci --no-audit --no-fund

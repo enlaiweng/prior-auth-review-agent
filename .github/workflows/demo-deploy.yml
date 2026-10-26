@@ -44,8 +44,14 @@ jobs:
       - name: Build the demo's content from this commit
         id: build
         run: |
+          if grep -q "AGENT_TEST_API_URL" demo/wrangler.toml; then
+            echo "::error title=Test setting in wrangler.toml::AGENT_TEST_API_URL is for local tests only and must not be in demo/wrangler.toml. Nothing was deployed."
+            exit 1
+          fi
           python3 demo/build_demo.py | tee "$RUNNER_TEMP/build.txt"
-          echo "line=$(cat "$RUNNER_TEMP/build.txt")" >> "$GITHUB_OUTPUT"
+          sha=$(grep -Eo 'content [0-9a-f]{64}' "$RUNNER_TEMP/build.txt" | cut -d' ' -f2)
+          [ -n "$sha" ] || { echo "::error title=No content fingerprint::The build did not report one."; exit 1; }
+          echo "content=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Install the pinned tools
         working-directory: demo
@@ -111,6 +117,11 @@ jobs:
           python3 -c "import json, os; json.dump({'CHECKLIST_MODE': 'true', 'ANTHROPIC_API_KEY': os.environ['ANTHROPIC_DEMO_KEY'], 'DEMO_PASSCODE': os.environ['DEMO_PASSCODE']}, open('$secrets', 'w'))"
           npx wrangler deploy --secrets-file "$secrets" | tee deploy.log
           rm -f "$secrets"
+          # A test-only setting left from an earlier version would carry over (secrets are only ever added): remove it.
+          if npx wrangler secret list --format json | python3 -c "import json, sys; sys.exit(0 if any(s.get('name') == 'AGENT_TEST_API_URL' for s in json.load(sys.stdin)) else 1)"; then
+            npx wrangler secret delete AGENT_TEST_API_URL > /dev/null   # answers its own question "yes" when automated
+            echo "Removed a leftover AGENT_TEST_API_URL setting."
+          fi
           url=$(grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
           if [ -z "$url" ]; then
             echo "::error title=No address::The deploy did not report a workers.dev address. If it says to register a workers.dev subdomain, set one in the Cloudflare dashboard and run this again."
@@ -118,17 +129,28 @@ jobs:
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
-      - name: Check the demo answers, in checklist mode, with live runs set up
+      - name: Check the new version answers, in checklist mode, with live runs set up
         env:
           URL: ${{ steps.deploy.outputs.url }}
+          CONTENT: ${{ steps.build.outputs.content }}
         run: |
-          code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
-          for i in $(seq 1 30); do [ "$(code "$URL/api/status")" = "200" ] && break; sleep 4; done
+          code() { curl -s --max-time 20 -o /dev/null -w "%{http_code}" "$@"; }
+          # Wait until the version answering is the one just built, not the one it replaced.
+          seen=""
+          for i in $(seq 1 45); do
+            seen=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['content_sha256'])" 2>/dev/null || true)
+            [ "$seen" = "$CONTENT" ] && break
+            sleep 4
+          done
+          if [ "$seen" != "$CONTENT" ]; then
+            echo "::error title=New version not answering::After three minutes the demo still answers with content ${seen:-nothing}, not $CONTENT. Run the workflow again; if it persists, send Claude a screenshot."
+            exit 1
+          fi
           fail=""
           [ "$(code "$URL/")" = "200" ] || fail="$fail page"
-          status=$(curl -s "$URL/api/status")
+          status=$(curl -s --max-time 20 "$URL/api/status")
           echo "$status" | python3 -c "import json, sys; s = json.load(sys.stdin); assert s['mode'] == 'checklist', s['mode']; assert s['live']['problem'] is None, s['live']['problem']" || fail="$fail status"
-          curl -s "$URL/api/cases" | python3 -c "import json, sys; c = json.load(sys.stdin)['cases']; assert len(c) == 12 and [x['case'] for x in c] == ['case_%02d' % i for i in range(1, 13)]" || fail="$fail twelve-cases"
+          curl -s --max-time 20 "$URL/api/cases" | python3 -c "import json, sys; c = json.load(sys.stdin)['cases']; assert len(c) == 12 and [x['case'] for x in c] == ['case_%02d' % i for i in range(1, 13)]" || fail="$fail twelve-cases"
           # Free checks of the guards: nothing here reaches the model.
           [ "$(code -X POST "$URL/api/run/case_01" -H 'Content-Type: application/json' -d '{}')" = "403" ] || fail="$fail run-without-header"
           [ "$(code -X POST "$URL/api/run/case_10" -H 'X-Demo: 1' -H 'Content-Type: application/json' -d '{"passcode":"x"}')" = "409" ] || fail="$fail held-out-refused"
@@ -138,6 +160,7 @@ jobs:
             echo ""
             echo "- Viewer: $URL"
             echo "- Mode: checklist (approvals and document requests off). Approvals are switched on only by the Demo switch workflow, after the release decision is signed."
-            echo "- Built: ${{ steps.build.outputs.line }}"
+            echo "- Content fingerprint: $CONTENT (the same value the viewer's status reports)"
             echo "- Next (RUNBOOK.md, Deploy): open the viewer, check all twelve cases are listed and every stored decision shows as routed, then run case 01 live with the passcode. It should answer route, with its criteria and citations."
+            echo "- Changing the passcode needs a new deploy, and every deploy turns approvals off; switch them on again afterwards only if the release decision stands."
           } >> "$GITHUB_STEP_SUMMARY"

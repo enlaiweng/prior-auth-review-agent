@@ -88,10 +88,19 @@ export function costUsd(model, usage) {
   return Math.round(cost * 10000) / 10000;
 }
 
-// Tests only: point the agent at a fake model on this computer. Ignored unless the address is local.
+// Tests only: point the agent at a fake model on this computer. Accepted only for a plain http address on 127.0.0.1
+// with no user name or password, checked by parsing: "http://127.0.0.1:@elsewhere.example/" has the host
+// elsewhere.example and is ignored, so the key can't be sent anywhere but Anthropic.
+export function localTestUrl(value) {
+  if (typeof value !== "string" || !value) return null;
+  let u;
+  try { u = new URL(value); } catch { return null; }
+  if (u.protocol !== "http:" || u.hostname !== "127.0.0.1" || u.username || u.password) return null;
+  return u.href;
+}
 function testServer() {
-  const u = process.env.AGENT_TEST_API_URL || "";
-  return u.startsWith("http://127.0.0.1:") ? { apiUrl: u } : {};
+  const u = localTestUrl(process.env.AGENT_TEST_API_URL);
+  return u ? { apiUrl: u } : {};
 }
 
 function args(argv) {

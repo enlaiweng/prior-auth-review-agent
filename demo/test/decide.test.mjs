@@ -86,29 +86,38 @@ function fixtureRun(name, { run = {}, decisions = {} } = {}) {
   for (const [id, d] of Object.entries(decisions)) writeFileSync(join(ROOT, dir, id + ".json"), JSON.stringify(d));
   return dir;
 }
-const okDecision = { routing: "route", criteria: null, error: "x" };
+const decision = id => ({ case_id: id, agent_version: AGENT_VERSION, spec_sha256: SPEC_SHA256, routing: "route", criteria: null, error: "x" });
 
 test("the build takes a finished run of this agent, and refuses an unfinished run, another agent, or an unlabeled case", () => {
   const tag = "demo-test-" + process.pid;
   const dirs = [];
   try {
-    let dir = fixtureRun(tag + "-ok", { decisions: { case_01: okDecision, case_00: okDecision } }); dirs.push(dir);
+    let dir = fixtureRun(tag + "-ok", { decisions: { case_01: decision("case_01"), case_00: decision("case_00") } }); dirs.push(dir);
     let r = buildWith(dir);
     assert.equal(r.code, 0, r.text);
     const content = readFileSync(r.out, "utf8");
     assert.match(content, /"stored":\{"case_01":/, "the golden case's decision is kept");
     assert.doesNotMatch(content, /"case_00":\{"case_id"/, "the smoke case is left out");
 
-    dir = fixtureRun(tag + "-unfinished", { run: { finished_utc: undefined }, decisions: { case_01: okDecision } }); dirs.push(dir);
+    dir = fixtureRun(tag + "-unfinished", { run: { finished_utc: undefined }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /did not finish/);
 
-    dir = fixtureRun(tag + "-old", { run: { agent_version: "agent-0.0" }, decisions: { case_01: okDecision } }); dirs.push(dir);
+    dir = fixtureRun(tag + "-old", { run: { agent_version: "agent-0.0" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /made by agent-0\.0/);
 
-    dir = fixtureRun(tag + "-unlabeled", { decisions: { case_05: okDecision } }); dirs.push(dir);
+    dir = fixtureRun(tag + "-unlabeled", { decisions: { case_05: decision("case_05") } }); dirs.push(dir);
     r = buildWith(dir);
     // Checked while case 05 still waits for its final labels; once all twelve are settled there is no case to try.
     if (!existsLabels("case_05")) { assert.notEqual(r.code, 0); assert.match(r.text, /no final labels yet/); }
+
+    dir = fixtureRun(tag + "-experiments", { run: { budget: "experiments" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
+    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /release budget/);
+
+    dir = fixtureRun(tag + "-swapped", { decisions: { case_01: decision("case_02") } }); dirs.push(dir);
+    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /does not match the run/);
+
+    dir = fixtureRun(tag + "-outside", { decisions: { case_04: decision("case_04") } }); dirs.push(dir);
+    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /outside clinician is still reading/);
 
     r = buildWith("eval/runs/../../etc"); assert.notEqual(r.code, 0); assert.match(r.text, /not a folder under eval\/runs/);
     r = buildWith("eval/runs/does-not-exist"); assert.notEqual(r.code, 0);
@@ -128,4 +137,30 @@ test("the build refuses when the plan and the runner disagree on the held-out ca
     assert.notEqual(r.status, 0);
     assert.match(r.stdout + r.stderr, /held-out cases differ/);
   } finally { writeFileSync(plan, before); }
+});
+
+test("the live scope file is checked: a wrong scope or a case that isn't golden stops the build", () => {
+  const f = join(ROOT, "demo/live_scope.json");
+  const before = readFileSync(f, "utf8");
+  try {
+    for (const bad of ['{"scope": "all", "outside_reader_open": []}', '{"scope": "dev"}', '{"scope": "dev", "outside_reader_open": ["case_13"]}',
+                       '{"scope": "dev", "outside_reader_open": [], "extra": 1}']) {
+      writeFileSync(f, bad);
+      const r = spawnSync("python3", ["demo/build_demo.py", "--out", join(mkdtempSync(join(tmpdir(), "demo-build-")), "c.js")], { cwd: ROOT, encoding: "utf8" });
+      assert.notEqual(r.status, 0, bad);
+    }
+    writeFileSync(f, '{"scope": "nine", "outside_reader_open": []}');
+    const out = join(mkdtempSync(join(tmpdir(), "demo-build-")), "c.js");
+    const r = spawnSync("python3", ["demo/build_demo.py", "--out", out], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /live runs allowed on case_01, case_02, case_03, case_04, case_06, case_09, case_11;/, "after run 1 with no outside reader: the nine minus unsettled ones");
+  } finally { writeFileSync(f, before); }
+});
+
+test("the test hook accepts only a plain local address", async () => {
+  const { localTestUrl } = await import("../src/testhook.js");
+  assert.equal(localTestUrl("http://127.0.0.1:9999/v1/messages"), "http://127.0.0.1:9999/v1/messages");
+  for (const bad of ["http://127.0.0.1:@evil.example/", "http://127.0.0.1@evil.example/", "http://u:p@127.0.0.1:9999/",
+                     "https://127.0.0.1:9999/", "http://127.0.0.1.evil.example/", "http://localhost:9999/", "", null, undefined, 7, "x"])
+    assert.equal(localTestUrl(bad), null, String(bad));
 });

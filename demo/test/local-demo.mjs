@@ -3,6 +3,7 @@
 // Cloudflare or Anthropic. The demo's content is built first from the repository (demo/build_demo.py).
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
+import { createServer as netServer } from "node:net";
 import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -65,8 +66,16 @@ export async function startFakeModel() {
 }
 
 // vars: Worker settings for this run. A value of null leaves that setting out, as if the deploy never set it.
+// A port the system confirms is free right now, so a test never talks to a server it didn't start.
+async function freePort() {
+  return await new Promise((resolve, reject) => {
+    const s = netServer(); s.unref(); s.on("error", reject);
+    s.listen(0, "127.0.0.1", () => { const { port } = s.address(); s.close(() => resolve(port)); });
+  });
+}
+
 export async function startDemo(vars = {}) {
-  const port = 19700 + Math.floor(Math.random() * 1000);
+  const port = await freePort();
   const persist = mkdtempSync(join(tmpdir(), "demo-"));
   execFileSync("npx", ["wrangler", "d1", "migrations", "apply", "prior-auth-demo", "--local", "--persist-to", persist],
     { cwd: DEMO, env: ENV, stdio: "ignore" });
@@ -77,7 +86,8 @@ export async function startDemo(vars = {}) {
   const base = `http://127.0.0.1:${port}`;
   const stop = () => { try { process.kill(-dev.pid); } catch (e) {} rmSync(persist, { recursive: true, force: true }); };
   for (let i = 0; i < 120; i++) {
-    try { if ((await fetch(base + "/api/status")).ok) return { base, port, persist, stop }; } catch (e) {}
+    if (dev.exitCode !== null) break;   // it couldn't start (for example the port was taken after all): don't use whatever answers there
+    try { if ((await fetch(base + "/api/status")).ok && dev.exitCode === null) return { base, port, persist, stop }; } catch (e) {}
     await new Promise(r => setTimeout(r, 500));
   }
   stop();

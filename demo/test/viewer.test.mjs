@@ -76,13 +76,41 @@ test("held-out and unsettled cases explain why they don't run live", async () =>
   await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 05");
   assert.match(await page.locator("#livecard").innerText(), /isn't settled yet/);
   assert.equal(page.url().endsWith("#case_05"), true, "the address names the case, so it can be shared");
+  await page.click('.cases button[data-case="case_04"]');
+  await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 04");
+  assert.match(await page.locator("#livecard").innerText(), /outside clinician is reading this case/);
+  await page.click('.cases button[data-case="case_06"]');
+  await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 06");
+  assert.match(await page.locator("#livecard").innerText(), /Until the first full run \(run 1\)/);
+  assert.equal(await page.locator("#pc").count(), 0);
   await ctx.close();
 });
 
 test("on a phone the page fits the screen with no sideways scrolling", async () => {
-  const { ctx, page } = await open("/#case_04", { width: 390, height: 844 });
+  const { ctx, page } = await open("/#case_02", { width: 390, height: 844 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `the page is ${overflow}px wider than the screen`);
   assert.ok(await page.locator("#pc").isVisible());
+  await ctx.close();
+});
+
+test("hostile text from the model is shown as text, never run or turned into markup", async () => {
+  errors = [];
+  const report = reportFrom(finalLabels("case_02"));
+  report.criteria.C1_red_flag.explanation = '<img src=x onerror="window.__pwned=1"><script>window.__pwned=2</script>';
+  report.criteria.C2_conservative_4wk.evidence = ['x" onmouseover="window.__pwned=3" data-x="', "note:p1"];
+  report.case_summary = "</div><b id=injected>bold</b>";
+  fake.reply = () => ({ report });
+  const { ctx, page } = await open("/#case_02");
+  await page.fill("#pc", PASSCODE);
+  await page.click("#run");
+  await page.waitForSelector("#liveresult .badge", { timeout: 30000 });
+  await page.hover("#liveresult button.id >> nth=0");
+  assert.equal(await page.evaluate(() => window.__pwned), undefined, "nothing in the model's text ran");
+  assert.equal(await page.locator("#liveresult img").count(), 0);
+  assert.equal(await page.locator("#injected").count(), 0);
+  assert.match(await page.locator("#liveresult").innerText(), /<img src=x onerror=/, "the text is shown as written");
+  assert.deepEqual(errors, []);
+  fake.reply = () => ({ report: reportFrom(finalLabels("case_01")) });
   await ctx.close();
 });

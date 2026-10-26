@@ -4,21 +4,25 @@
 //   - Anyone can read each case's record and its stored decision, if a stored run is set (demo/stored_run.txt).
 //     A stored decision's outcome is decided again here by the agent's fixed rule, under the current mode.
 //   - Live runs call the real agent (agent/agent.js, unchanged) on one case, with the demo's own key. They need the
-//     passcode the owner hands out, are capped per minute and per day, and are refused for the held-out cases and for
-//     any case whose final labels are not yet in place.
+//     passcode the owner hands out, are capped per minute and per day, and are refused for the held-out cases, for
+//     any case whose final labels are not yet in place, for cases an outside clinician is still reading, and, until
+//     run 1, for every case outside the development set (demo/live_scope.json).
 //   - Checklist mode (the kill switch, RUNBOOK.md): the approve output and document requests are off unless the
 //     Worker's CHECKLIST_MODE setting is exactly "false". Missing, empty, or anything else means checklist mode.
-// The Worker holds no labels, no intended answers, and no case-specific logic. It keeps no request logs; the only
-// thing it stores is one row per live-run attempt (time, case, outcome) for the caps, with no address or passcode.
+// The Worker holds no labels, no intended answers, and no case-specific logic. It keeps no request logs; it stores one
+// row per live-run attempt (time, case, outcome) for the caps and, on wrong-passcode rows only, a daily keyed
+// fingerprint of the visitor's address (migrations/0002_visitor.sql). No address or passcode is stored.
 
 import { CONTENT } from "./content.generated.js";
 import { reviewCase, AGENT_VERSION, SETTINGS } from "../../agent/agent.js";
 import { SPEC_SHA256 } from "../../agent/spec.generated.js";
 import { redecide } from "./decide.js";
+import { localTestUrl } from "./testhook.js";
 
 const HEARTBEAT_MS = 10000;          // a progress line every ten seconds keeps the connection open while the model works
 const BAD_PASSCODE_WINDOW_MS = 600000;
-const BAD_PASSCODE_LIMIT = 10;       // wrong passcodes in ten minutes before live runs pause for everyone
+const BAD_PER_VISITOR = 5;           // wrong passcodes in ten minutes before live runs pause for that visitor
+const BAD_OVERALL = 50;              // wrong passcodes in ten minutes, all visitors together, before live runs pause for all
 const MIN_PASSCODE = 12;
 
 if (CONTENT.agent.version !== AGENT_VERSION || CONTENT.agent.spec_sha256 !== SPEC_SHA256) {
@@ -28,7 +32,7 @@ if (CONTENT.agent.version !== AGENT_VERSION || CONTENT.agent.spec_sha256 !== SPE
 // ---- Settings ---------------------------------------------------------------------------------------------------
 // Fail-safe: approvals and document requests are on only when CHECKLIST_MODE is exactly "false".
 const approveOn = env => env.CHECKLIST_MODE === "false";
-const passcode = env => (typeof env.DEMO_PASSCODE === "string" ? env.DEMO_PASSCODE : "");
+const passcode = env => (typeof env.DEMO_PASSCODE === "string" ? env.DEMO_PASSCODE.trim() : "");
 const apiKey = env => (typeof env.ANTHROPIC_API_KEY === "string" ? env.ANTHROPIC_API_KEY.trim() : "");
 const limit = (v, fallback) => { const n = Number(v); return Number.isInteger(n) && n > 0 ? n : fallback; };
 const perMinute = env => limit(env.LIVE_PER_MINUTE, 2);
@@ -40,10 +44,10 @@ function liveProblem(env) {
   if (passcode(env).length < MIN_PASSCODE) return "Live runs aren't set up: the demo has no passcode.";
   return null;
 }
-// Tests only: send the model call to a fake server on this computer. Ignored unless the address is local.
+// Tests only: send the model call to a fake server on this computer (testhook.js says which addresses count).
 function testApi(env) {
-  const u = typeof env.AGENT_TEST_API_URL === "string" ? env.AGENT_TEST_API_URL : "";
-  return u.startsWith("http://127.0.0.1:") ? { apiUrl: u } : {};
+  const u = localTestUrl(env.AGENT_TEST_API_URL);
+  return u ? { apiUrl: u } : {};
 }
 
 // ---- Responses --------------------------------------------------------------------------------------------------
@@ -70,20 +74,28 @@ async function samePasscode(given, expected) {
 }
 
 // ---- Cases ------------------------------------------------------------------------------------------------------
-function liveRefusal(c) {
-  if (c.held_out) return "This is one of the three held-out cases. They are never run before the release evaluation, so the agent can't be tuned on them.";
-  if (!c.labeled) return "This case's final answer key isn't settled yet, so it doesn't run live until it is.";
-  return null;
-}
+// Why a case doesn't run live, in the order the build checks (demo/build_demo.py, refusal).
+const REFUSALS = {
+  held_out: "This is one of the three held-out cases. They are never run before the release evaluation, so the agent can't be tuned on them.",
+  unlabeled: "This case's final answer key isn't settled yet, so it doesn't run live until it is.",
+  outside_reader: "An outside clinician is reading this case right now. The agent's answer on it stays hidden until their answers are in, so nothing here can shape their reading.",
+  before_run1: "Until the first full run (run 1), live runs are limited to the development cases, 01 to 05, so run 1 stays the first look at the other cases.",
+};
+const liveRefusal = c => (c.refusal ? REFUSALS[c.refusal] || "This case doesn't run live." : null);
 function storedFor(caseId, env) {
   const c = CONTENT.cases[caseId];
-  return redecide(c.bundle, CONTENT.stored[caseId], approveOn(env));
+  try {
+    return redecide(c.bundle, CONTENT.stored[caseId], approveOn(env));
+  } catch (e) {
+    // A stored report the rule can't read is shown as a failed decision, routed, rather than breaking the page.
+    return redecide(c.bundle, { error: "the stored report could not be read (" + String(e && e.message || e) + ")" }, approveOn(env));
+  }
 }
 function caseSummary(caseId, env) {
   const c = CONTENT.cases[caseId];
   const s = storedFor(caseId, env);
   return { case: caseId, name: c.name, request: c.view.request.text, patient: c.view.patient.text, held_out: c.held_out,
-           live_refusal: liveRefusal(c), stored: s ? { routing: s.routing, error: !!s.error } : null };
+           refusal: c.refusal, live_refusal: liveRefusal(c), stored: s ? { routing: s.routing, error: !!s.error } : null };
 }
 
 async function status(env) {
@@ -92,7 +104,7 @@ async function status(env) {
     agent: { version: AGENT_VERSION, spec_sha256: SPEC_SHA256, model: SETTINGS.model, effort: SETTINGS.effort },
     mode: approveOn(env) ? "approve" : "checklist",
     live: { problem: liveProblem(env), per_minute: perMinute(env), per_day: perDay(env), used_today: day },
-    stored_run: CONTENT.stored_run, held_out: CONTENT.held_out, content_sha256: CONTENT.content_sha256,
+    stored_run: CONTENT.stored_run, held_out: CONTENT.held_out, live_scope: CONTENT.live_scope, content_sha256: CONTENT.content_sha256,
   };
 }
 
@@ -101,6 +113,16 @@ const startOfDay = ms => { const d = new Date(ms); return Date.UTC(d.getUTCFullY
 async function runsSince(env, sinceMs) {
   const r = await env.DB.prepare("SELECT COUNT(*) AS n FROM live_runs WHERE outcome != 'bad_passcode' AND at_ms >= ?1").bind(sinceMs).first();
   return r ? r.n : 0;
+}
+
+// A keyed fingerprint of the visitor's address and the day: lets wrong passcodes be limited per visitor without storing
+// any address. Cloudflare sets CF-Connecting-IP; a visitor can't choose it.
+async function visitor(request, env, now) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const day = new Date(now).toISOString().slice(0, 10);
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("demo-visitor|" + passcode(env)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ip + "|" + day)));
+  return [...mac.slice(0, 12)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 
 async function liveRun(request, env, ctx, caseId) {
@@ -118,13 +140,18 @@ async function liveRun(request, env, ctx, caseId) {
 
   const now = Date.now();
   await env.DB.prepare("DELETE FROM live_runs WHERE at_ms < ?1").bind(now - 3 * 86400000).run();
-  const bad = await env.DB.prepare("SELECT COUNT(*) AS n FROM live_runs WHERE outcome = 'bad_passcode' AND at_ms > ?1")
-    .bind(now - BAD_PASSCODE_WINDOW_MS).first();
-  if (bad.n >= BAD_PASSCODE_LIMIT) return fail(429, "Too many wrong passcodes. Live runs are paused for a few minutes.", "locked");
-  if (!(await samePasscode(body.passcode, passcode(env)))) {
-    await env.DB.prepare("INSERT INTO live_runs (at_ms, case_id, outcome) VALUES (?1, ?2, 'bad_passcode')").bind(now, caseId).run();
-    return fail(403, "That passcode isn't right.", "bad_passcode");
-  }
+  // Every passcode check first records itself as a wrong passcode, in one statement that also enforces the limits, so
+  // many guesses sent at once can't all slip under them. A right passcode then removes its row.
+  const who = await visitor(request, env, now);
+  const since = now - BAD_PASSCODE_WINDOW_MS;
+  const guard = await env.DB.prepare(
+    "INSERT INTO live_runs (at_ms, case_id, outcome, who) SELECT ?1, ?2, 'bad_passcode', ?3 " +
+    "WHERE (SELECT COUNT(*) FROM live_runs WHERE outcome = 'bad_passcode' AND who = ?3 AND at_ms > ?4) < ?5 " +
+    "AND (SELECT COUNT(*) FROM live_runs WHERE outcome = 'bad_passcode' AND at_ms > ?4) < ?6")
+    .bind(now, caseId, who, since, BAD_PER_VISITOR, BAD_OVERALL).run();
+  if (guard.meta.changes !== 1) return fail(429, "Too many wrong passcodes. Live runs are paused for a few minutes.", "locked");
+  if (!(await samePasscode(body.passcode, passcode(env)))) return fail(403, "That passcode isn't right.", "bad_passcode");
+  await env.DB.prepare("DELETE FROM live_runs WHERE id = ?1").bind(guard.meta.last_row_id).run();
   // One statement counts and records, so two requests at once can't both slip under a cap.
   const ins = await env.DB.prepare(
     "INSERT INTO live_runs (at_ms, case_id, outcome) SELECT ?1, ?2, 'started' " +
