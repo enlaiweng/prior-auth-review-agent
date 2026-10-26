@@ -92,6 +92,14 @@ async function ownerInvites(page, { name, email = "", note = "", cases = [] }) {
 }
 // One person's block on the admin page, and its "Change cases, links, or reopen a case" section opened.
 const personBox = (page, name) => page.locator("div.crit", { has: page.locator("div.name", { hasText: name }) });
+// Clicks Refresh and waits until the page has redrawn its list. The redraw replaces the whole list, closing any panel
+// opened in the meantime, so a test that opened a panel straight after clicking Refresh could find it closed again
+// (the random "element is not visible" failure in scenario 21 on 2026-10-24).
+async function ownerRefreshes(page) {
+  await page.evaluate(() => { const m = document.getElementById("main"); if (m.firstElementChild) m.firstElementChild.dataset.beforeRefresh = "1"; });
+  await page.click("#refresh");
+  await until(async () => (await page.locator("#main [data-before-refresh]").count()) === 0, "the admin page to redraw after Refresh");
+}
 async function ownerOpensChanges(page, name) {
   const box = personBox(page, name);
   if (!(await box.locator("details").evaluate(d => d.open))) await box.locator("summary").click();
@@ -286,7 +294,7 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   assert.match(await homeRow(dabs, "Practice A"), /View/);
 
   // The owner refreshes and sees the credit, the training, and the progress.
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   await until(async () => /Practice A: submitted/.test(await personBox(owner, "Dr. Dabs").innerText()), "the owner to see Practice A submitted");
   const box = await personBox(owner, "Dr. Dabs").innerText();
   assert.match(box, /Credited as Dr\. Dabs, Cardiothoracic surgeon/);
@@ -455,7 +463,7 @@ scenario("6. The owner changes someone's cases; a case with saved answers stays"
   await saved(page);
 
   // Swap Case 04 for Practice A.
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   let box = await ownerOpensChanges(owner, "Reassigned Person");
   await box.locator("input[value=case_04]").uncheck();
   await box.locator("input[value=practice_a]").check();
@@ -486,7 +494,7 @@ scenario("7. A lost link: the owner makes a new one; the old one stops at once a
   await picks(page, "C1_red_flag", "supported");
   await saved(page);
 
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   await ownerClicksTwice(owner, "Lost Link", "Make a new link");
   const newLink = await personBox(owner, "Lost Link").locator("#lk").innerText();
   assert.notEqual(newLink, oldLink);
@@ -516,7 +524,7 @@ scenario("8. Turning a link off while someone is labeling, then turning them bac
   await startsLabeling(page, link);
   await opensCase(page, "practice_b");
 
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   await ownerClicksTwice(owner, "Switched Off", "Turn the link off");
   const offTag = () => personBox(owner, "Switched Off").locator("div.name .chip", { hasText: "link off" }).count();
   await until(async () => (await offTag()) === 1, "the 'link off' tag");
@@ -548,7 +556,7 @@ scenario("9. The owner reopens a submitted case with a reason; the labeler fixes
   await submits(page);
   const first = (await exported()).find(l => l.invited_name === "Fixer");
 
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   let box = await ownerOpensChanges(owner, "Fixer");
   await box.locator("button", { hasText: "Reopen it" }).click();
   await until(async () => /please give a reason/.test(await personBox(owner, "Fixer").innerText()), "the request for a reason");
@@ -587,7 +595,7 @@ scenario("10. Removing a person who asks: labels and details go, the log keeps w
   await submits(page);
   const id = (await exported()).find(l => l.credit_name === "Ms. Remove Me").labeler_id;
 
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   await ownerClicksTwice(owner, "Remove Me Please", "Remove this person's details");
   await until(async () => (await personBox(owner, "Remove Me Please").count()) === 0, "the person to leave the list");
 
@@ -854,7 +862,7 @@ scenario("18. Names with accents, apostrophes, and symbols show exactly as typed
   await page.goto(other.link);
   await shows(page, literally("This browser is signed in as " + name + ". Continuing switches it to Next Person."));
 
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   await until(async () => (await personBox(owner, "Zoë O'Brien").innerText()).includes("Credited as " + name + ", R&D <lead>"), "the credit on the admin page");
 });
 
@@ -902,7 +910,7 @@ scenario("21. Starting over: the labeler clears a case, and later the owner clea
   await submits(page);
 
   // The labeler asks to redo it. The owner clears the submitted case, with a reason.
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   const box = await ownerOpensChanges(owner, "Redo Person");
   await box.locator("select[id^=cl_]").selectOption("practice_a");
   await box.locator("input[placeholder^=Why]").fill("asked to redo it after rereading C3");
@@ -930,7 +938,7 @@ scenario("21. Starting over: the labeler clears a case, and later the owner clea
   await opensCase(page, "practice_b");
   await picks(page, "C1_red_flag", "supported");
   await saved(page);
-  await owner.click("#refresh");
+  await ownerRefreshes(owner);
   const box2 = await ownerOpensChanges(owner, "Redo Person");
   await box2.locator("select[id^=cl_]").selectOption("practice_b");
   await box2.locator("input[placeholder^=Why]").fill("assigned by mistake");

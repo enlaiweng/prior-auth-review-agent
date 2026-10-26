@@ -250,6 +250,10 @@ def main(argv=None):
         "run_id": run_id,
         "cases": {},
     }
+    def save_record():
+        # Rewritten after every case, so a run that stops partway still leaves a record matching the files written so far.
+        open(f"{run_dir}/run_record.json", "w", encoding="utf-8").write(json.dumps(record, indent=1, ensure_ascii=False) + "\n")
+
     sent = 0
     for case_id in wanted:
         text, prompt_sha = prompts[case_id]
@@ -258,6 +262,7 @@ def main(argv=None):
             record["cases"][case_id] = {"prompt_sha256": prompt_sha, "outcome": "skipped",
                                         "problems": ["already labeled in an earlier run; not sent again"]}
             print(f"{case_id}: skipped, {existing} already exists")
+            save_record()
             continue
         if sent:
             time.sleep(args.pause)
@@ -298,11 +303,12 @@ def main(argv=None):
                 entry.update(outcome="labeled", labels_file=out, labels_sha256=sha256(written))
         record["cases"][case_id] = entry
         print(f"{case_id}: {entry['outcome']}" + ("" if entry["outcome"] == "labeled" else ": " + "; ".join(entry["problems"])))
+        save_record()
 
     record["finished_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
     versions = sorted({str(e.get("model_version")) for e in record["cases"].values() if e["outcome"] != "skipped"})
     record["model_versions_returned"] = versions
-    open(f"{run_dir}/run_record.json", "w", encoding="utf-8").write(json.dumps(record, indent=1, ensure_ascii=False) + "\n")
+    save_record()
 
     failed = [c for c, e in record["cases"].items() if e["outcome"] == "failed"]
     if args.summary:
