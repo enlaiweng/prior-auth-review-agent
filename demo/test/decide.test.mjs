@@ -88,7 +88,7 @@ function fixtureRun(name, { run = {}, decisions = {} } = {}) {
 }
 const decision = id => ({ case_id: id, agent_version: AGENT_VERSION, spec_sha256: SPEC_SHA256, routing: "route", criteria: null, error: "x" });
 
-test("the build takes a finished run of this agent, and refuses an unfinished run, another agent, or an unlabeled case", () => {
+test("the build takes a finished run of this agent, leaves out held-out and outside-reader cases, and refuses an unfinished run, another agent, or an unlabeled case", () => {
   const tag = "demo-test-" + process.pid;
   const dirs = [];
   try {
@@ -105,9 +105,14 @@ test("the build takes a finished run of this agent, and refuses an unfinished ru
     dir = fixtureRun(tag + "-old", { run: { agent_version: "agent-0.0" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /made by agent-0\.0/);
 
-    dir = fixtureRun(tag + "-unlabeled", { decisions: { case_05: decision("case_05") } }); dirs.push(dir);
-    r = buildWith(dir);
     // Checked while case 05 still waits for its final labels; once all twelve are settled there is no case to try.
+    // Case 05 is also an outside reader's case (left out, not refused), so that list is cleared for this check.
+    dir = fixtureRun(tag + "-unlabeled", { decisions: { case_05: decision("case_05") } }); dirs.push(dir);
+    const scopeFile = join(ROOT, "demo/live_scope.json"), scopeBefore = readFileSync(scopeFile, "utf8");
+    try {
+      writeFileSync(scopeFile, '{"scope": "dev", "outside_reader_open": []}');
+      r = buildWith(dir);
+    } finally { writeFileSync(scopeFile, scopeBefore); }
     if (!existsLabels("case_05")) { assert.notEqual(r.code, 0); assert.match(r.text, /no final labels yet/); }
 
     dir = fixtureRun(tag + "-experiments", { run: { budget: "experiments" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
@@ -116,8 +121,13 @@ test("the build takes a finished run of this agent, and refuses an unfinished ru
     dir = fixtureRun(tag + "-swapped", { decisions: { case_01: decision("case_02") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /does not match the run/);
 
-    dir = fixtureRun(tag + "-outside", { decisions: { case_04: decision("case_04") } }); dirs.push(dir);
-    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /outside clinician is still reading/);
+    // A release run covers all twelve: the held-out cases and the ones an outside clinician is reading are left out.
+    dir = fixtureRun(tag + "-all", { decisions: { case_01: decision("case_01"), case_04: decision("case_04"),
+      case_08: decision("case_08"), case_10: decision("case_10"), case_12: decision("case_12") } }); dirs.push(dir);
+    r = buildWith(dir); assert.equal(r.code, 0, r.text);
+    assert.match(r.text, /stored decisions: 1 /, "only case 01 is kept");
+    const all = readFileSync(r.out, "utf8");
+    for (const id of ["case_04", "case_08", "case_10", "case_12"]) assert.doesNotMatch(all, new RegExp('"' + id + '":\\{"case_id"'), id);
 
     r = buildWith("eval/runs/../../etc"); assert.notEqual(r.code, 0); assert.match(r.text, /not a folder under eval\/runs/);
     r = buildWith("eval/runs/does-not-exist"); assert.notEqual(r.code, 0);

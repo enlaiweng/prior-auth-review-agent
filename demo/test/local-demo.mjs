@@ -79,7 +79,7 @@ export async function startDemo(vars = {}) {
   const persist = mkdtempSync(join(tmpdir(), "demo-"));
   execFileSync("npx", ["wrangler", "d1", "migrations", "apply", "prior-auth-demo", "--local", "--persist-to", persist],
     { cwd: DEMO, env: ENV, stdio: "ignore" });
-  const all = { ANTHROPIC_API_KEY: FAKE_KEY, DEMO_PASSCODE: PASSCODE, ...vars };
+  const all = { ANTHROPIC_API_KEY: FAKE_KEY, DEMO_PASSCODE: PASSCODE, VISITOR_KEY: "test-visitor-key-0123456789abcdef0123", ...vars };
   const args = ["wrangler", "dev", "--local", "--ip", "127.0.0.1", "--port", String(port), "--persist-to", persist];
   for (const [k, v] of Object.entries(all)) if (v !== null && v !== undefined) args.push("--var", `${k}:${v}`);
   const dev = spawn("npx", args, { cwd: DEMO, env: ENV, stdio: "ignore", detached: true });

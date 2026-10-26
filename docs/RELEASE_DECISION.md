@@ -4,7 +4,7 @@ EDOM Phase 5 commitment. Half a page. Signed against the thresholds in EVAL_PLAN
 
 ## Decision
 
-[Go / No-go] for release [1.0], agent version [agent-x.y, as the demo's status shows it], evaluated on golden set [1.0] on [date]. Evaluation report: EVALUATION.md.
+[Go / No-go] for release [1.0], agent version [agent-x.y] (spec [first 12 characters of spec_sha256]), evaluated on golden set [1.0] on [date]. The version and spec are the ones the demo's status shows. Evaluation report: EVALUATION.md.
 
 ## Thresholds
 

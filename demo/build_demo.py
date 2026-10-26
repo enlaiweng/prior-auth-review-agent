@@ -107,11 +107,12 @@ def stored(run_dir, cases, version, sha, outside):
     for case_id in run["cases"]:
         if case_id not in cases:
             continue  # the smoke case or a fairness pair: not shown in the viewer
+        if cases[case_id]["held_out"]:
+            continue  # held out: scored in the release evaluation, never shown, so it stays usable for later releases
+        if case_id in outside:
+            continue  # an outside clinician is still reading it: withheld until demo/live_scope.json clears it
         if not cases[case_id]["labeled"]:
             raise SystemExit(f"{run_dir}: holds a decision for {case_id}, which has no final labels yet; nothing built")
-        if case_id in outside:
-            raise SystemExit(f"{run_dir}: holds a decision for {case_id}, which an outside clinician is still reading "
-                             "(demo/live_scope.json); nothing built")
         d = json.load(open(os.path.join(run_dir, case_id + ".json"), encoding="utf-8"))
         if d.get("case_id") != case_id or d.get("agent_version") != version or d.get("spec_sha256") != sha:
             raise SystemExit(f"{run_dir}/{case_id}.json: its case id, agent version, or spec does not match the run; nothing built")
@@ -120,6 +121,14 @@ def stored(run_dir, cases, version, sha, outside):
             "finished_utc": run.get("finished_utc"), "workflow_run": run.get("workflow_run"),
             "models_returned": run.get("models_returned"), "git_commit": run.get("git_commit")}
     return meta, decisions
+
+
+def CODE_FILES():
+    """The files that make up the deployed Worker, apart from the generated content."""
+    files = [p for p in glob.glob("demo/src/*.js") if not p.endswith("content.generated.js")]
+    files += [p for p in glob.glob("agent/*") if os.path.isfile(p)]
+    files += ["demo/wrangler.toml", "demo/package-lock.json"]
+    return files
 
 
 def script_hash(page):
@@ -153,7 +162,10 @@ def main(argv=None):
     page = open("demo/pages/index.html", encoding="utf-8").read()
     body = {"agent": {"version": version, "spec_sha256": sha}, "held_out": held, "live_scope": scope, "order": order, "cases": cases,
             "stored_run": run_meta, "stored": decisions}
-    content_sha = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    # The fingerprint covers the code and the page as well as the content, so a deploy that changes only code still
+    # shows a new fingerprint, and the deploy can tell when the new version is the one answering.
+    code = {p: hashlib.sha256(open(p, "rb").read()).hexdigest() for p in sorted(CODE_FILES())}
+    content_sha = hashlib.sha256(json.dumps(dict(body, code=code, page=page), sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     content = dict(body, content_sha256=content_sha, page=page, page_script_hash=script_hash(page))
     text = ("// Built by demo/build_demo.py from the repository. Not committed; rebuilt before every test and deploy.\n"
             "export const CONTENT = " + json.dumps(content, ensure_ascii=False, separators=(",", ":")) + ";\n")

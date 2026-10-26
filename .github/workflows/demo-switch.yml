@@ -7,8 +7,9 @@
 #   on:  approvals and document requests on. Refused unless demo/tools/release_gate.py finds, on main, a signed Go in
 #        docs/RELEASE_DECISION.md for the exact agent version the demo is running, the hard gate met, and no open
 #        kill-switch trip in docs/GOVERNANCE.md.
-# Its own queue (not shared with "Deploy demo"), so a deploy waiting for approval can never hold up or cancel the
-# kill switch. Don't approve a deploy and a switch at the same time.
+# Queues: "off" has its own queue, so a deploy waiting for approval can never hold up the kill switch. "on" shares the
+# deploy's queue, so approvals are never switched on while new code is being deployed; afterwards it checks the demo
+# still runs the agent the gate passed, and turns approvals off again if not.
 name: Demo switch
 
 on:
@@ -25,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: demo-switch
+  group: ${{ inputs.approvals == 'on' && 'demo-deploy' || 'demo-switch' }}
   cancel-in-progress: false
 
 jobs:
@@ -63,14 +64,23 @@ jobs:
           [ -n "$sub" ] && echo "url=https://prior-auth-demo.$sub.workers.dev" >> "$GITHUB_OUTPUT"
           [ -n "$sub" ] || echo "::warning title=Address not found::The Worker exists, but its workers.dev address could not be read; the new mode can't be confirmed automatically."
 
-      - name: Approvals on only after a signed Go for the version the demo is running
+      - name: Approvals on only after a signed Go for the agent the demo is running
+        id: gate
         if: inputs.approvals == 'on'
         env:
           URL: ${{ steps.find.outputs.url }}
         run: |
           if [ -z "$URL" ]; then echo "::error title=Can't check the version::The demo's address is unknown, so its agent version can't be checked. Approvals stay off."; exit 1; fi
-          version=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['agent']['version'])" 2>/dev/null || true)
-          python3 demo/tools/release_gate.py "$version"
+          ident() { curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; s = json.load(sys.stdin); print(s['agent']['version'], s['agent']['spec_sha256'], s['content_sha256'])" 2>/dev/null || true; }
+          # Three readings a few seconds apart must agree, so a version still being replaced isn't the one checked.
+          first=$(ident); sleep 5; second=$(ident); sleep 5; third=$(ident)
+          if [ -z "$first" ] || [ "$first" != "$second" ] || [ "$second" != "$third" ]; then
+            echo "::error title=Demo not steady::The demo's status changed or didn't answer while being checked ('$first', '$second', '$third'). Approvals stay off; run this again in a few minutes."
+            exit 1
+          fi
+          read -r version spec content <<< "$first"
+          python3 demo/tools/release_gate.py "$version" "$spec"
+          echo "ident=$first" >> "$GITHUB_OUTPUT"
 
       - name: Install the pinned tools
         working-directory: demo
@@ -90,6 +100,9 @@ jobs:
         env:
           URL: ${{ steps.find.outputs.url }}
           WANT: ${{ inputs.approvals }}
+          GATED: ${{ steps.gate.outputs.ident }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "$URL" ]; then
             echo "::error title=Could not confirm::The setting was changed, but the demo's address is unknown. Open the viewer and check the banner."
@@ -105,6 +118,14 @@ jobs:
           if [ "$mode" != "$expected" ]; then
             echo "::error title=Mode not confirmed::The demo reports mode '${mode:-nothing}', expected '$expected'. Open the viewer and check the banner; run this again if needed."
             exit 1
+          fi
+          if [ "$WANT" = "on" ]; then
+            now=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; s = json.load(sys.stdin); print(s['agent']['version'], s['agent']['spec_sha256'], s['content_sha256'])" 2>/dev/null || true)
+            if [ "$now" != "$GATED" ]; then
+              printf '%s' true | (cd demo && npx wrangler secret put CHECKLIST_MODE)
+              echo "::error title=Different agent now running::Approvals were switched on for '$GATED', but the demo now reports '${now:-nothing}'. Approvals were turned off again; check the latest deploy, then run this again."
+              exit 1
+            fi
           fi
           {
             echo "## Demo switched"

@@ -200,6 +200,15 @@ test("wrong passcodes pause that visitor after five, even sent all at once, and 
   });
 });
 
+test("addresses in one IPv6 /64 count as one visitor", async () => {
+  await withDemo({}, async base => {
+    for (let i = 1; i <= 5; i++) assert.equal((await live(base, "case_01", "wrong-" + i, as("2001:db8:1:2::" + i))).status, 403);
+    const r = await live(base, "case_01", "wrong-6", as("2001:db8:1:2:aaaa:bbbb:cccc:dddd"));
+    assert.equal(r.status, 429, "a sixth address in the same /64 is the same visitor");
+    assert.equal((await live(base, "case_01", "wrong-7", as("2001:db8:1:3::1"))).status, 403, "the next /64 is another visitor");
+  });
+});
+
 test("a right passcode leaves no wrong-passcode mark", async () => {
   fake.reply = () => ({ report: reportFrom(finalLabels("case_01")) });
   await withDemo({ LIVE_PER_MINUTE: "20" }, async base => {
@@ -216,6 +225,10 @@ test("without a key or a proper passcode, live runs say they aren't set up", asy
   await withDemo({ DEMO_PASSCODE: "short" }, async base => {
     assert.match((await getJson(base, "/api/status")).json.live.problem, /no passcode/);
     const r = await live(base, "case_01", "short"); assert.equal(r.status, 503);
+  });
+  await withDemo({ VISITOR_KEY: null }, async base => {
+    assert.match((await getJson(base, "/api/status")).json.live.problem, /no visitor key/);
+    assert.equal((await live(base, "case_01")).status, 503);
   });
 });
 
@@ -238,6 +251,15 @@ test("stored decisions from a finished run are shown, decided again under the cu
     writeFileSync(join(ROOT, dir, "run.json"), JSON.stringify({ agent_version: AGENT_VERSION, spec_sha256: SPEC_SHA256, case_set: "nine", budget: "release",
       started_utc: "2026-11-01T18:00:00Z", finished_utc: "2026-11-01T18:20:00Z", cases: { case_01: {}, case_02: {} } }));
     build(["--stored-run", dir]);
+    // The Worker's own backstop: even if the content held a stored decision for a held-out case or an outside
+    // reader's case, it is never served.
+    const gen = join(ROOT, "demo/src/content.generated.js");
+    const text = readFileSync(gen, "utf8");
+    const prefix = "export const CONTENT = ";
+    const at = text.indexOf(prefix);
+    const content = JSON.parse(text.slice(at + prefix.length).replace(/;\s*$/, ""));
+    for (const id of ["case_04", "case_08"]) content.stored[id] = { ...content.stored.case_01, case_id: id };
+    writeFileSync(gen, text.slice(0, at) + prefix + JSON.stringify(content) + ";\n");
     for (const [mode, expected] of [[null, "route"], ["false", "approve"]]) {
       await withDemo({ CHECKLIST_MODE: mode }, async base => {
         const s = (await getJson(base, "/api/status")).json;
@@ -246,6 +268,10 @@ test("stored decisions from a finished run are shown, decided again under the cu
         assert.deepEqual(list.find(c => c.case === "case_01").stored, { routing: expected, error: false });
         assert.deepEqual(list.find(c => c.case === "case_02").stored, { routing: "route", error: true });
         assert.equal(list.find(c => c.case === "case_03").stored, null);
+        for (const id of ["case_04", "case_08"]) {
+          assert.equal(list.find(c => c.case === id).stored, null, id + " in the list");
+          assert.equal((await getJson(base, "/api/cases/" + id)).json.decision, null, id + " on its own");
+        }
         const one = (await getJson(base, "/api/cases/case_01")).json.decision;
         assert.equal(one.routing, expected);
         assert.equal(one.checklist_mode, mode !== "false");

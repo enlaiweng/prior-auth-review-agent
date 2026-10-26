@@ -5,8 +5,9 @@
 # demo's D1 database, and deploys the Worker together with its secrets in one upload. Every deploy is in checklist
 # mode: CHECKLIST_MODE is "true" in the same upload as the code, so new code never runs with approvals on. Approvals
 # are switched on only by the "Demo switch" workflow, after the release decision is signed.
-# Keys: it prints none. The demo key and the passcode go into a secrets file readable only by the runner's user, which
-# is deleted straight after the upload.
+# Keys: it prints none. The demo key, the passcode and a fresh random visitor key go into a secrets file readable only
+# by the runner's user, which is deleted straight after the upload.
+# It shares its queue with "Demo switch" when that is turning approvals on, so the two never run at the same time.
 name: Deploy demo
 
 on:
@@ -114,11 +115,14 @@ jobs:
           secrets="$RUNNER_TEMP/demo-secrets.json"
           umask 077
           trap 'rm -f "$secrets"' EXIT
-          python3 -c "import json, os; json.dump({'CHECKLIST_MODE': 'true', 'ANTHROPIC_API_KEY': os.environ['ANTHROPIC_DEMO_KEY'], 'DEMO_PASSCODE': os.environ['DEMO_PASSCODE']}, open('$secrets', 'w'))"
+          # VISITOR_KEY: a fresh random value each deploy, seen by nobody, that keys the visitor fingerprints.
+          python3 -c "import json, os, secrets; json.dump({'CHECKLIST_MODE': 'true', 'ANTHROPIC_API_KEY': os.environ['ANTHROPIC_DEMO_KEY'], 'DEMO_PASSCODE': os.environ['DEMO_PASSCODE'], 'VISITOR_KEY': secrets.token_hex(32)}, open('$secrets', 'w'))"
           npx wrangler deploy --secrets-file "$secrets" | tee deploy.log
           rm -f "$secrets"
           # A test-only setting left from an earlier version would carry over (secrets are only ever added): remove it.
-          if npx wrangler secret list --format json | python3 -c "import json, sys; sys.exit(0 if any(s.get('name') == 'AGENT_TEST_API_URL' for s in json.load(sys.stdin)) else 1)"; then
+          # If the list can't be read, the step fails rather than carrying on unchecked.
+          names=$(npx wrangler secret list --format json | python3 -c "import json, sys; print(' '.join(s['name'] for s in json.load(sys.stdin)))")
+          if [[ " $names " == *" AGENT_TEST_API_URL "* ]]; then
             npx wrangler secret delete AGENT_TEST_API_URL > /dev/null   # answers its own question "yes" when automated
             echo "Removed a leftover AGENT_TEST_API_URL setting."
           fi

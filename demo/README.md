@@ -27,8 +27,8 @@ The word "deny" never appears as an outcome. The agent has no deny output.
 
 Approvals are on only when the Worker's `CHECKLIST_MODE` setting is exactly `false`. Missing, mistyped or anything
 else means checklist mode. Every deploy sets it to checklist mode. Only the **Demo switch** workflow turns approvals
-on, and it refuses unless `docs/RELEASE_DECISION.md` on main says "Go for release" for the agent version the demo is
-running and carries your typed, dated "Signed:" line.
+on, and it refuses unless `docs/RELEASE_DECISION.md` on main is filled in completely, says "Go for release" for the
+agent the demo is running (its version and spec fingerprint), and carries your typed, dated "Signed:" line.
 
 Stored decisions follow the mode too. The demo never shows the outcome written in a stored file; it applies the fixed
 rule again to the stored criteria, under the current mode. So the off switch covers everything on screen.
@@ -38,7 +38,7 @@ rule again to the stored criteria, under the current mode. So the off switch cov
 | Guard | What it does |
 | --- | --- |
 | Passcode | At least 12 characters, set by you. A wrong one is refused without reaching the model. |
-| Wrong passcodes | After 5 wrong passcodes in ten minutes from one visitor, live runs pause for that visitor; after 50 from everyone together, for everyone. Each check is counted in one database step, so many guesses sent at once can't slip past. |
+| Wrong passcodes | After 5 wrong passcodes in ten minutes from one visitor, live runs pause for that visitor; after 50 from everyone together, for everyone. A visitor is one IPv4 address, or one block of IPv6 addresses (the first 64 bits). Each check is counted in one database step, so many guesses sent at once can't slip past. Someone with many networks could still pause live runs for everyone for a while; viewing is never affected. |
 | Caps | 2 live runs a minute and 20 a day, across all visitors (roughly $2 a day, at about $0.10 a run; a run that has to retry costs more). Settings `LIVE_PER_MINUTE` and `LIVE_PER_DAY` in `wrangler.toml`. |
 | Held-out cases | 08, 10 and 12 never run live. They're scored only in the release evaluation. |
 | Unsettled cases | A case runs live only once its final labels are in place, the same rule the evaluation runs follow. |
@@ -48,9 +48,9 @@ rule again to the stored criteria, under the current mode. So the off switch cov
 | The key | The demo's own key, in its own Anthropic workspace with a spend limit. It never appears in any page or answer. |
 
 The Worker keeps no request logs. Its database holds one row per live-run attempt (time, case, outcome), deleted
-after three days. On wrong-passcode rows only, it also keeps a fingerprint of the visitor's address and the day,
-made with the passcode as a key, so it can't be turned back into an address and changes daily. No address,
-passcode or browser detail is stored.
+after three days. On wrong-passcode rows only, it also keeps a fingerprint of the visitor's network and the day,
+made with a random key that each deploy creates and nobody ever sees, so it can't be turned back into an address and
+changes daily. No address, passcode or browser detail is stored.
 
 ## Which cases run live: `live_scope.json`
 
@@ -64,8 +64,10 @@ With today's settings, cases 01, 02 and 03 run live. Each change reaches the dem
 ## Stored decisions
 
 `demo/stored_run.txt` says which finished evaluation run the viewer shows: `none` for now, and after the release
-evaluation, its folder under `eval/runs/`. The build refuses a run that didn't finish, a run made by a different
-agent version, or a decision for a case without final labels.
+evaluation, its folder under `eval/runs/`. The build refuses a run that didn't finish, a run not on the release
+budget, a run made by a different agent version or spec, or a decision for a case without final labels. It leaves
+out the held-out cases (so they stay unseen for later releases) and any case an outside clinician is still reading;
+the Worker also refuses to show either, as a second check.
 
 ## Deploying it (you)
 
@@ -75,6 +77,10 @@ You need two secrets you already have in the GitHub **release** environment (`CL
 | Name in GitHub | What it is |
 | --- | --- |
 | `DEMO_PASSCODE` | The passcode you give people for live runs. At least 12 characters. Something you can read out loud helps, for example three or four random words joined by hyphens from your password manager's generator. Keep it in your password manager. |
+
+Once, before the first deploy: Settings, Environments, **release**, Deployment branches and tags, choose "Selected
+branches and tags" and add `main` and the tag pattern `v*`. The workflows already refuse other branches, but this
+setting is the one a changed copy of a workflow on another branch can't get around.
 
 Then, on the **Actions** tab: **Deploy demo**, **Run workflow** (Branch: main), and approve it. The run's summary
 gives the viewer's address and the smoke test to do next (RUNBOOK.md, Deploy). Changing the passcode needs a new

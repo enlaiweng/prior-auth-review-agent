@@ -18,6 +18,7 @@ import { reviewCase, AGENT_VERSION, SETTINGS } from "../../agent/agent.js";
 import { SPEC_SHA256 } from "../../agent/spec.generated.js";
 import { redecide } from "./decide.js";
 import { localTestUrl } from "./testhook.js";
+import { network } from "./network.js";
 
 const HEARTBEAT_MS = 10000;          // a progress line every ten seconds keeps the connection open while the model works
 const BAD_PASSCODE_WINDOW_MS = 600000;
@@ -42,6 +43,7 @@ const deadlineMs = env => Math.min(limit(env.LIVE_DEADLINE_SECONDS, 240), 600) *
 function liveProblem(env) {
   if (!apiKey(env)) return "Live runs aren't set up: the demo has no model key.";
   if (passcode(env).length < MIN_PASSCODE) return "Live runs aren't set up: the demo has no passcode.";
+  if (String(env.VISITOR_KEY || "").length < 32) return "Live runs aren't set up: the demo has no visitor key.";
   return null;
 }
 // Tests only: send the model call to a fake server on this computer (testhook.js says which addresses count).
@@ -84,6 +86,8 @@ const REFUSALS = {
 const liveRefusal = c => (c.refusal ? REFUSALS[c.refusal] || "This case doesn't run live." : null);
 function storedFor(caseId, env) {
   const c = CONTENT.cases[caseId];
+  // A backstop for the build's rule: never a stored decision for a held-out case or one an outside clinician is reading.
+  if (c.held_out || c.refusal === "outside_reader") return null;
   try {
     return redecide(c.bundle, CONTENT.stored[caseId], approveOn(env));
   } catch (e) {
@@ -115,12 +119,13 @@ async function runsSince(env, sinceMs) {
   return r ? r.n : 0;
 }
 
-// A keyed fingerprint of the visitor's address and the day: lets wrong passcodes be limited per visitor without storing
-// any address. Cloudflare sets CF-Connecting-IP; a visitor can't choose it.
+// A keyed fingerprint of the visitor's network and the day: lets wrong passcodes be limited per visitor without storing
+// any address. Cloudflare sets CF-Connecting-IP; a visitor can't choose it. The key is VISITOR_KEY, a random value each
+// deploy makes and nobody sees, so a fingerprint can't be turned back into an address.
 async function visitor(request, env, now) {
-  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const ip = network(request.headers.get("CF-Connecting-IP") || "unknown");
   const day = new Date(now).toISOString().slice(0, 10);
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("demo-visitor|" + passcode(env)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(env.VISITOR_KEY)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ip + "|" + day)));
   return [...mac.slice(0, 12)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
