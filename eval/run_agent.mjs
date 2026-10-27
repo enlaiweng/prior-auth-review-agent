@@ -123,7 +123,11 @@ async function main() {
     started_utc: new Date().toISOString(), cases: {},
   };
   console.log(`${AGENT_VERSION} (spec ${SPEC_SHA256.slice(0, 12)}), ${SETTINGS.model}, effort ${SETTINGS.effort}; ${cases.length} case(s) on the ${a.budget} budget`);
-  for (const c of cases) {
+  // run.json is rewritten after every case, so a run that stops partway (a timeout, a cancelled job) still leaves a
+  // record matching the decisions written so far. finished_utc and the totals are added only when every case is done.
+  const saveRun = () => writeFileSync(`${out}/run.json`, JSON.stringify(run, null, 1) + "\n");
+  for (const [i, c] of cases.entries()) {
+    console.log(`${c.id}: sending (${i + 1} of ${cases.length})`);
     const bundle = JSON.parse(readFileSync(`${c.dir}/bundle.json`, "utf8"));
     const d = await reviewCase(bundle, { apiKey, caseId: c.id, approveEnabled: !a.checklist, ...testServer() });
     writeFileSync(`${out}/${c.id}.json`, JSON.stringify(d, null, 1) + "\n");
@@ -134,13 +138,14 @@ async function main() {
     console.log(`${c.id}: ${d.routing}${d.named_gap ? ` (gap on ${d.named_gap.criterion})` : ""}${d.error ? `; ERROR ${d.error}` : ""}; ` +
                 `tokens in ${u.input_tokens ?? "?"} + cache ${(u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)}, out ${u.output_tokens ?? "?"}; ` +
                 `about $${cost ?? "?"}; ${d.seconds} s`);
+    saveRun();
   }
   const all = Object.values(run.cases);
   run.finished_utc = new Date().toISOString();
   run.models_returned = [...new Set(all.map(x => x.model_returned))];
   run.errors = Object.entries(run.cases).filter(([, x]) => x.error).map(([id]) => id);
   run.cost_usd_estimate_total = Math.round(all.reduce((s, x) => s + (x.cost_usd_estimate || 0), 0) * 10000) / 10000;
-  writeFileSync(`${out}/run.json`, JSON.stringify(run, null, 1) + "\n");
+  saveRun();
   console.log(`done: ${all.length} case(s), ${run.errors.length} error(s), about $${run.cost_usd_estimate_total} in total; written to ${out}`);
   if (run.errors.length) process.exitCode = 2;
 }

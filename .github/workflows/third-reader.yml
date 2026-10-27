@@ -66,6 +66,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           CASES: ${{ inputs.cases }}
+          PYTHONUNBUFFERED: "1"   # print each line as it happens, so the log shows progress during the run
         run: |
           set +e
           python3 eval/third_reader/run_third_reader.py --cases "$CASES" --summary "$RUNNER_TEMP/summary.md"
