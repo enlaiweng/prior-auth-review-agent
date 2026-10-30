@@ -1,0 +1,17 @@
+{
+  "name": "prior-auth-demo",
+  "private": true,
+  "description": "The public demo: a Cloudflare Worker running the agent on the twelve synthetic cases (see README.md).",
+  "type": "module",
+  "scripts": {
+    "build": "cd .. && python3 demo/build_demo.py",
+    "dev": "wrangler dev --local",
+    "test": "node --test --test-concurrency=1 test/decide.test.mjs test/api.test.mjs",
+    "viewer": "node --test --test-concurrency=1 test/viewer.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "undici": "6.23.0",
+    "wrangler": "4.147.0"
+  }
+}

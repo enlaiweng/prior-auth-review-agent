@@ -4,7 +4,7 @@ EDOM Phase 5 commitment. Half a page. Signed against the thresholds in EVAL_PLAN
 
 ## Decision
 
-[Go / No-go] for release [1.0], agent version [tag], evaluated on golden set [1.0] on [date]. Evaluation report: EVALUATION.md.
+[Go / No-go] for release [1.0], agent version [agent-x.y] (spec [first 12 characters of spec_sha256]), evaluated on golden set [1.0] on [date]. The version and spec are the ones the demo's status shows. Evaluation report: EVALUATION.md.
 
 ## Thresholds
 
@@ -26,4 +26,4 @@ Claude, an AI engineering agent, built the system and wrote the cases under Enla
 
 Monitoring thresholds and the kill switch in RUNBOOK.md are in place before the first demo user. The vendor-update re-evaluation runs within 7 days of release. Release 2 (commercial variant) is a design note, not a release; building it would require a new record.
 
-Signed: [the owner types his name and the date here before merging].
+Signed: [the owner types his name and the date, written YYYY-MM-DD, here before merging].

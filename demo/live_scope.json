@@ -1,0 +1,4 @@
+{
+  "scope": "dev",
+  "outside_reader_open": ["case_04", "case_05", "case_07", "case_10"]
+}

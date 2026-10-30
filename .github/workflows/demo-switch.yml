@@ -1,0 +1,140 @@
+# Switches the deployed demo between checklist mode and approvals (RUNBOOK.md, Kill switch; ADR-14).
+# How it starts: by hand, from the Actions page, on main only. It uses the "release" environment, so GitHub waits for the
+# owner to approve the run.
+# What it does: changes only the Worker's CHECKLIST_MODE secret. The code stays exactly as deployed; Cloudflare makes a
+# new version with the same code and the new setting. Then it reads the demo's status to confirm the mode changed.
+#   off: checklist mode, the kill switch. Allowed whenever the demo exists.
+#   on:  approvals and document requests on. Refused unless demo/tools/release_gate.py finds, on main, a signed Go in
+#        docs/RELEASE_DECISION.md for the exact agent version the demo is running, the hard gate met, and no open
+#        kill-switch trip in docs/GOVERNANCE.md.
+# Queues: "off" has its own queue, so a deploy waiting for approval can never hold up the kill switch. "on" shares the
+# deploy's queue, so approvals are never switched on while new code is being deployed; afterwards it checks the demo
+# still runs the agent the gate passed, and turns approvals off again if not.
+name: Demo switch
+
+on:
+  workflow_dispatch:
+    inputs:
+      approvals:
+        description: "Approvals: off (checklist mode, the kill switch) or on (only after the release decision is signed)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ inputs.approvals == 'on' && 'demo-deploy' || 'demo-switch' }}
+  cancel-in-progress: false
+
+jobs:
+  switch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:
+          node-version: "22"
+
+      - name: Find the deployed demo
+        id: find
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers"
+          exists=$(curl -s --max-time 20 -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/scripts/prior-auth-demo/settings")
+          if [ "$exists" != "200" ]; then
+            echo "::error title=No demo deployed::Cloudflare has no Worker named prior-auth-demo (answered $exists). Run Deploy demo first; nothing was changed."
+            exit 1
+          fi
+          sub=$(curl -s --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/subdomain" | python3 -c "import json, sys; print(json.load(sys.stdin)['result']['subdomain'])" 2>/dev/null || true)
+          [ -n "$sub" ] && echo "url=https://prior-auth-demo.$sub.workers.dev" >> "$GITHUB_OUTPUT"
+          [ -n "$sub" ] || echo "::warning title=Address not found::The Worker exists, but its workers.dev address could not be read; the new mode can't be confirmed automatically."
+
+      - name: Approvals on only after a signed Go for the agent the demo is running
+        id: gate
+        if: inputs.approvals == 'on'
+        env:
+          URL: ${{ steps.find.outputs.url }}
+        run: |
+          if [ -z "$URL" ]; then echo "::error title=Can't check the version::The demo's address is unknown, so its agent version can't be checked. Approvals stay off."; exit 1; fi
+          ident() { curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; s = json.load(sys.stdin); print(s['agent']['version'], s['agent']['spec_sha256'], s['content_sha256'])" 2>/dev/null || true; }
+          # Three readings a few seconds apart must agree, so a version still being replaced isn't the one checked.
+          first=$(ident); sleep 5; second=$(ident); sleep 5; third=$(ident)
+          if [ -z "$first" ] || [ "$first" != "$second" ] || [ "$second" != "$third" ]; then
+            echo "::error title=Demo not steady::The demo's status changed or didn't answer while being checked ('$first', '$second', '$third'). Approvals stay off; run this again in a few minutes."
+            exit 1
+          fi
+          read -r version spec content <<< "$first"
+          python3 demo/tools/release_gate.py "$version" "$spec"
+          echo "ident=$first" >> "$GITHUB_OUTPUT"
+
+      - name: Install the pinned tools
+        working-directory: demo
+        run: npm ci --no-audit --no-fund
+
+      - name: Change the setting
+        working-directory: demo
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WANT: ${{ inputs.approvals }}
+        run: |
+          value=true; [ "$WANT" = "on" ] && value=false
+          printf '%s' "$value" | npx wrangler secret put CHECKLIST_MODE
+
+      - name: Confirm the demo reports the new mode
+        env:
+          URL: ${{ steps.find.outputs.url }}
+          WANT: ${{ inputs.approvals }}
+          GATED: ${{ steps.gate.outputs.ident }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error title=Could not confirm::The setting was changed, but the demo's address is unknown. Open the viewer and check the banner."
+            exit 1
+          fi
+          expected=checklist; [ "$WANT" = "on" ] && expected=approve
+          mode=""
+          for i in $(seq 1 30); do
+            mode=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; print(json.load(sys.stdin)['mode'])" 2>/dev/null || true)
+            [ "$mode" = "$expected" ] && break
+            sleep 4
+          done
+          if [ "$mode" != "$expected" ]; then
+            echo "::error title=Mode not confirmed::The demo reports mode '${mode:-nothing}', expected '$expected'. Open the viewer and check the banner; run this again if needed."
+            exit 1
+          fi
+          if [ "$WANT" = "on" ]; then
+            now=$(curl -s --max-time 20 "$URL/api/status" | python3 -c "import json, sys; s = json.load(sys.stdin); print(s['agent']['version'], s['agent']['spec_sha256'], s['content_sha256'])" 2>/dev/null || true)
+            if [ "$now" != "$GATED" ]; then
+              printf '%s' true | (cd demo && npx wrangler secret put CHECKLIST_MODE)
+              echo "::error title=Different agent now running::Approvals were switched on for '$GATED', but the demo now reports '${now:-nothing}'. Approvals were turned off again; check the latest deploy, then run this again."
+              exit 1
+            fi
+          fi
+          {
+            echo "## Demo switched"
+            echo ""
+            echo "- Viewer: $URL"
+            if [ "$expected" = checklist ]; then
+              echo "- Mode now: checklist (approvals and document requests off; every case routes)."
+            else
+              echo "- Mode now: approvals on."
+            fi
+            echo "- Record it in docs/GOVERNANCE.md: a decision-log row, and the model inventory's lifecycle state (Suspended after a trip)."
+          } >> "$GITHUB_STEP_SUMMARY"

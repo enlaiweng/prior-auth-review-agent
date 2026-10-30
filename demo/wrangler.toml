@@ -1,0 +1,31 @@
+# The public demo: one Cloudflare Worker and one small D1 database (see README.md).
+# Deployed by .github/workflows/demo-deploy.yml, which the owner approves; switched between checklist mode and
+# approvals by .github/workflows/demo-switch.yml.
+name = "prior-auth-demo"
+main = "src/worker.js"
+compatibility_date = "2026-09-15"
+workers_dev = true
+preview_urls = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "prior-auth-demo"
+# The deploy workflow finds or creates the database and writes its real id here before deploying,
+# so no account-specific id is kept in the repository. Local runs (wrangler dev --local) ignore it.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# No request logs: nothing here needs logging beyond the live-run counts.
+[observability]
+enabled = false
+
+[vars]
+LIVE_PER_MINUTE = "2"   # live runs across all visitors, per minute
+LIVE_PER_DAY = "20"     # live runs across all visitors, per UTC day (about $2 at about $0.10 a case)
+
+# Secrets, set by the deploy workflow from the GitHub "release" environment, never kept here:
+#   ANTHROPIC_API_KEY  from ANTHROPIC_DEMO_KEY (the demo workspace's key, with its own spend limit)
+#   DEMO_PASSCODE      from DEMO_PASSCODE (the passcode for live runs, at least 12 characters)
+#   VISITOR_KEY        a random value made fresh by each deploy and seen by nobody (keys the visitor fingerprints)
+#   CHECKLIST_MODE     "true" on every deploy; "false" (approvals on) only through demo-switch.yml after the
+#                      release decision is signed. Anything other than exactly "false" means checklist mode.

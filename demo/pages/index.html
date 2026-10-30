@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prior Auth Agent Demo</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #f7f6f3; --panel: #ffffff; --fg: #1d1c1a; --muted: #5d5a54; --line: #dedad2; --code: #efece6;
+  --accent: #2f5d8a; --accent-weak: #e6eef6;
+  --ok: #276b3d; --ok-weak: #e3f2e6; --warn: #8a5a00; --warn-weak: #fbf0d9; --route: #4a4f8c; --route-weak: #ebecf7;
+  --bad: #9c2b23; --bad-weak: #fbe9e7; --hl: #fff3b0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #1f1f1d; --fg: #ecebe7; --muted: #a9a59c; --line: #3a3935; --code: #2b2a27;
+    --accent: #8fb6dd; --accent-weak: #1f2c39;
+    --ok: #8fd19e; --ok-weak: #1d3323; --warn: #f0c46a; --warn-weak: #3a2f17; --route: #b3b8f0; --route-weak: #26283f;
+    --bad: #f2a29a; --bad-weak: #3d211e; --hl: #4a4220;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+header { padding: 20px 16px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.head-in { max-width: 1148px; margin: 0 auto; }
+header h1 { margin: 0 0 4px; font-size: 22px; }
+header p { margin: 0; color: var(--muted); max-width: 760px; }
+.mode { margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 760px; }
+.mode.checklist { background: var(--route-weak); color: var(--fg); border: 1px solid var(--route); }
+.mode.approve { background: var(--ok-weak); color: var(--fg); border: 1px solid var(--ok); }
+.wrap { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1180px; margin: 0 auto; }
+nav h2, main h2 { font-size: 15px; margin: 0 0 8px; }
+.cases { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cases button { width: 100%; text-align: left; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; font: inherit; }
+.cases button[aria-current="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.cases .sub { display: block; font-size: 12.5px; color: var(--muted); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.card h3 { margin: 0 0 8px; font-size: 15px; }
+.lead { color: var(--muted); margin: 0 0 6px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+.badge.approve { background: var(--ok-weak); color: var(--ok); }
+.badge.request { background: var(--warn-weak); color: var(--warn); }
+.badge.route { background: var(--route-weak); color: var(--route); }
+.pill { white-space: nowrap; display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+.pill.supported { background: var(--ok-weak); color: var(--ok); }
+.pill.unsupported { background: var(--bad-weak); color: var(--bad); }
+.pill.undeterminable { background: var(--warn-weak); color: var(--warn); }
+.crits { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; margin-top: 10px; }
+.crit { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.crit .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+.crit .name { font-weight: 600; }
+.crit p { margin: 4px 0; }
+.quote { color: var(--muted); font-size: 13.5px; border-left: 3px solid var(--line); padding-left: 8px; margin: 6px 0 0; }
+code.id, button.id { font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); color: var(--fg); border: 0; border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+button.id { cursor: pointer; text-decoration: underline dotted; }
+.ids { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+ul.reasons { margin: 6px 0 0; padding-left: 20px; }
+ul.items { list-style: none; margin: 0; padding: 0; }
+ul.items li, p.para { padding: 4px 6px; border-radius: 6px; margin: 2px 0; }
+.hl { background: var(--hl); outline: 2px solid var(--warn); }
+.meta { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+input[type=password] { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); min-width: 0; flex: 1 1 200px; max-width: 320px; }
+button.go { font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--panel); cursor: pointer; }
+button.go:disabled { opacity: .55; cursor: default; }
+.err { color: var(--bad); }
+.note { font-size: 13.5px; color: var(--muted); }
+.sr { position: absolute; left: -9999px; }
+footer { max-width: 1180px; margin: 0 auto; padding: 4px 16px 24px; font-size: 13px; color: var(--muted); }
+/* Phones: last, so these win over the rules above. */
+@media (max-width: 760px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); }
+  .cases { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cases button { text-align: center; padding: 6px 4px; }
+  .cases .sub { display: none; }
+}
+</style>
+</head>
+<body>
+<header><div class="head-in">
+  <h1>Prior authorization review agent</h1>
+  <p>A demo on twelve made-up patient records. For each request for a lower back MRI, the agent checks four Medicare criteria and shows its evidence. It can approve, ask for one specific document, or send the case to a physician. It never denies.</p>
+  <div id="mode" class="mode" role="status">Loading…</div>
+</div></header>
+<div class="wrap">
+  <nav aria-label="Cases">
+    <h2>Cases</h2>
+    <ul class="cases" id="cases"></ul>
+  </nav>
+  <main id="main" tabindex="-1"><p class="lead">Loading the cases…</p></main>
+</div>
+<footer id="foot"></footer>
+<script>
+"use strict";
+const CRIT = [
+  ["C1_red_flag", "C1. Red flag", "A finding that suggests something urgent, such as nerve damage that is getting worse, or a history of cancer."],
+  ["C2_conservative_4wk", "C2. Four weeks of conservative care", "Physical therapy or medicine for at least four weeks, without enough improvement."],
+  ["C3_informs_management", "C3. Will change the treatment plan", "An injection or surgery is being considered, and the scan would affect that decision."],
+  ["C4_no_duplicate_imaging", "C4. Not a repeat of earlier imaging", "No earlier spine scan would make this one a duplicate, unless the record explains why both are needed."],
+];
+const OUTCOME = { approve: "Approve", request: "Request one document", route: "Send to physician review" };
+const STATUS = { supported: "Met", unsupported: "Not met", undeterminable: "Can't tell from the record" };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let STATUS_INFO = null, LIST = [], CURRENT = null, WANTED = null, PASSCODE = "";
+// One live run at a time per page. LIVE keeps each case's last live-run message and result, so moving between cases
+// never shows one case's result on another, and a result is still there on coming back.
+let RUNNING = null;
+const LIVE = {};
+const OFFLINE = "The demo can't be reached right now. Check your connection, then try again.";
+
+async function getJson(url) {
+  const r = await fetch(url, { headers: { Accept: "application/json" } }).catch(() => { throw new Error(OFFLINE); });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "The demo didn't answer (" + r.status + ").");
+  return j;
+}
+
+function modeBanner(s) {
+  const m = $("mode");
+  if (s.mode === "approve") {
+    m.className = "mode approve";
+    m.textContent = "Approvals are on. The agent can approve a request when every criterion it relies on is met with evidence.";
+  } else {
+    m.className = "mode checklist";
+    m.textContent = "Checklist mode: approvals and document requests are switched off, so every case goes to a physician. The agent still shows each criterion and its evidence.";
+  }
+}
+
+function idChip(id) { return '<button type="button" class="id" data-goto="' + esc(id) + '" title="Show this in the record">' + esc(id) + "</button>"; }
+function anchorId(id) { return "rec-" + id.replace(/[^A-Za-z0-9_-]/g, "_"); }
+
+function decisionHtml(d, title) {
+  if (!d) return "";
+  let h = '<div class="card"><h3>' + esc(title) + "</h3>";
+  h += '<div class="row"><span class="badge ' + esc(d.routing) + '">' + esc(OUTCOME[d.routing] || d.routing) + "</span>";
+  if (d.basis) h += '<span class="note">The approval rests on ' + esc(d.basis) + ".</span>";
+  h += "</div>";
+  if (d.named_gap) h += '<p><b>Document requested for ' + esc(d.named_gap.criterion) + ":</b> " + esc(d.named_gap.missing) + "</p>";
+  if (d.routing_reasons && d.routing_reasons.length) {
+    h += '<p class="lead" style="margin-top:10px">Why, from the fixed rule in code (the model reports; the rule decides):</p><ul class="reasons">';
+    d.routing_reasons.forEach(r => { h += "<li>" + esc(r) + "</li>"; });
+    h += "</ul>";
+  }
+  if (d.error) h += '<p class="err">The model\'s report couldn\'t be used: ' + esc(d.error) + "</p>";
+  if (d.criteria) {
+    h += '<div class="crits">';
+    CRIT.forEach(([k, name]) => {
+      const c = d.criteria[k]; if (!c) return;
+      h += '<div class="crit"><div class="head"><span class="name">' + esc(name) + '</span><span class="pill ' + esc(c.status) + '">' + esc(STATUS[c.status] || c.status) + "</span></div>";
+      h += "<p>" + esc(c.explanation) + "</p>";
+      if (c.evidence && c.evidence.length) h += '<div class="ids" aria-label="Evidence">' + c.evidence.map(idChip).join("") + "</div>";
+      else h += '<p class="note">No record entry cited.</p>';
+      if (c.policy_quote) h += '<p class="quote">Policy ' + esc((c.policy_passages || []).join(", ")) + ': "' + esc(c.policy_quote) + '"</p>';
+      h += "</div>";
+    });
+    h += "</div>";
+  }
+  if (d.contradictions && d.contradictions.length) {
+    h += '<p style="margin-top:10px"><b>Where the record contradicts itself:</b></p><ul class="reasons">';
+    d.contradictions.forEach(x => { h += "<li>" + esc(x.criterion) + ": " + esc(x.description || "") + ' <span class="ids">' + (x.evidence || []).map(idChip).join("") + "</span></li>"; });
+    h += "</ul>";
+  }
+  if (d.case_summary) h += '<p style="margin-top:10px"><b>Summary for the physician reviewer:</b> ' + esc(d.case_summary) + "</p>";
+  const bits = [];
+  if (d.confidence) bits.push("model's confidence: " + d.confidence);
+  if (d.model && d.model.returned) bits.push("model: " + d.model.returned);
+  if (d.seconds != null) bits.push(d.seconds + " s");
+  if (bits.length) h += '<p class="meta">' + esc(bits.join(" · ")) + "</p>";
+  return h + "</div>";
+}
+
+function recordHtml(v) {
+  let h = '<div class="card"><h3>The record</h3><p class="lead">Every entry has an id. The decision cites these ids as its evidence; click one to find it here.</p>';
+  h += '<ul class="items"><li id="' + anchorId(v.request.id) + '"><code class="id">' + esc(v.request.id) + "</code> " + esc(v.request.date) + ": " + esc(v.request.text) + "</li>";
+  h += '<li id="' + anchorId(v.patient.id) + '"><code class="id">' + esc(v.patient.id) + "</code> " + esc(v.patient.text) + "</li></ul>";
+  v.sections.forEach(s => {
+    h += '<h3 style="margin-top:12px">' + esc(s.title) + '</h3><ul class="items">';
+    s.items.forEach(i => { h += '<li id="' + anchorId(i.id) + '"><code class="id">' + esc(i.id) + "</code> " + (i.date ? esc(i.date) + ": " : "") + esc(i.text) + "</li>"; });
+    h += "</ul>";
+  });
+  h += '<h3 style="margin-top:12px" id="' + anchorId(v.note.id) + '">Visit note <code class="id">' + esc(v.note.id) + "</code></h3>";
+  v.note.paragraphs.forEach(p => { h += '<p class="para" id="' + anchorId(p.id) + '"><code class="id">' + esc(p.id) + "</code> " + esc(p.text) + "</p>"; });
+  return h + "</div>";
+}
+
+function liveHtml(c) {
+  let h = '<div class="card" id="livecard"><h3>Run it live</h3>';
+  if (c.live_refusal) return h + '<p class="note">' + esc(c.live_refusal) + "</p></div>";
+  if (STATUS_INFO.live.problem) return h + '<p class="note">' + esc(STATUS_INFO.live.problem) + "</p></div>";
+  h += '<p class="lead">Sends this record to the agent now. It takes a minute or two. Live runs need the passcode the project\'s owner gives out, and are limited to ' +
+       esc(STATUS_INFO.live.per_day) + " a day.</p>";
+  const mine = LIVE[c.case] || {};
+  const other = RUNNING && RUNNING !== c.case ? esc("A live run on " + RUNNING.replace("case_", "Case ") + " is still going; this one can start when it finishes.") : "";
+  h += '<div class="row"><label for="pc" class="sr">Passcode</label><input type="password" id="pc" autocomplete="off" placeholder="Passcode" value="' + esc(PASSCODE) + '">' +
+       '<button type="button" class="go" id="run"' + (RUNNING ? " disabled" : "") + '>Run the agent</button></div><p id="livestate" class="note" role="status" aria-live="polite">' +
+       (other || mine.state || "") + '</p></div><div id="liveresult">' + (mine.result || "") + "</div>";
+  return h;
+}
+
+function renderCase(c) {
+  CURRENT = c.case;
+  document.querySelectorAll(".cases button").forEach(b => b.setAttribute("aria-current", b.dataset.case === c.case ? "true" : "false"));
+  let h = '<h2 style="font-size:20px;margin:0 0 4px">' + esc(c.name) + "</h2>";
+  h += '<p class="lead">' + esc(c.request) + "<br>Patient: " + esc(c.patient) + (c.held_out ? " · held-out case" : "") + "</p>";
+  if (c.decision) {
+    h += decisionHtml(c.decision, "The agent's decision (stored from the evaluation run)");
+  } else {
+    h += '<div class="card"><h3>The agent\'s decision</h3><p class="note">No stored decision yet. Stored decisions come from the release evaluation; until then, a decision appears here only after a live run.</p></div>';
+  }
+  h += liveHtml(c) + recordHtml(c.view);
+  $("main").innerHTML = h;
+  const run = $("run");
+  if (run) run.onclick = () => liveRun(c.case);
+  const pc = $("pc");
+  if (pc) pc.onkeydown = e => { if (e.key === "Enter") liveRun(c.case); };
+}
+
+async function openCase(id, focus) {
+  WANTED = id;
+  try {
+    const c = await getJson("/api/cases/" + encodeURIComponent(id));
+    if (WANTED !== id) return;   // another case was chosen while this one loaded
+    renderCase(c);
+    if (focus) $("main").focus();
+  } catch (e) { $("main").innerHTML = '<p class="err">' + esc(e.message) + "</p>"; }
+}
+
+async function liveRun(id) {
+  if (RUNNING) return;   // a second Enter or click while a run is going does nothing
+  // Messages and results are kept per case and shown only while that case is open.
+  const setState = html => { LIVE[id] = { ...LIVE[id], state: html }; if (CURRENT === id && $("livestate")) $("livestate").innerHTML = html; };
+  const setResult = html => { LIVE[id] = { ...LIVE[id], result: html }; if (CURRENT === id && $("liveresult")) $("liveresult").innerHTML = html; };
+  PASSCODE = $("pc").value;
+  if (!PASSCODE) { setState('<span class="err">Type the passcode first.</span>'); return; }
+  RUNNING = id;
+  $("run").disabled = true; setResult(""); setState(esc("Sending the record to the agent…"));
+  const started = Date.now();
+  const tick = setInterval(() => { setState(esc("The agent is reading the record… " + Math.round((Date.now() - started) / 1000) + " s")); }, 1000);
+  try {
+    const r = await fetch("/api/run/" + encodeURIComponent(id), {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Demo": "1" }, body: JSON.stringify({ passcode: PASSCODE }),
+    }).catch(() => { throw new Error(OFFLINE); });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      if (j.code === "bad_passcode") PASSCODE = "";
+      throw new Error(j.error || "The live run didn't start (" + r.status + ").");
+    }
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let buf = "", done = false;
+    while (!done) {
+      const part = await reader.read().catch(() => ({ done: true }));   // the connection dropped
+      if (part.done) break;
+      buf += dec.decode(part.value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1);
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line);
+        if (msg.type === "decision") {
+          clearInterval(tick);
+          setResult(decisionHtml(msg.decision, "Live run, just now"));
+          setState(esc("Done in " + Math.round((Date.now() - started) / 1000) + " s."));
+          done = true;
+        } else if (msg.type === "error") {
+          throw new Error(msg.message);
+        }
+      }
+    }
+    if (!done) throw new Error("The connection closed before the agent finished. Try again.");
+  } catch (e) {
+    clearInterval(tick);
+    setState('<span class="err">' + esc(e.message) + "</span>");
+  } finally {
+    clearInterval(tick);
+    RUNNING = null;
+    if ($("run")) $("run").disabled = false;
+    // Another case open now: clear its "a run is still going" note.
+    if (CURRENT !== id && $("livestate")) $("livestate").innerHTML = (LIVE[CURRENT] || {}).state || "";
+    loadStatus().catch(() => {});
+  }
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-goto]");
+  if (!b) return;
+  const el = document.getElementById(anchorId(b.dataset.goto));
+  if (!el) return;
+  document.querySelectorAll(".hl").forEach(x => x.classList.remove("hl"));
+  el.classList.add("hl");
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+async function loadStatus() {
+  STATUS_INFO = await getJson("/api/status");
+  modeBanner(STATUS_INFO);
+  const s = STATUS_INFO, run = s.stored_run;
+  $("foot").textContent = "Agent " + s.agent.version + " (spec " + s.agent.spec_sha256.slice(0, 12) + "), model " + s.agent.model +
+    ". " + (run ? "Stored decisions from the run started " + run.started_utc + "." : "No stored run yet.") +
+    " All records are synthetic. Live runs used today: " + s.live.used_today + " of " + s.live.per_day + ".";
+}
+
+async function start() {
+  try {
+    await loadStatus();
+    LIST = (await getJson("/api/cases")).cases;
+    $("cases").innerHTML = LIST.map(c => {
+      const sub = c.stored ? (OUTCOME[c.stored.routing] || c.stored.routing) : (c.held_out ? "Held out" : c.live_refusal ? "Not live yet" : "Can run live");
+      return '<li><button type="button" data-case="' + esc(c.case) + '" aria-current="false">' + esc(c.name) + '<span class="sub">' + esc(sub) + "</span></button></li>";
+    }).join("");
+    // Each case has its own address (#case_04), so links can be shared and the browser's back button moves between cases.
+    document.querySelectorAll(".cases button").forEach(b => b.onclick = () => {
+      const id = b.dataset.case;
+      // The case already open stays as it is (reloading it would clear a passcode being typed); it only gets its address.
+      if (id === CURRENT) { history.replaceState(null, "", "#" + id); $("main").focus(); return; }
+      if (location.hash === "#" + id) openCase(id, true); else location.hash = id;
+    });
+    window.addEventListener("hashchange", () => {
+      const id = location.hash.slice(1);
+      if (LIST.some(c => c.case === id)) openCase(id, true);
+    });
+    const want = (location.hash || "").slice(1);
+    openCase(LIST.some(c => c.case === want) ? want : LIST[0].case, false);
+  } catch (e) {
+    $("main").innerHTML = '<p class="err">' + esc(e.message) + "</p>";
+  }
+}
+start();
+</script>
+</body>
+</html>
