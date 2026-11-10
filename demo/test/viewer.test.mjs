@@ -67,18 +67,17 @@ test("a live run: the passcode, the result in plain words, and evidence that jum
   await ctx.close();
 });
 
-test("held-out and unsettled cases explain why they don't run live", async () => {
+// A case that isn't settled yet, and one an outside clinician is reading, are covered in scenarios.test.mjs (19), on
+// changed content: no golden case is in either state now.
+test("held-out cases and cases waiting for run 1 explain why they don't run live", async () => {
   const { ctx, page } = await open("/#case_10");
   assert.equal(await page.locator("#main h2").innerText(), "Case 10");
   assert.match(await page.locator("#livecard").innerText(), /held-out cases/);
   assert.equal(await page.locator("#pc").count(), 0, "no passcode box");
-  await page.click('.cases button[data-case="case_05"]');
-  await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 05");
-  assert.match(await page.locator("#livecard").innerText(), /isn't settled yet/);
-  assert.equal(page.url().endsWith("#case_05"), true, "the address names the case, so it can be shared");
-  await page.click('.cases button[data-case="case_04"]');
-  await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 04");
-  assert.match(await page.locator("#livecard").innerText(), /outside clinician is reading this case/);
+  await page.click('.cases button[data-case="case_07"]');
+  await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 07");
+  assert.match(await page.locator("#livecard").innerText(), /Until the first full run \(run 1\)/);
+  assert.equal(page.url().endsWith("#case_07"), true, "the address names the case, so it can be shared");
   await page.click('.cases button[data-case="case_06"]');
   await page.waitForFunction(() => document.querySelector("#main h2").innerText === "Case 06");
   assert.match(await page.locator("#livecard").innerText(), /Until the first full run \(run 1\)/);

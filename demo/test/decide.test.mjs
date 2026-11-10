@@ -19,7 +19,7 @@ const fetchFor = report => async () => new Response(JSON.stringify({ model: "fak
 // Reports of every shape the rule handles: approvable, a request, a red flag left open, a contradiction, a cited id
 // that isn't in the case, and everything undeterminable.
 function variants(id) {
-  const labeled = ["case_05", "case_07"].includes(id) ? finalLabels("case_01") : finalLabels(id);
+  const labeled = finalLabels(id);
   const ids = Object.values(labeled).flatMap(c => c.evidence);
   const all = s => Object.fromEntries(Object.keys(labeled).map(k => [k, { status: s, evidence: [] }]));
   return [
@@ -88,7 +88,7 @@ function fixtureRun(name, { run = {}, decisions = {} } = {}) {
 }
 const decision = id => ({ case_id: id, agent_version: AGENT_VERSION, spec_sha256: SPEC_SHA256, routing: "route", criteria: null, error: "x" });
 
-test("the build takes a finished run of this agent, leaves out held-out and outside-reader cases, and refuses an unfinished run, another agent, or an unlabeled case", () => {
+test("the build takes a finished run of this agent, leaves out held-out and outside-reader cases, and refuses an unfinished run, another agent, or an unsettled case", () => {
   const tag = "demo-test-" + process.pid;
   const dirs = [];
   try {
@@ -105,15 +105,13 @@ test("the build takes a finished run of this agent, leaves out held-out and outs
     dir = fixtureRun(tag + "-old", { run: { agent_version: "agent-0.0" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /made by agent-0\.0/);
 
-    // Checked while case 05 still waits for its final labels; once all twelve are settled there is no case to try.
-    // Case 05 is also an outside reader's case (left out, not refused), so that list is cleared for this check.
+    // A stored decision for a case without final labels stops the build. All twelve cases are settled now, so there is
+    // no real case to try: the build's own check is called on a made-up unsettled case.
     dir = fixtureRun(tag + "-unlabeled", { decisions: { case_05: decision("case_05") } }); dirs.push(dir);
-    const scopeFile = join(ROOT, "demo/live_scope.json"), scopeBefore = readFileSync(scopeFile, "utf8");
-    try {
-      writeFileSync(scopeFile, '{"scope": "dev", "outside_reader_open": []}');
-      r = buildWith(dir);
-    } finally { writeFileSync(scopeFile, scopeBefore); }
-    if (!existsLabels("case_05")) { assert.notEqual(r.code, 0); assert.match(r.text, /no final labels yet/); }
+    const u = python(`
+version, sha = m.agent_identity()
+m.stored(sys.argv[1], {"case_05": {"held_out": False, "labeled": False}}, version, sha, set())`, [dir]);
+    assert.notEqual(u.status, 0); assert.match(u.stdout + u.stderr, /case_05, which has no final labels yet/);
 
     dir = fixtureRun(tag + "-experiments", { run: { budget: "experiments" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /release budget/);
@@ -122,9 +120,15 @@ test("the build takes a finished run of this agent, leaves out held-out and outs
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /does not match the run/);
 
     // A release run covers all twelve: the held-out cases and the ones an outside clinician is reading are left out.
+    // No outside reader is invited now, so case 04 is listed as one in the scope file for this check only.
     dir = fixtureRun(tag + "-all", { decisions: { case_01: decision("case_01"), case_04: decision("case_04"),
       case_08: decision("case_08"), case_10: decision("case_10"), case_12: decision("case_12") } }); dirs.push(dir);
-    r = buildWith(dir); assert.equal(r.code, 0, r.text);
+    const scopeFile = join(ROOT, "demo/live_scope.json"), scopeBefore = readFileSync(scopeFile, "utf8");
+    try {
+      writeFileSync(scopeFile, '{"scope": "dev", "outside_reader_open": ["case_04"]}');
+      r = buildWith(dir);
+    } finally { writeFileSync(scopeFile, scopeBefore); }
+    assert.equal(r.code, 0, r.text);
     assert.match(r.text, /stored decisions: 1 /, "only case 01 is kept");
     const all = readFileSync(r.out, "utf8");
     for (const id of ["case_04", "case_08", "case_10", "case_12"]) assert.doesNotMatch(all, new RegExp('"' + id + '":\\{"case_id"'), id);
@@ -136,7 +140,26 @@ test("the build takes a finished run of this agent, leaves out held-out and outs
   }
 });
 
-function existsLabels(id) { try { readFileSync(join(ROOT, "data/golden", id, "labels.yaml")); return true; } catch { return false; } }
+// Calls the build's own functions (demo/build_demo.py, imported as m) on made-up case states.
+function python(code, args = []) {
+  return spawnSync("python3", ["-c", 'import json, sys\nsys.path.insert(0, "demo")\nimport build_demo as m\n' + code, ...args], { cwd: ROOT, encoding: "utf8" });
+}
+
+test("why a case doesn't run live, in the build's order: held out, not settled, an outside reader's, before run 1", () => {
+  const r = python(`
+dev = {"case_05"}
+case = lambda held, labeled: {"held_out": held, "labeled": labeled}
+print(json.dumps([
+    m.refusal("case_05", case(True, False), "dev", {"case_05"}, dev),    # held out comes first
+    m.refusal("case_05", case(False, False), "dev", {"case_05"}, dev),   # then not settled yet
+    m.refusal("case_05", case(False, True), "dev", {"case_05"}, dev),    # then an outside reader's case
+    m.refusal("case_07", case(False, True), "dev", set(), dev),          # then, before run 1, a case outside the development set
+    m.refusal("case_07", case(False, True), "nine", set(), dev),         # after run 1 it runs live
+    m.refusal("case_05", case(False, True), "dev", set(), dev),          # a settled development case runs live
+]))`);
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(JSON.parse(r.stdout), ["held_out", "unlabeled", "outside_reader", "before_run1", null, null]);
+});
 
 test("the build refuses when the plan and the runner disagree on the held-out cases", () => {
   const plan = join(ROOT, "docs/EVAL_PLAN.md");
@@ -163,7 +186,11 @@ test("the live scope file is checked: a wrong scope or a case that isn't golden 
     const out = join(mkdtempSync(join(tmpdir(), "demo-build-")), "c.js");
     const r = spawnSync("python3", ["demo/build_demo.py", "--out", out], { cwd: ROOT, encoding: "utf8" });
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /live runs allowed on case_01, case_02, case_03, case_04, case_06, case_09, case_11;/, "after run 1 with no outside reader: the nine minus unsettled ones");
+    assert.match(r.stdout, /live runs allowed on case_01, case_02, case_03, case_04, case_05, case_06, case_07, case_09, case_11;/, "after run 1 with no outside reader: all nine that aren't held out");
+    writeFileSync(f, '{"scope": "dev", "outside_reader_open": ["case_04"]}');
+    const held = spawnSync("python3", ["demo/build_demo.py", "--out", out], { cwd: ROOT, encoding: "utf8" });
+    assert.equal(held.status, 0, held.stderr);
+    assert.match(held.stdout, /live runs allowed on case_01, case_02, case_03, case_05;/, "before run 1 with case 04 held back for an outside reader");
   } finally { writeFileSync(f, before); }
 });
 
