@@ -187,52 +187,52 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   await owner.click("#keygo");
   await owner.waitForSelector("#invite");
 
-  // The owner invites Dr. Dabs with two cases and copies the link.
-  const link = await ownerInvites(owner, { name: "Dr. Dabs", email: "dabs@example.org", note: "consult after Gemini", cases: ["case_01", "practice_a"] });
+  // The owner invites Dr. Rivera with two cases and copies the link.
+  const link = await ownerInvites(owner, { name: "Dr. Rivera", email: "rivera@example.org", note: "consult after Gemini", cases: ["case_01", "practice_a"] });
   assert.match(link, literally(BASE + "/l/"));
   await owner.click("#copy");
   await shows(owner, /Copied/, "#copy");
   assert.equal(await owner.evaluate(() => navigator.clipboard.readText()), link, "the copied link is the one shown");
-  const dabsBox = personBox(owner, "Dr. Dabs");
-  assert.match(await dabsBox.innerText(), /Hasn't opened the link and agreed yet/);
-  assert.match(await dabsBox.innerText(), /Case 01: not started/);
-  assert.match(await dabsBox.innerText(), /Practice A: not started/);
+  const riveraBox = personBox(owner, "Dr. Rivera");
+  assert.match(await riveraBox.innerText(), /Hasn't opened the link and agreed yet/);
+  assert.match(await riveraBox.innerText(), /Case 01: not started/);
+  assert.match(await riveraBox.innerText(), /Practice A: not started/);
   await shot(owner, "01-owner-invited");
 
-  // Dr. Dabs opens the link. Opening alone signs nothing in; Continue does.
-  const { ctx: dabsBrowser, page: dabs } = await person("Dr. Dabs");
-  await dabs.goto(link);
-  await shows(dabs, /This is the personal link for Dr\. Dabs\./);
-  assert.equal((await dabsBrowser.cookies()).length, 0, "no cookie before Continue");
-  await shot(dabs, "02-continue-page");
-  await dabs.click("#go");
-  await dabs.waitForURL(/\/app/);
+  // Dr. Rivera opens the link. Opening alone signs nothing in; Continue does.
+  const { ctx: riveraBrowser, page: rivera } = await person("Dr. Rivera");
+  await rivera.goto(link);
+  await shows(rivera, /This is the personal link for Dr\. Rivera\./);
+  assert.equal((await riveraBrowser.cookies()).length, 0, "no cookie before Continue");
+  await shot(rivera, "02-continue-page");
+  await rivera.click("#go");
+  await rivera.waitForURL(/\/app/);
 
   // The welcome page: the name is filled in, both boxes are needed, and it says the project is public.
-  await dabs.waitForSelector("#cgo");
-  assert.equal(await dabs.inputValue("#cname"), "Dr. Dabs");
-  assert.match(await text(dabs, "main"), /The project is public/);
-  await dabs.click("#cgo");
-  await shows(dabs, /both boxes need to be ticked/, "#cerr");
-  await shot(dabs, "03-welcome");
-  await agrees(dabs, { role: "Cardiothoracic surgeon" });
+  await rivera.waitForSelector("#cgo");
+  assert.equal(await rivera.inputValue("#cname"), "Dr. Rivera");
+  assert.match(await text(rivera, "main"), /The project is public/);
+  await rivera.click("#cgo");
+  await shows(rivera, /both boxes need to be ticked/, "#cerr");
+  await shot(rivera, "03-welcome");
+  await agrees(rivera, { role: "Physician reviewer" });
 
   // The home page: a greeting, the training, and only the two assigned cases, not started.
-  assert.match(await text(dabs, "main"), /Welcome, Dr\. Dabs/);
-  assert.match(await text(dabs, "main"), /You have 2 cases to label/);
-  assert.match(await homeRow(dabs, "Case 01"), /Not started/);
-  assert.match(await homeRow(dabs, "Practice A"), /Not started/);
-  assert.equal(await dabs.locator("table.cases tr").count(), 3, "a header row and two cases");
-  await shot(dabs, "04-home");
+  assert.match(await text(rivera, "main"), /Welcome, Dr\. Rivera/);
+  assert.match(await text(rivera, "main"), /You have 2 cases to label/);
+  assert.match(await homeRow(rivera, "Case 01"), /Not started/);
+  assert.match(await homeRow(rivera, "Practice A"), /Not started/);
+  assert.equal(await rivera.locator("table.cases tr").count(), 3, "a header row and two cases");
+  await shot(rivera, "04-home");
 
   // The policy panel opens and closes.
-  await dabs.click("#showref");
-  await shows(dabs, /LCD L34220/, "#refdlg");
-  await dabs.click("#closeref");
-  assert.equal(await dabs.isVisible("#refdlg"), false);
+  await rivera.click("#showref");
+  await shows(rivera, /LCD L34220/, "#refdlg");
+  await rivera.click("#closeref");
+  assert.equal(await rivera.isVisible("#refdlg"), false);
 
   // The training opens in a new tab with the note for invited labelers, and its walkthrough runs.
-  const [training] = await Promise.all([dabsBrowser.waitForEvent("page"), dabs.click('a:has-text("Open the training")')]);
+  const [training] = await Promise.all([riveraBrowser.waitForEvent("page"), rivera.click('a:has-text("Open the training")')]);
   await training.waitForLoadState();
   await shows(training, /A note for invited labelers/);
   await training.waitForSelector("#guidedlg", { state: "visible" });
@@ -246,72 +246,72 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   await shot(training, "05-training");
   await training.close();
 
-  // Dr. Dabs ticks "I've done the training"; the date appears.
-  await dabs.check("#trained");
-  await shows(dabs, /I've done the training \(/, "main");
+  // Dr. Rivera ticks "I've done the training"; the date appears.
+  await rivera.check("#trained");
+  await shows(rivera, /I've done the training \(/, "main");
 
   // Case 01 opens and gets one answer, saved but not submitted; Next case goes to Practice A.
-  await opensCase(dabs, "case_01");
-  await picks(dabs, "C1_red_flag", "undeterminable");
-  await saved(dabs);
-  await dabs.click("#next");
-  await shows(dabs, /Your labels, Practice A/, "#formcol");
-  assert.ok(await dabs.isVisible("#prev"), "Previous case is offered");
+  await opensCase(rivera, "case_01");
+  await picks(rivera, "C1_red_flag", "undeterminable");
+  await saved(rivera);
+  await rivera.click("#next");
+  await shows(rivera, /Your labels, Practice A/, "#formcol");
+  assert.ok(await rivera.isVisible("#prev"), "Previous case is offered");
 
   // Practice A, answered in full. Submit stays off until it is complete.
-  await picks(dabs, "C1_red_flag", "unsupported");
-  await picks(dabs, "C2_conservative_4wk", "supported");
-  const c2 = await cites(dabs, "C2_conservative_4wk", "first");
-  await picks(dabs, "C3_informs_management", "supported");
-  const c3 = await cites(dabs, "C3_informs_management", "last");
-  await picks(dabs, "C4_no_duplicate_imaging", "supported");
-  assert.ok(await dabs.isDisabled("#submit"), "Submit stays off before the routing is chosen");
-  assert.ok(await looksOff(dabs, "#submit"), "and looks switched off");
-  await routes(dabs, "approve");
-  await saved(dabs);
-  await shows(dabs, /^Complete\./, "#state");
-  assert.ok(await dabs.isEnabled("#submit"));
-  await shot(dabs, "06-practice-a-complete");
+  await picks(rivera, "C1_red_flag", "unsupported");
+  await picks(rivera, "C2_conservative_4wk", "supported");
+  const c2 = await cites(rivera, "C2_conservative_4wk", "first");
+  await picks(rivera, "C3_informs_management", "supported");
+  const c3 = await cites(rivera, "C3_informs_management", "last");
+  await picks(rivera, "C4_no_duplicate_imaging", "supported");
+  assert.ok(await rivera.isDisabled("#submit"), "Submit stays off before the routing is chosen");
+  assert.ok(await looksOff(rivera, "#submit"), "and looks switched off");
+  await routes(rivera, "approve");
+  await saved(rivera);
+  await shows(rivera, /^Complete\./, "#state");
+  assert.ok(await rivera.isEnabled("#submit"));
+  await shot(rivera, "06-practice-a-complete");
 
   // Leaving and coming back keeps the answers; the home page says it's ready.
-  await dabs.click("#back");
-  assert.match(await homeRow(dabs, "Practice A"), /Ready to submit/);
-  await opensCase(dabs, "practice_a");
-  assert.ok(await checked(dabs, "C3_informs_management", "supported"));
-  assert.match(await text(dabs, "#formcol"), /Evidence \(1 selected\)/);
+  await rivera.click("#back");
+  assert.match(await homeRow(rivera, "Practice A"), /Ready to submit/);
+  await opensCase(rivera, "practice_a");
+  assert.ok(await checked(rivera, "C3_informs_management", "supported"));
+  assert.match(await text(rivera, "#formcol"), /Evidence \(1 selected\)/);
 
   // Submit asks first, then locks the case.
-  await dabs.click("#submit");
-  await shows(dabs, /Submit Practice A\?/, "#modal");
-  await dabs.click("#mcancel");
-  assert.equal(await dabs.isVisible("#modal"), false, "Cancel closes the question");
-  assert.ok(await dabs.isEnabled("#submit"), "and nothing was submitted");
-  await submits(dabs);
-  assert.ok(await dabs.isDisabled('#formcol input[name=routing][value=route]'), "a submitted case can't be changed");
-  await shot(dabs, "07-locked");
-  await dabs.click("#back");
-  assert.match(await homeRow(dabs, "Practice A"), /Submitted/);
-  assert.match(await homeRow(dabs, "Practice A"), /View/);
+  await rivera.click("#submit");
+  await shows(rivera, /Submit Practice A\?/, "#modal");
+  await rivera.click("#mcancel");
+  assert.equal(await rivera.isVisible("#modal"), false, "Cancel closes the question");
+  assert.ok(await rivera.isEnabled("#submit"), "and nothing was submitted");
+  await submits(rivera);
+  assert.ok(await rivera.isDisabled('#formcol input[name=routing][value=route]'), "a submitted case can't be changed");
+  await shot(rivera, "07-locked");
+  await rivera.click("#back");
+  assert.match(await homeRow(rivera, "Practice A"), /Submitted/);
+  assert.match(await homeRow(rivera, "Practice A"), /View/);
 
   // The owner refreshes and sees the credit, the training, and the progress.
   await ownerRefreshes(owner);
-  await until(async () => /Practice A: submitted/.test(await personBox(owner, "Dr. Dabs").innerText()), "the owner to see Practice A submitted");
-  const box = await personBox(owner, "Dr. Dabs").innerText();
-  assert.match(box, /Credited as Dr\. Dabs, Cardiothoracic surgeon/);
+  await until(async () => /Practice A: submitted/.test(await personBox(owner, "Dr. Rivera").innerText()), "the owner to see Practice A submitted");
+  const box = await personBox(owner, "Dr. Rivera").innerText();
+  assert.match(box, /Credited as Dr\. Rivera, Physician reviewer/);
   assert.match(box, /says they did the training/);
-  assert.match(box, /dabs@example\.org; consult after Gemini/);
+  assert.match(box, /rivera@example\.org; consult after Gemini/);
   assert.match(box, /Case 01: started/);
   await shot(owner, "08-owner-progress");
 
-  // The owner downloads the submitted labels: one file, holding exactly what Dr. Dabs submitted, with who and when.
+  // The owner downloads the submitted labels: one file, holding exactly what Dr. Rivera submitted, with who and when.
   const [download] = await Promise.all([owner.waitForEvent("download"), owner.click("#export")]);
   assert.match(download.suggestedFilename(), /^submitted-labels-\d{4}-\d{2}-\d{2}\.json$/);
   const file = JSON.parse(readFileSync(await download.path(), "utf8"));
-  const rows = file.labels.filter(l => l.invited_name === "Dr. Dabs");
+  const rows = file.labels.filter(l => l.invited_name === "Dr. Rivera");
   assert.equal(rows.length, 1, "only the submitted case is in the file, not Case 01, which is only started");
   const row = rows[0];
   assert.equal(row.case, "practice_a"); assert.equal(row.kind, "practice");
-  assert.equal(row.credit_name, "Dr. Dabs"); assert.equal(row.role, "Cardiothoracic surgeon");
+  assert.equal(row.credit_name, "Dr. Rivera"); assert.equal(row.role, "Physician reviewer");
   assert.ok(row.consent_at && row.training_done_at && row.submitted_at);
   assert.equal(row.case_sha, CONTENT.cases.practice_a.case_sha, "it records which version of the case was shown");
   assert.deepEqual(row.label, {
@@ -325,7 +325,7 @@ scenario("1. An invited clinician's first visit, from the owner's invite to the 
   });
 
   // The activity log tells the story in order.
-  const log = (await ownerLog(owner)).filter(r => r.includes("Dr. Dabs")).reverse();
+  const log = (await ownerLog(owner)).filter(r => r.includes("Dr. Rivera")).reverse();
   const story = ["labeler invited", "signed in with link", "consent", "training marked done", "label started", "label submitted"];
   let at = 0;
   for (const r of log) if (at < story.length && r.includes(story[at])) at++;
