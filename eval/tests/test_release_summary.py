@@ -133,9 +133,27 @@ class SummaryTest(unittest.TestCase):
         self.assertIn("| case_10 (held out) | request | request (C4) | request (C4) | request (C4) | 4 of 4 | yes |", text)
         self.assertIn("| case_91 | approve | approve | approve | approve | 4 of 4 | yes |", text)
         self.assertIn("per run: 0, 0, 0.", text)
-        for absent in ("## Fairness pairs", "## Without the notes", "## Injection check", "## Vendor-update run", "CHARTER.md"):
+        for absent in ("## Fairness pairs", "## Without the notes", "## Injection check", "## Vendor-update run", "CHARTER.md", "as the model wrote them"):
             self.assertNotIn(absent, text)
         self.assertIn("on 3 cases, one case moves routing agreement by 33 points", text)
+
+    def test_quotes_as_the_model_wrote_them_are_shown_when_the_runs_carry_the_figure(self):
+        def with_raw(value, trimmed):
+            def f(d, s):
+                s["metrics"].update(citation_faithfulness_as_written=value, quotes_trimmed_by_agent=trimmed)
+            return f
+        runs = self.base_runs(second=with_raw(11 / 12, 1), third=with_raw(1.0, 0))
+        # The headline run needs the figure too, or the row is left out (runs from before agent-0.4 do not have it).
+        self.assertNotIn("as the model wrote them", self.rs.summary(runs))
+        p = os.path.join(runs[0], "score.json")
+        with open(p) as f:
+            s = json.load(f)
+        with_raw(1.0, 0)(None, s)
+        with open(p, "w") as f:
+            json.dump(s, f)
+        text = self.rs.summary(runs)
+        self.assertIn("| Quotes word for word as the model wrote them, before the agent's own check | reported | 100% (0 trimmed) | 92% (1 trimmed) | 100% (0 trimmed) | 92% to 100% |  |", text)
+        self.assertIn("| Citation faithfulness | 95% | 100% | 100% | 100% | 100% | met in every run |", text)
 
     def test_a_false_approval_on_a_held_out_case_in_one_run_fails_the_gate_and_is_named(self):
         def second(d, s):

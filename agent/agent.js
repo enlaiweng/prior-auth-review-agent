@@ -1,13 +1,15 @@
 // The prior authorization review agent: one module, used by the evaluation runs (Node.js on GitHub Actions) and by the
 // Cloudflare Worker (docs/ARCHITECTURE.md, ADR-10 (3)). It reads one FHIR bundle, asks the model for a per-criterion
-// report in a fixed JSON schema, checks the report, and lets the fixed rule in agent/routing.js choose the outcome.
+// report in a fixed JSON schema, checks the report, lets the fixed rule in agent/routing.js choose the outcome, and
+// checks each policy quote against the policy's own text (agent/quotes.js).
 // No Node-only modules, so the same file runs in a Worker. No case-specific logic anywhere in this folder.
 
-import { SYSTEM_PROMPT, SCHEMA, PASSAGE_IDS, SPEC_SHA256 } from "./spec.generated.js";
+import { SYSTEM_PROMPT, SCHEMA, PASSAGE_IDS, PASSAGES, SPEC_SHA256 } from "./spec.generated.js";
 import { readCase, caseMessage } from "./record.js";
 import { decideRouting, CRITERIA } from "./routing.js";
+import { checkQuotes } from "./quotes.js";
 
-export const AGENT_VERSION = "agent-0.3";
+export const AGENT_VERSION = "agent-0.4";
 
 // Pinned settings (ADR-10 (4)). Recorded with every run; fixed at the freeze. temperature is not sent: on these
 // models a non-default value returns an error. No tools and no tool_choice: the report comes back through the
@@ -122,6 +124,8 @@ export async function reviewCase(bundle, {
     missing_document_suggested: null,
     invalid_evidence: [],
     invalid_policy_passages: [],
+    policy_quotes_trimmed: [],
+    policy_quotes_unverified: [],
     case_summary: null,
     confidence: null,
     error: null,
@@ -152,16 +156,23 @@ export async function reviewCase(bundle, {
     validIds: new Set(rc.citableIds), noteIds: rc.noteIds, passageIds: new Set(PASSAGE_IDS), approveEnabled,
     entryStart: rc.entryStart, requestDate: rc.requestDate,
   });
+  // The quotes are checked after the outcome is chosen and never change it: the rule reads statuses, evidence, and
+  // passage ids, not the quoted words. A quote with a stray word at an end is trimmed to the policy's own words, and
+  // what the model wrote is kept beside it.
+  const short = Object.fromEntries(Object.entries(CRITERIA).map(([s, k]) => [k, s]));
+  const quotes = checkQuotes(report, PASSAGES, short);
   return Object.assign(decision, {
     routing: verdict.routing,
     named_gap: verdict.named_gap,
     basis: verdict.basis,
     routing_reasons: verdict.reasons,
-    criteria: report.criteria,
+    criteria: quotes.criteria,
     contradictions: report.contradictions,
     missing_document_suggested: report.missing_document,
     invalid_evidence: verdict.invalid_evidence,
     invalid_policy_passages: verdict.invalid_policy_passages,
+    policy_quotes_trimmed: quotes.trimmed,
+    policy_quotes_unverified: quotes.unverified,
     case_summary: report.case_summary,
     confidence: report.confidence,
   });

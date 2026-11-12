@@ -218,6 +218,13 @@ def section_thresholds(base):
         out.append("| " + " | ".join(cells) + " |")
     pend = [f"{s['metrics']['pend_rate'] * 100:.0f}%" if s["metrics"].get("pend_rate") is not None else "no cases" for s in scores]
     out.append("| " + " | ".join(["Pend rate", "reported"] + pend + ([spread("pend_rate", scores)] if n > 1 else []) + [""]) + " |")
+    if all("citation_faithfulness_as_written" in s["metrics"] for s in scores):
+        # From agent-0.4 the agent trims a stray word off a quote (agent/quotes.js). The gate above reads the quote a
+        # reviewer is shown; this row shows the model's own wording, so the trimming is in plain view.
+        raw = [f"{s['metrics']['citation_faithfulness_as_written'] * 100:.0f}% ({s['metrics']['quotes_trimmed_by_agent']} trimmed)"
+               if s["metrics"]["citation_faithfulness_as_written"] is not None else "no cases" for s in scores]
+        out.append("| " + " | ".join(["Quotes word for word as the model wrote them, before the agent's own check", "reported"] + raw
+                                     + ([spread("citation_faithfulness_as_written", scores)] if n > 1 else []) + [""]) + " |")
     lines, _ = by_the_numbers(scores, scores[0])
     out += ["", "The release rule's inputs (EVAL_PLAN.md, Go/no-go rule):"] + lines
     fa = [f"{mark(c)} in {run_label(i, n)}" for i, s in enumerate(scores) for c in false_approval_cases(s)]

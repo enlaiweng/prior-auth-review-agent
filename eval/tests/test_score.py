@@ -142,6 +142,64 @@ class ScoreTest(unittest.TestCase):
             self.assertIn("case_01", s["unscored_cases"])
 
 
+class TrimmedQuotesTest(unittest.TestCase):
+    """From agent-0.4 the agent trims a stray word off a policy quote and records what the model wrote. The gate reads
+    the quote in the decision; the model's own wording is scored beside it, so the trimming is never hidden."""
+
+    def setUp(self):
+        self.old = os.getcwd()
+        os.chdir(ROOT)
+        self.dir = tempfile.mkdtemp()
+        import score
+        self.score = score
+
+    def tearDown(self):
+        os.chdir(self.old)
+        shutil.rmtree(self.dir)
+
+    def metrics(self, d):
+        with open(os.path.join(self.dir, "case_00.json"), "w") as f:
+            json.dump(d, f)
+        s = self.score.score(self.dir)
+        return s, s["metrics"]
+
+    def test_a_decision_from_before_the_check_reads_the_same_both_ways(self):
+        s, m = self.metrics(decision())
+        self.assertEqual((m["citation_faithfulness"], m["citation_faithfulness_as_written"], m["quotes_trimmed_by_agent"]), (1.0, 1.0, 0))
+        s, m = self.metrics(decision(quote="the information gained ... decision-making"))
+        self.assertEqual((m["citation_faithfulness"], m["citation_faithfulness_as_written"], m["quotes_trimmed_by_agent"]), (0.0, 0.0, 0))
+
+    def test_a_trimmed_quote_counts_for_the_gate_and_is_shown_as_the_model_wrote_it(self):
+        d = decision()
+        exact = d["criteria"]["C2_conservative_4wk"]["policy_quote"]
+        d["policy_quotes_trimmed"] = [{"criterion": "C2", "as_written": "that " + exact}]
+        d["policy_quotes_unverified"] = []
+        s, m = self.metrics(d)
+        self.assertEqual(m["citation_faithfulness"], 1.0)
+        self.assertEqual(m["citation_faithfulness_as_written"], 0.75)
+        self.assertEqual(m["quotes_trimmed_by_agent"], 1)
+        self.assertTrue(s["meets_threshold"]["citation_faithfulness"])
+        self.assertNotIn("citation_faithfulness_as_written", s["meets_threshold"])     # reported, never gated
+        md = self.score.markdown(s)
+        self.assertIn("| Quotes as the model wrote them, before the agent's own check | 75% word for word; 1 trimmed by the check | reported | |", md)
+
+    def test_a_quote_left_unverified_still_counts_against_the_gate(self):
+        d = decision()
+        d["criteria"]["C3_informs_management"]["policy_quote"] = "the information gained ... decision-making"
+        d["policy_quotes_trimmed"] = []
+        d["policy_quotes_unverified"] = ["C3"]
+        s, m = self.metrics(d)
+        self.assertEqual((m["citation_faithfulness"], m["citation_faithfulness_as_written"], m["quotes_trimmed_by_agent"]), (0.75, 0.75, 0))
+        self.assertFalse(s["meets_threshold"]["citation_faithfulness"])
+
+    def test_the_scorer_checks_a_trimmed_quote_itself_and_does_not_take_the_agents_word(self):
+        d = decision()
+        d["criteria"]["C2_conservative_4wk"]["policy_quote"] = "words that are not in the policy"
+        d["policy_quotes_trimmed"] = [{"criterion": "C2", "as_written": "other words that are not in the policy"}]
+        s, m = self.metrics(d)
+        self.assertEqual((m["citation_faithfulness"], m["citation_faithfulness_as_written"], m["quotes_trimmed_by_agent"]), (0.75, 0.75, 1))
+
+
 class NoteAsGivenTest(unittest.TestCase):
     """A side check that changes the note is held to the note the agent was shown (run.json, note_paragraphs).
     The smoke case's stored note is one paragraph, so note:p1 exists in it and note:p2 does not."""

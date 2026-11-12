@@ -1,6 +1,6 @@
 # The agent
 
-This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.3** (the quoted policy words are one unbroken run copied from one passage; before it, agent-0.2, ADR-12: an approval is checked before the red-flag step).
+This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.4** (the code checks each policy quote against the policy's own text and drops a wrong first or last word; before it, agent-0.3: the quoted policy words are one unbroken run copied from one passage; agent-0.2, ADR-12: an approval is checked before the red-flag step).
 
 ## How a case is decided
 
@@ -22,6 +22,8 @@ This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10):
 The red-flag step routes when the model reports a contradiction on C1, calls C1 supported without one of the entries that count for C1, or calls C1 undeterminable while citing the note. Such a red flag never makes C1 met, so it can never carry an approval. It does not block an approval that C2 carries; when C2 carries an approval despite such a red flag, the reasons note the red flag, for the audit sample and anyone reading the decision.
 
 Every decision carries plain-language reasons naming the step that decided it.
+
+4. **The quote check** (`quotes.js`). After the outcome is chosen, the code checks each criterion's policy quote against the passages that criterion cites: it must appear there word for word (runs of spaces and line breaks count as one space), and be at least three words or a whole passage. The model usually copies exactly, and now and then gets the first or last word wrong ("the MRI will be covered" for the policy's "MRI will be covered"). When a quote is not word for word, the code tries dropping its first word, its last word, or both; if what is left is word for word and at least three words, it replaces the quote, and what the model wrote is kept in the decision (`policy_quotes_trimmed`). One word at each end is the most that is dropped, and nothing is added or reworded. A quote that needs more than that, such as a wrong word further in or phrases joined with an ellipsis, is left exactly as written and listed (`policy_quotes_unverified`). Two limits of so simple a rule: a wrong first or last word is dropped whatever it is, so if that word carried meaning ("four months" for the policy's "four weeks"), what is left is still the policy's own words and counts, and the misquote shows only in the record of what the model wrote and in the as-written figure; and an ellipsis typed onto the last word with no space is part of that word and is dropped with it. The check never changes the outcome: the rule reads statuses, evidence, and passage ids, not the quoted words. The scorer applies the same word-for-word test separately (`eval/score.py`), counts the quote in the decision, and also reports how the quotes scored as the model wrote them. That second figure rests on the agent's own record of what the model wrote. Not yet done: the demo's viewer shows a quote the same way whether or not the check verified it.
 
 ## Readings written into the rule
 
@@ -62,9 +64,10 @@ These are fixed at the freeze. The vendor-update run on claude-sonnet-5-5 uses t
 | `decision_schema.json` | The shape of the model's report |
 | `record.js` | The input step |
 | `routing.js` | The rule |
+| `quotes.js` | The check of the policy quotes |
 | `agent.js` | The model call, the checks, and the decision object |
-| `spec.generated.js` | Made by `eval/tools/build_agent_spec.py`: the full system prompt (instructions, criteria from EVAL_PLAN.md, outcomes from the charter, policy passages), the schema, and `SPEC_SHA256`, one fingerprint over all of it and the three code files |
-| `test/` | Tests: the rule, the input step against the Python on every bundle, the module with a fake model, and a full run with a fake model, including the budget and labels-first guards |
+| `spec.generated.js` | Made by `eval/tools/build_agent_spec.py`: the full system prompt (instructions, criteria from EVAL_PLAN.md, outcomes from the charter, policy passages), the schema, the passages' text for the quote check, and `SPEC_SHA256`, one fingerprint over all of it and the four code files |
+| `test/` | Tests: the rule, the input step against the Python on every bundle, the quote check against the scorer, the module with a fake model, and a full run with a fake model, including the budget and labels-first guards |
 
 ## How to run it
 

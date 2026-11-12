@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from build_case_pages import LEGEND, criteria_text, outputs_text  # the same text the labelers see
 
 OUT = "agent/spec.generated.js"
-CODE = ["agent/routing.js", "agent/record.js", "agent/agent.js"]
+CODE = ["agent/routing.js", "agent/record.js", "agent/quotes.js", "agent/agent.js"]
 
 
 def system_prompt(passages):
@@ -57,6 +57,9 @@ def main():
         f"export const SPEC_FILES = {json.dumps(files, indent=1)};",
         f"export const POLICY = {json.dumps({'lcd_id': passages['lcd_id'], 'source_revision': passages['source_revision']})};",
         f"export const PASSAGE_IDS = {json.dumps([p['id'] for p in passages['passages']])};",
+        "// Each passage's text, for the agent's check of its policy quotes (agent/quotes.js). The same text is in the",
+        "// system prompt below, so the fingerprint already covers it.",
+        f"export const PASSAGES = {json.dumps({p['id']: p['text'] for p in passages['passages']}, ensure_ascii=False, indent=1)};",
         f"export const SCHEMA = {json.dumps(schema, indent=1)};",
         f"export const SYSTEM_PROMPT = {json.dumps(prompt, ensure_ascii=False)};",
         "",

@@ -19,7 +19,10 @@ for (const f of readdirSync(dir).filter(f => /^case_.*\.json$/.test(f)).sort()) 
     contradictions: d.contradictions?.map(x => ({ criterion: x.criterion, evidence: x.evidence })),
     missing_document_suggested: d.missing_document_suggested && cut(d.missing_document_suggested.criterion + ": " + d.missing_document_suggested.missing, 200),
     confidence: d.confidence,
-    invalid_evidence: d.invalid_evidence, model_returned: d.model.returned, stop_reason: d.stop_reason, usage: d.usage,
+    invalid_evidence: d.invalid_evidence,
+    quotes_trimmed: d.policy_quotes_trimmed?.map(t => ({ criterion: t.criterion, as_written: cut(t.as_written, 300) })),
+    quotes_unverified: d.policy_quotes_unverified,
+    model_returned: d.model.returned, stop_reason: d.stop_reason, usage: d.usage,
     cost_usd_estimate: run.cases[d.case_id]?.cost_usd_estimate, seconds: d.seconds,
   };
   console.log(`::notice title=${d.case_id}: ${d.routing}::${esc(JSON.stringify(brief))}`);
