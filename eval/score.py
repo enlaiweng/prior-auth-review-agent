@@ -16,6 +16,9 @@ How each metric is counted (EVAL_PLAN.md; choices the plan leaves open are marke
   as not faithful, so leaving quotes out cannot raise the score; a quote must sit in a passage the criterion cites, so
   a right quote under a wrong passage id counts as mismatched; and a quote of fewer than three words counts only when
   it is a whole passage (some passages are one word, such as "Fever"), so a fragment like "the" cannot pass.
+  From agent-0.4 the agent checks its own quotes and trims a stray word at an end (agent/quotes.js), recording what
+  the model wrote. The gate reads the quote in the decision, which is what a reviewer is shown. Reported beside it,
+  not gated: how many quotes were trimmed, and the share that were word for word as the model wrote them.
 - Evidence validity: of every id cited (criteria and contradictions), the share that exists in the case: a resource
   in the bundle, or a note paragraph note:pN as eval/tools/build_case_pages.py numbers them. Hard gate: 100%. A run
   that cites no id at all cannot show this, so the gate counts as not met. When a side check changed the note the
@@ -39,6 +42,7 @@ import base64, glob, json, os, re, sys
 import yaml
 
 KEYS = ["C1_red_flag", "C2_conservative_4wk", "C3_informs_management", "C4_no_duplicate_imaging"]
+SHORT = dict(zip(KEYS, ["C1", "C2", "C3", "C4"]))
 THRESHOLDS = {  # EVAL_PLAN.md, Metrics and release thresholds
     "false_approvals": ("count", 0), "citation_faithfulness": ("min", 0.95), "evidence_validity": ("min", 1.0),
     "per_criterion_agreement": ("min", 0.85), "routing_agreement": ("min", 0.80),
@@ -108,7 +112,7 @@ def score(run_dir):
     run_json = os.path.join(run_dir, "run.json")
     run = load(run_json) if os.path.exists(run_json) else {}
     scored, unscored, rows = [], [], []
-    c = dict(fa=0, not_approvable=0, quotes=0, quotes_ok=0, no_quote=0, ids=0, ids_ok=0, crit=0, crit_ok=0,
+    c = dict(fa=0, not_approvable=0, quotes=0, quotes_ok=0, quotes_ok_as_written=0, trimmed=0, no_quote=0, ids=0, ids_ok=0, crit=0, crit_ok=0,
              route_ok=0, gaps=0, gaps_hit=0, routes=0, routes_ok=0, pended=0, minutes=0.0, baseline=0.0, all_supported_mismatch=0)
     for cid, d in decisions.items():
         lp = labels_path(cid)
@@ -129,15 +133,23 @@ def score(run_dir):
                 c["fa"] += 1
         # citations and evidence
         cited = []
+        # What the model wrote, for a quote the agent's own check trimmed (agent/quotes.js; none before agent-0.4).
+        written = {t["criterion"]: t["as_written"] for t in d.get("policy_quotes_trimmed") or []}
         for k in KEYS:
             x = crit.get(k) or {}
             q = (x.get("policy_quote") or "").strip()
             if crit:
                 c["quotes"] += 1
+                ok = bool(q) and quote_faithful(q, x.get("policy_passages") or [], passages)
                 if not q:
                     c["no_quote"] += 1
-                elif quote_faithful(q, x.get("policy_passages") or [], passages):
+                elif ok:
                     c["quotes_ok"] += 1
+                if SHORT[k] in written:
+                    c["trimmed"] += 1
+                    c["quotes_ok_as_written"] += quote_faithful(written[SHORT[k]], x.get("policy_passages") or [], passages)
+                else:
+                    c["quotes_ok_as_written"] += ok
             cited += x.get("evidence") or []
         for con in d.get("contradictions") or []:
             cited += con.get("evidence") or []
@@ -178,6 +190,7 @@ def score(run_dir):
     metrics = {
         "false_approvals": c["fa"], "not_approvable_cases": c["not_approvable"],
         "citation_faithfulness": ratio(c["quotes_ok"], c["quotes"]), "criteria_without_quote": c["no_quote"],
+        "quotes_trimmed_by_agent": c["trimmed"], "citation_faithfulness_as_written": ratio(c["quotes_ok_as_written"], c["quotes"]),
         "evidence_validity": ratio(c["ids_ok"], c["ids"]), "ids_cited": c["ids"],
         "per_criterion_agreement": ratio(c["crit_ok"], c["crit"]),
         "routing_agreement": ratio(c["route_ok"], n),
@@ -218,6 +231,7 @@ def markdown(s):
             if s.get("checklist_mode") else
             f"| False approvals | {m['false_approvals']} of {m['not_approvable_cases']} | 0 (hard gate) | {mark('false_approvals')} |"),
            f"| Citation faithfulness | {pct(m['citation_faithfulness'])} ({m['criteria_without_quote']} criteria with no quote, counted as not faithful) | 95% | {mark('citation_faithfulness')} |",
+           f"| Quotes as the model wrote them, before the agent's own check | {pct(m['citation_faithfulness_as_written'])} word for word; {m['quotes_trimmed_by_agent']} trimmed by the check | reported | |",
            f"| Evidence validity | {pct(m['evidence_validity']) if m['evidence_validity'] is not None else 'no ids cited'} of {m['ids_cited']} ids | 100% (hard gate) | {mark('evidence_validity')} |",
            f"| Per-criterion agreement | {pct(m['per_criterion_agreement'])} | 85% | {mark('per_criterion_agreement')} |",
            f"| Routing agreement | {pct(m['routing_agreement'])} | 80% | {mark('routing_agreement')} |",
