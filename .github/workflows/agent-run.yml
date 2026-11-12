@@ -14,6 +14,9 @@
 #      eval/release_summary.py; eval/README.md, rule 10). "vendor-update" is that last run by itself.
 # Keys: none is printed. The agent sends the key only in a request header to api.anthropic.com.
 name: Agent run
+# What a run started by hand is called in the list of runs and on the approval screen, so the owner can see what he is
+# about to approve: for example "Agent run: release-evaluation on the release budget".
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Agent run: {0} on the {1} budget', inputs.cases, inputs.budget) || 'Agent run: experiments on a push' }}"
 
 on:
   push:
