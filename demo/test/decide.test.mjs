@@ -116,6 +116,14 @@ m.stored(sys.argv[1], {"case_05": {"held_out": False, "labeled": False}}, versio
     dir = fixtureRun(tag + "-experiments", { run: { budget: "experiments" }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /release budget/);
 
+    // The release evaluation's side checks are not the agent as released: a changed note, or another model.
+    dir = fixtureRun(tag + "-no-notes", { run: { variant: "no-notes", vendor_update: false }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
+    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /a side check of the release evaluation/);
+    dir = fixtureRun(tag + "-vendor", { run: { variant: null, vendor_update: true }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
+    r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /a side check of the release evaluation/);
+    dir = fixtureRun(tag + "-plain", { run: { variant: null, vendor_update: false }, decisions: { case_01: decision("case_01") } }); dirs.push(dir);
+    r = buildWith(dir); assert.equal(r.code, 0, r.text);
+
     dir = fixtureRun(tag + "-swapped", { decisions: { case_01: decision("case_02") } }); dirs.push(dir);
     r = buildWith(dir); assert.notEqual(r.code, 0); assert.match(r.text, /does not match the run/);
 
