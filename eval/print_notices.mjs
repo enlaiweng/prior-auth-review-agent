@@ -15,7 +15,7 @@ for (const f of readdirSync(dir).filter(f => /^case_.*\.json$/.test(f)).sort()) 
     routing: d.routing, named_gap: d.named_gap && { criterion: d.named_gap.criterion, missing: cut(d.named_gap.missing, 200) },
     basis: d.basis, error: cut(d.error, 300), reasons: d.routing_reasons,
     criteria: d.criteria && Object.fromEntries(Object.entries(d.criteria).map(([k, c]) =>
-      [k, { status: c.status, evidence: c.evidence, passages: c.policy_passages, quote: cut(c.policy_quote, 160) }])),
+      [k, { status: c.status, evidence: c.evidence, passages: c.policy_passages, quote: cut(c.policy_quote, 300) }])),
     contradictions: d.contradictions?.map(x => ({ criterion: x.criterion, evidence: x.evidence })),
     missing_document_suggested: d.missing_document_suggested && cut(d.missing_document_suggested.criterion + ": " + d.missing_document_suggested.missing, 200),
     confidence: d.confidence,
@@ -25,3 +25,9 @@ for (const f of readdirSync(dir).filter(f => /^case_.*\.json$/.test(f)).sort()) 
   console.log(`::notice title=${d.case_id}: ${d.routing}::${esc(JSON.stringify(brief))}`);
 }
 console.log(`::notice title=Run ${dir.split("/").pop()}::${esc(JSON.stringify({ agent_version: run.agent_version, spec: run.spec_sha256, settings: run.settings, models_returned: run.models_returned, errors: run.errors, cost_usd_estimate_total: run.cost_usd_estimate_total }))}`);
+// The score, when eval/score.py has scored the run: the numbers behind the summary's table, and which thresholds they
+// meet, so they can be read from the run's log or check annotations too.
+try {
+  const s = JSON.parse(readFileSync(`${dir}/score.json`, "utf8"));
+  console.log(`::notice title=Score ${dir.split("/").pop()}::${esc(JSON.stringify({ metrics: s.metrics, meets_threshold: s.meets_threshold, errors: s.errors, scored_cases: s.scored_cases }))}`);
+} catch { /* not scored */ }
