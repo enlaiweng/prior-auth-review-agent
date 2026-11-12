@@ -16,8 +16,8 @@ How each metric is counted (EVAL_PLAN.md; choices the plan leaves open are marke
   as not faithful, so leaving quotes out cannot raise the score; a quote must sit in a passage the criterion cites, so
   a right quote under a wrong passage id counts as mismatched; and a quote of fewer than three words counts only when
   it is a whole passage (some passages are one word, such as "Fever"), so a fragment like "the" cannot pass.
-  From agent-0.4 the agent checks its own quotes and trims a stray word at an end (agent/quotes.js), recording what
-  the model wrote. The gate reads the quote in the decision, which is what a reviewer is shown. Reported beside it,
+  From agent-0.4 the agent checks its own quotes and drops a wrong first or last word (agent/quotes.js), recording
+  what the model wrote. The gate reads the quote in the decision, which is what a reviewer is shown. Reported beside it,
   not gated: how many quotes were trimmed, and the share that were word for word as the model wrote them.
 - Evidence validity: of every id cited (criteria and contradictions), the share that exists in the case: a resource
   in the bundle, or a note paragraph note:pN as eval/tools/build_case_pages.py numbers them. Hard gate: 100%. A run

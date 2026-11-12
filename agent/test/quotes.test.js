@@ -2,12 +2,13 @@
 // The check must agree with the scorer (eval/score.py) on which quotes are word for word, on every example here, so
 // "the agent verified it" and "the scorer counts it" mean the same thing.
 // Run from the repository root: node --test 'agent/test/*.test.js'   (needs python3 on the path)
-// The quotes below are pieces of the policy text and made-up variations of them. No case content is used.
+// The quotes below are pieces of the policy text and made-up variations of them. The last tests run the agent module
+// on the throwaway test case (data/smoke/case_00) with a made-up report. No golden case is used.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { norm, wordForWord, longestRun, checkQuote, checkQuotes, MIN_WORDS, KEEP_SHARE } from "../quotes.js";
+import { norm, wordForWord, checkQuote, checkQuotes, MIN_WORDS } from "../quotes.js";
 import { reviewCase } from "../agent.js";
 import { PASSAGES, PASSAGE_IDS } from "../spec.generated.js";
 
@@ -43,36 +44,45 @@ test("word for word: inside one cited passage, spaces and line breaks as one spa
   }
 });
 
-test("the longest run of the quote's own words that is in one passage", () => {
-  const n = EXACT.split(" ").length;
-  assert.deepEqual(longestRun("the " + EXACT, [P36]), { text: EXACT, words: n });
-  assert.deepEqual(longestRun(EXACT + " or longer", [P36]), { text: EXACT, words: n });
-  assert.equal(longestRun("zebra giraffe", [P36]), null);
-  assert.equal(longestRun("", [P36]), null);
-  assert.equal(longestRun(EXACT, []), null);
-  // Two runs of the same length: the first one is kept.
-  assert.deepEqual(longestRun("will be covered xx only if the", ["will be covered", "only if the"]), { text: "will be covered", words: 3 });
-});
-
-test("a stray word at an end is trimmed and the model's own text kept; anything more is left as written", () => {
+test("a wrong first or last word is dropped and the model's own text kept; anything more is left as written", () => {
+  const trimmed = q => ({ quote: EXACT, verified: true, as_written: q });
+  const untouched = q => ({ quote: q, verified: false, as_written: null });
   assert.deepEqual(checkQuote(EXACT, [P36]), { quote: EXACT, verified: true, as_written: null });
-  assert.deepEqual(checkQuote("the " + EXACT, [P36]), { quote: EXACT, verified: true, as_written: "the " + EXACT });
-  assert.deepEqual(checkQuote(EXACT + " or more", [P36]), { quote: EXACT, verified: true, as_written: EXACT + " or more" });
-  // Joined phrases, a reworded middle, the wrong passage, an empty quote: not verified, and not touched.
-  for (const q of ["MRI will be covered ... conservative management lasting at least four weeks",
-                   EXACT.replace("reasonable trial", "fair trial"), "Imaging is always covered for this patient", ""]) {
-    assert.deepEqual(checkQuote(q, [P36]), { quote: q, verified: false, as_written: null }, q);
+  // One word too many at the start, at the end, or both.
+  for (const q of ["the " + EXACT, EXACT + " also", "the " + EXACT + " also"]) assert.deepEqual(checkQuote(q, [P36]), trimmed(q), q);
+  // A first word that differs from the policy's only in its capital letter or quotation mark is still a wrong word:
+  // it is dropped, never corrected.
+  const p16 = PASSAGES["L34220-16"], w16 = norm(p16).split(" ");
+  const said = ["red", ...w16.slice(1, 9)].join(" ");
+  assert.deepEqual(checkQuote(said, [p16]), { quote: w16.slice(1, 9).join(" "), verified: true, as_written: said });
+  // Two words too many at one end, a wrong word further in, a changed number near the end, phrases joined with an
+  // ellipsis (a long piece and a short one too), the wrong passage, text that is not policy, an empty quote: not
+  // verified, and not touched.
+  for (const q of ["then the " + EXACT, EXACT + " or more",
+                   EXACT.replace("reasonable trial", "fair trial"), EXACT.replace("will be covered", "will not be covered"),
+                   EXACT.replace("four weeks", "six weeks"),
+                   "MRI will be covered ... conservative management lasting at least four weeks", EXACT + " ... red flags",
+                   "Imaging is always covered for this patient", ""]) {
+    assert.deepEqual(checkQuote(q, [P36]), untouched(q), q);
   }
-  assert.deepEqual(checkQuote(EXACT, [PASSAGES["L34220-37"]]), { quote: EXACT, verified: false, as_written: null });
-  // The four-fifths rule: of five words, four must survive; of ten, eight.
-  assert.equal(KEEP_SHARE, 0.8);
+  assert.deepEqual(checkQuote(EXACT, [PASSAGES["L34220-37"]]), untouched(EXACT));
+  assert.deepEqual(checkQuote("the " + EXACT, []), untouched("the " + EXACT));
+  // What is left after dropping is never shorter than three words.
   const text = ["one two three four five six seven eight nine ten"];
-  assert.equal(checkQuote("zero one two three four", text).quote, "one two three four");
-  assert.equal(checkQuote("zero zero one two three", text).verified, false);
-  assert.equal(checkQuote("x y one two three four five six seven eight", text).quote, "one two three four five six seven eight");
-  assert.equal(checkQuote("x y z one two three four five six seven", text).verified, false);
-  // A trimmed quote is never shorter than three words.
-  assert.equal(checkQuote("x one two", text).verified, false);
+  assert.equal(checkQuote("zero one two three", text).quote, "one two three");
+  assert.equal(checkQuote("zero one two", text).verified, false);
+  assert.equal(checkQuote("zero one two three eleven", text).quote, "one two three");
+  assert.equal(checkQuote("zero one two eleven", text).verified, false);
+  // The fewest words are dropped: the first word alone before the last alone, either alone before both.
+  assert.equal(checkQuote("zero two three four", ["zero two three", "two three four"]).quote, "two three four");
+  assert.equal(checkQuote("one two three four ten", text).quote, "one two three four");
+  // A quote the model wrapped in quotation marks loses its first and last words, which carry the marks.
+  assert.equal(checkQuote('"two three four five six"', text).quote, "three four five");
+  // A very long quote is checked quickly: three tries, however long it is.
+  const long = Array.from({ length: 20000 }, (_, i) => "w" + i).join(" ");
+  const started = Date.now();
+  assert.equal(checkQuote(long, [P36]).verified, false);
+  assert.ok(Date.now() - started < 1000);
 });
 
 test("whatever the check calls verified, the scorer counts, on the policy's own text and on variations of it", () => {
@@ -86,7 +96,8 @@ test("whatever the check calls verified, the scorer counts, on the policy's own 
     const other = ids[(n + 1) % ids.length];
     for (const piece of pieces) {
       const changed = piece.split(" "); changed[Math.floor(changed.length / 2)] = "changed";
-      for (const q of [piece, "the " + piece, piece + " also", changed.join(" "), piece + " ... " + w.slice(-3).join(" "), piece.replace(/ /g, " \n")]) {
+      for (const q of [piece, "the " + piece, piece + " also", "the " + piece + " also", "then the " + piece, changed.join(" "),
+                       piece + " ... " + w.slice(-3).join(" "), piece.replace(/ /g, "\u00a0\n")]) {
         examples.push({ quote: q, cited: [id] }, { quote: q, cited: [other] }, { quote: q, cited: [other, id] });
       }
     }
@@ -99,14 +110,20 @@ passages = score.passage_texts()
 print(json.dumps([score.quote_faithful(e["quote"], e["cited"], passages) for e in json.load(sys.stdin)]))
 `], { input: JSON.stringify(examples), encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
   assert.equal(py.length, examples.length);
-  assert.ok(examples.length > 4000);
+  assert.ok(examples.length > 6000);
   let verified = 0, trimmed = 0;
   examples.forEach((e, i) => {
     const texts = e.cited.map(id => PASSAGES[id]);
     assert.equal(wordForWord(e.quote, texts), py[i], `the agent and the scorer differ on ${JSON.stringify(e)}`);
     const r = checkQuote(e.quote, texts);
     if (r.verified) verified++;
-    if (r.as_written !== null) { trimmed++; assert.equal(r.as_written, e.quote); assert.ok(norm(e.quote).includes(r.quote), "a trimmed quote is a piece of what was written"); }
+    if (r.as_written !== null) {
+      trimmed++;
+      assert.equal(r.as_written, e.quote);
+      const said = norm(e.quote).split(" "), kept = r.quote.split(" ");
+      assert.ok(norm(e.quote).includes(r.quote), "a trimmed quote is a piece of what was written");
+      assert.ok(said.length - kept.length <= 2 && kept.length >= 3, "at most one word from each end, and three words left");
+    }
     else assert.equal(r.quote, e.quote, "a quote that is not trimmed is not touched");
     assert.equal(r.verified, r.as_written !== null || py[i], JSON.stringify(e));
   });
@@ -134,7 +151,7 @@ const reportWith = quotes => ({
     C3_informs_management: crit("undeterminable", [], ["L34220-39"], quotes.C3),
     C4_no_duplicate_imaging: crit("supported", [], ["L34220-41", "L34220-99"], quotes.C4),
   },
-  contradictions: [], missing_document: { criterion: "C3", missing: "the treatment decision the MRI will inform" },
+  contradictions: [], missing_document: { criterion: "C3", missing: "a made-up document, for this test" },
   case_summary: "s", confidence: "moderate",
 });
 const reply = report => async () => ({ ok: true, status: 200, headers: { get: () => "req_test" }, text: async () => JSON.stringify({
@@ -177,6 +194,18 @@ test("a decision that failed has no quotes to check", async () => {
   assert.equal(d.routing, "route");
   assert.deepEqual(d.policy_quotes_trimmed, []);
   assert.deepEqual(d.policy_quotes_unverified, []);
+});
+
+test("a reply with something extra under criteria still gets a decision", async () => {
+  const report = reportWith({ C1, C2: "the " + EXACT, C3, C4 });
+  report.criteria.C5_made_up = null;
+  report.criteria.note = "extra";
+  const d = await reviewCase(smoke, { apiKey: "k", caseId: "case_00", fetchImpl: reply(report) });
+  assert.equal(d.error, null);
+  assert.equal(d.routing, "request");
+  assert.deepEqual(d.policy_quotes_trimmed, [{ criterion: "C2", as_written: "the " + EXACT }]);
+  assert.deepEqual(d.policy_quotes_unverified, []);
+  assert.equal(d.criteria.C5_made_up, null);
 });
 
 test("checkQuotes copies the criteria and never changes the report it was given", () => {
