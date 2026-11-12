@@ -1,0 +1,133 @@
+{
+ "case_id": "case_05",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case05-claim",
+ "routing": "route",
+ "named_gap": null,
+ "basis": null,
+ "routing_reasons": [
+  "Not approvable: C4 is not met (unsupported).",
+  "No single missing document was named, so the case is routed."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "The structured exam observations from both the April and August visits document negative straight leg raise, normal 5/5 strength, symmetric 2+ reflexes, and intact sensation, and the visit note explicitly denies fever, weight loss, and bladder/bowel changes. No structured entry documents any red-flag finding (trauma, cancer history, infection, progressive neurologic deficit, saddle anesthesia, etc.), so the criterion is not met.",
+   "evidence": [
+    "Observation/case05-obs-01",
+    "Observation/case05-obs-02",
+    "note:p1",
+    "note:p3"
+   ],
+   "policy_passages": [
+    "L34220-30",
+    "L34220-27",
+    "L34220-28",
+    "L34220-29",
+    "L34220-31",
+    "L34220-32",
+    "L34220-33",
+    "L34220-34"
+   ],
+   "policy_quote": "Clinically significant or progressive neurologic deficit in the lower extremity",
+   "status": "unsupported"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "Low back pain is documented as starting 2026-01-26, and the request is dated 2026-08-14, well over four weeks later. A structured Procedure records 12 physical therapy sessions from 2026-02-09 to 2026-03-27, and a structured MedicationRequest documents daily acetaminophen from 2026-02-02; the record shows the patient's symptoms are unchanged across follow-up encounters in April and August, so the trial did not resolve the pain.",
+   "evidence": [
+    "Condition/case05-cond-01",
+    "Procedure/case05-pt-01",
+    "MedicationRequest/case05-med-01",
+    "Encounter/case05-enc-01",
+    "Encounter/case05-enc-02",
+    "Encounter/case05-enc-03",
+    "Encounter/case05-enc-04",
+    "note:p1",
+    "note:p2",
+    "note:p4"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36",
+    "L34220-37"
+   ],
+   "policy_quote": "MRI will be covered only if the patient has not responded to a reasonable trial of conservative management lasting at least four weeks",
+   "status": "supported"
+  },
+  "C3_informs_management": {
+   "explanation": "The August 6 encounter and visit note document that a lumbar medial branch block (an intervertebral joint injection) is being planned, and the MRI is requested before that procedure. An injection of this kind is the example of aggressive treatment the LCD cites as sufficient to make imaging findings relevant to medical decision-making.",
+   "evidence": [
+    "Encounter/case05-enc-04",
+    "note:p5"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "A lumbar MRI used to evaluate uncomplicated degenerative disc disease or herniated nucleus pulposus is not considered medically necessary when a surgical intervention or other aggressive treatment (e.g. intervertebral joint injection) is not under consideration.",
+   "status": "supported"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "A prior lumbar MRI was performed on 2026-04-09 and its DiagnosticReport gives conclusive findings (multilevel degenerative disc disease, facet arthropathy, no stenosis, no nerve root compression, no fracture), not an inconclusive study. The only stated reason for repeating the MRI is that it is four months old, while the record also states the exam and symptoms are unchanged since April, so no documented clinical need for a second study is shown.",
+   "evidence": [
+    "Procedure/case05-img-01",
+    "DiagnosticReport/case05-dr-01",
+    "note:p2",
+    "note:p5"
+   ],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "unsupported"
+  }
+ },
+ "contradictions": [
+  {
+   "criterion": "C4",
+   "description": "The note's stated justification for repeating the MRI is only that the prior study is four months old, which is contradicted by the DiagnosticReport documenting conclusive (not inconclusive) findings and by the record's own statement that the exam and symptoms are unchanged since that prior study.",
+   "evidence": [
+    "note:p5",
+    "DiagnosticReport/case05-dr-01",
+    "note:p3",
+    "note:p4"
+   ]
+  }
+ ],
+ "missing_document_suggested": null,
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a repeat lumbar MRI without contrast for an 82-year-old man with chronic axial low back pain, ordered ahead of a planned lumbar medial branch block. No red-flag finding is documented (C1 unsupported), but a conservative trial of physical therapy and scheduled acetaminophen lasting well over four weeks without resolution is documented (C2 supported), and the planned injection means findings would inform management (C3 supported). However, the record shows a conclusive lumbar MRI from four months earlier with unchanged clinical findings, and the only stated reason for repeating the study is the passage of time, which contradicts the documented need-for-both-studies requirement (C4 unsupported).",
+ "confidence": "high",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 8166,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 6462,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 6807,
+  "output_tokens_details": {
+   "thinking_tokens": 5165
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNUZniX2yUk2VAbMhkS",
+ "attempts": 1,
+ "seconds": 67.5
+}

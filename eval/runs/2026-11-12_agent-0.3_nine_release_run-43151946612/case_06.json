@@ -1,0 +1,133 @@
+{
+ "case_id": "case_06",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case06-claim",
+ "routing": "route",
+ "named_gap": null,
+ "basis": null,
+ "routing_reasons": [
+  "Not approvable: C3 is not met (undeterminable); neither C1 (undeterminable) nor C2 (unsupported) is met.",
+  "Routed because the record contradicts itself on C1, the red-flag criterion; when a case is not approvable, a red-flag question goes to a physician rather than to a document request (EVAL_PLAN.md, C1; ADR-12)."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "The visit note claims a 'history of breast cancer' (note:p2, p4, p5) and frames the MRI as a work-up for metastatic disease, which would be the red flag 'history of cancer.' However, the structured Condition entry for this history (case06-cond-02) is coded as 'Benign neoplasm of left breast' (resolved 2016), and the associated Procedure (case06-proc-01) is 'Excision of lesion of left breast,' not a cancer diagnosis or treatment. The structured exam Observation (case06-obs-01) and the note itself also document negative neurologic findings (normal strength, reflexes, sensation, negative straight leg raise) and no fever, chills, weight loss, or bladder/bowel symptoms. Because the only claimed red flag is contradicted by the structured record and no other red flag is documented, C1 is undeterminable.",
+   "evidence": [
+    "note:p2",
+    "note:p4",
+    "note:p5",
+    "Condition/case06-cond-02",
+    "Procedure/case06-proc-01",
+    "Observation/case06-obs-01",
+    "Condition/case06-cond-01"
+   ],
+   "policy_passages": [
+    "L34220-16",
+    "L34220-20",
+    "L34220-30",
+    "L34220-33"
+   ],
+   "policy_quote": "History of cancer",
+   "status": "undeterminable"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "The structured Condition (case06-cond-01) shows low back pain onset on 2026-07-27, only about 16 days before the claim's creation date of 2026-08-12, well short of the one-month symptom duration the LCD requires before imaging is generally appropriate for a non-red-flag presentation. The only structured conservative-care entry is a Naproxen MedicationRequest (case06-med-01) authored 2026-08-11, started just one day before the request, not a trial of at least four weeks. The note's reference to prior OTC acetaminophen (note:p2) has no structured entry behind it. C2 is therefore unsupported.",
+   "evidence": [
+    "Condition/case06-cond-01",
+    "MedicationRequest/case06-med-01",
+    "Claim/case06-claim"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36",
+    "L34220-37"
+   ],
+   "policy_quote": "has not responded to a reasonable trial of conservative management lasting at least four weeks",
+   "status": "unsupported"
+  },
+  "C3_informs_management": {
+   "explanation": "The note's plan (note:p5) states the MRI is intended to look for metastatic disease given the cancer history and that abnormal findings would lead to an oncology referral, which could be an aggressive-treatment pathway. However, the stated rationale depends on a cancer history that the structured record contradicts (Condition/case06-cond-02 and Procedure/case06-proc-01 document a benign neoplasm and its excision, not cancer), and no structured entry documents a surgical intervention or other aggressive treatment under consideration for the back pain itself. Given this contradiction, whether the MRI findings would meaningfully inform treatment choices is undeterminable.",
+   "evidence": [
+    "note:p4",
+    "note:p5",
+    "Condition/case06-cond-02",
+    "Procedure/case06-proc-01"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "When the findings will not affect the treatment choices, the test is not reasonable or necessary.",
+   "status": "undeterminable"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "No prior spinal CT or other imaging study is referenced anywhere in the bundle or the visit note, so there is no documented study for this MRI to duplicate. Because this status rests on the absence of any prior imaging in the record, there is no specific id to cite.",
+   "evidence": [],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "supported"
+  }
+ },
+ "contradictions": [
+  {
+   "criterion": "C1",
+   "description": "The note claims a history of breast cancer as the basis for a red flag, but the structured Condition and Procedure entries document a benign neoplasm and its excision rather than cancer.",
+   "evidence": [
+    "note:p2",
+    "note:p4",
+    "note:p5",
+    "Condition/case06-cond-02",
+    "Procedure/case06-proc-01"
+   ]
+  },
+  {
+   "criterion": "C3",
+   "description": "The stated management rationale (ruling out metastatic disease, with oncology referral if abnormal) depends on the same claimed cancer history that the structured record contradicts.",
+   "evidence": [
+    "note:p4",
+    "note:p5",
+    "Condition/case06-cond-02",
+    "Procedure/case06-proc-01"
+   ]
+  }
+ ],
+ "missing_document_suggested": null,
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a lumbar MRI with and without contrast in a 67-year-old woman with two weeks of low back pain and no leg symptoms. C2 is unsupported because symptoms have lasted only about 16 days and the only documented conservative treatment (naproxen) began just one day before the request, both short of the four-week threshold. C1 and C3 are undeterminable because the note's stated rationale rests on a 'history of cancer' that the structured record contradicts, showing a benign neoplasm and its excision instead. C4 is supported since no prior imaging is documented in the record; overall the record contains an internal contradiction regarding the cancer history that bears on both C1 and C3.",
+ "confidence": "moderate",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 5048,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 6462,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 6994,
+  "output_tokens_details": {
+   "thinking_tokens": 5210
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNZYQmduBZrx9BBXnYi",
+ "attempts": 1,
+ "seconds": 66.6
+}

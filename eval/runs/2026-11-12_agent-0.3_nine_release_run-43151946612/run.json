@@ -1,0 +1,263 @@
+{
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "settings": {
+  "model": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "budget": "release",
+ "case_set": "nine",
+ "checklist_mode": false,
+ "git_commit": "fb5436a406fdf27fa805a2761121daf7c5080679",
+ "workflow_run": "https://github.com/enlaiweng/prior-auth-review-agent/actions/runs/43151946612",
+ "started_utc": "2026-11-12T04:01:07.535Z",
+ "cases": {
+  "case_01": {
+   "routing": "approve",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 7775,
+    "cache_creation_input_tokens": 6462,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 6462,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 3914,
+    "output_tokens_details": {
+     "thinking_tokens": 2660
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0708,
+   "seconds": 39,
+   "attempts": 1
+  },
+  "case_02": {
+   "routing": "route",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 6389,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 5519,
+    "output_tokens_details": {
+     "thinking_tokens": 4339
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0693,
+   "seconds": 53.5,
+   "attempts": 1
+  },
+  "case_03": {
+   "routing": "request",
+   "named_gap": {
+    "criterion": "C2",
+    "missing": "A structured Procedure entry or medication order documenting the physical therapy and/or anti-inflammatory trial for back pain (with dates/duration), to establish a reasonable trial of conservative management lasting at least four weeks."
+   },
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 5631,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 4283,
+    "output_tokens_details": {
+     "thinking_tokens": 2899
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0554,
+   "seconds": 40.9,
+   "attempts": 1
+  },
+  "case_04": {
+   "routing": "approve",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 6063,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 5349,
+    "output_tokens_details": {
+     "thinking_tokens": 4123
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0669,
+   "seconds": 49.8,
+   "attempts": 1
+  },
+  "case_05": {
+   "routing": "route",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 8166,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 6807,
+    "output_tokens_details": {
+     "thinking_tokens": 5165
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0857,
+   "seconds": 67.5,
+   "attempts": 1
+  },
+  "case_06": {
+   "routing": "route",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 5048,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 6994,
+    "output_tokens_details": {
+     "thinking_tokens": 5210
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0813,
+   "seconds": 66.6,
+   "attempts": 1
+  },
+  "case_07": {
+   "routing": "route",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 5158,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 5144,
+    "output_tokens_details": {
+     "thinking_tokens": 3726
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.063,
+   "seconds": 49.1,
+   "attempts": 1
+  },
+  "case_09": {
+   "routing": "approve",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 7237,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 3463,
+    "output_tokens_details": {
+     "thinking_tokens": 2318
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0504,
+   "seconds": 32.6,
+   "attempts": 1
+  },
+  "case_11": {
+   "routing": "route",
+   "named_gap": null,
+   "error": null,
+   "model_returned": "claude-sonnet-5",
+   "stop_reason": "end_turn",
+   "usage": {
+    "input_tokens": 6082,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6462,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 4515,
+    "output_tokens_details": {
+     "thinking_tokens": 3177
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+   },
+   "cost_usd_estimate": 0.0586,
+   "seconds": 44.5,
+   "attempts": 1
+  }
+ },
+ "finished_utc": "2026-11-12T04:08:31.159Z",
+ "models_returned": [
+  "claude-sonnet-5"
+ ],
+ "errors": [],
+ "cost_usd_estimate_total": 0.6014
+}

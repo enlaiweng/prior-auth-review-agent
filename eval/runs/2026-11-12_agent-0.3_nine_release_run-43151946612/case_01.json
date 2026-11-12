@@ -1,0 +1,117 @@
+{
+ "case_id": "case_01",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case01-claim",
+ "routing": "approve",
+ "named_gap": null,
+ "basis": "C2",
+ "routing_reasons": [
+  "C3 and C4 are supported, and C2 is supported with a record entry other than the visit note; every applicable criterion cites the policy and every cited id exists in the case."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "No red-flag finding is present. The structured exam Observation and the Condition record show a neurologically intact patient (negative straight-leg raise, 5/5 strength, symmetric 2+ reflexes, intact sensation, no fever, weight loss, or bladder/bowel change), consistent with the note's history and exam.",
+   "evidence": [
+    "Observation/case01-obs-01",
+    "Condition/case01-cond-01",
+    "note:p1",
+    "note:p3",
+    "note:p4"
+   ],
+   "policy_passages": [
+    "L34220-16",
+    "L34220-17",
+    "L34220-27",
+    "L34220-28",
+    "L34220-29",
+    "L34220-30",
+    "L34220-31",
+    "L34220-32",
+    "L34220-33",
+    "L34220-34"
+   ],
+   "policy_quote": "evaluating muscle strength, limb circumference, reflexes, sensation, straight leg raise, and sitting knee extension tests",
+   "status": "unsupported"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "Low back pain onset is dated 2026-04-27 (Condition/case01-cond-01), more than four weeks before the 2026-08-14 request, and conservative care is documented structurally: a completed Physical therapy Procedure (2026-06-02 to 2026-07-28, 16 sessions) and an acetaminophen MedicationRequest from 2026-04-29. Follow-up encounters and the note describe persistent pain at baseline severity despite this treatment, consistent with no response to conservative management.",
+   "evidence": [
+    "Condition/case01-cond-01",
+    "Procedure/case01-pt-01",
+    "MedicationRequest/case01-med-01",
+    "Encounter/case01-enc-02",
+    "Encounter/case01-enc-03",
+    "Encounter/case01-enc-04",
+    "note:p2",
+    "note:p4"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36",
+    "L34220-37"
+   ],
+   "policy_quote": "MRI will be covered only if the patient has not responded to a reasonable trial of conservative management lasting at least four weeks.",
+   "status": "supported"
+  },
+  "C3_informs_management": {
+   "explanation": "The encounter record and the note both document referral to pain management for a lumbar facet joint injection, an aggressive treatment, with the MRI requested specifically to identify the levels involved before that injection. This shows the imaging result will directly inform the treatment plan.",
+   "evidence": [
+    "Encounter/case01-enc-04",
+    "note:p5"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "the information gained from the test will be used for medical decision-making",
+   "status": "supported"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "No prior lumbar imaging study (such as a CT) is referenced anywhere in the structured record or the note, so there is no indication of duplicative imaging requiring additional justification.",
+   "evidence": [],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "supported"
+  }
+ },
+ "contradictions": [],
+ "missing_document_suggested": null,
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a non-contrast lumbar MRI in a 77-year-old with axial low back pain since late April 2026. No red-flag findings are documented in either the structured exam or the note (C1 unsupported), but conservative management—physical therapy and acetaminophen—lasting well over four weeks without sustained improvement is documented in structured Procedure and MedicationRequest entries (C2 supported). The MRI is intended to guide a planned lumbar facet joint injection (C3 supported), and no prior lumbar imaging is referenced, so duplication is not a concern (C4 supported). The record is internally consistent with no contradictions and no missing single document needed.",
+ "confidence": "high",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 7775,
+  "cache_creation_input_tokens": 6462,
+  "cache_read_input_tokens": 0,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 6462,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 3914,
+  "output_tokens_details": {
+   "thinking_tokens": 2660
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNF4RGM3wU4kHRDs3Lh",
+ "attempts": 1,
+ "seconds": 39
+}

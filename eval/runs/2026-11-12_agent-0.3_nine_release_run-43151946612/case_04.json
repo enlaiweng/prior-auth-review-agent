@@ -1,0 +1,104 @@
+{
+ "case_id": "case_04",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case04-claim",
+ "routing": "approve",
+ "named_gap": null,
+ "basis": "C1",
+ "routing_reasons": [
+  "C3 and C4 are supported, and C1 is supported with a record entry other than the visit note; every applicable criterion cites the policy and every cited id exists in the case."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "Structured Observations document motor weakness that is both clinically significant and progressive: left ankle dorsiflexion and great toe extension were 4/5 on 2026-07-30 and fell to 2/5 by 2026-08-07, with new steppage gait and sensory loss on the later exam. This is an independent structured finding (not note-only) matching the LCD's 'clinically significant or progressive neurologic deficit' and 'clinically significant motor weakness' red flags, and is consistent with the note's assessment of foot drop.",
+   "evidence": [
+    "Observation/case04-obs-01",
+    "Observation/case04-obs-02",
+    "note:p3",
+    "note:p4"
+   ],
+   "policy_passages": [
+    "L34220-16",
+    "L34220-30",
+    "L34220-33"
+   ],
+   "policy_quote": "Clinically significant or progressive neurologic deficit in the lower extremity",
+   "status": "supported"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "Symptom onset is recorded as 2026-07-27 (Condition/case04-cond-01) and the conservative therapy, naproxen, began 2026-07-30 (MedicationRequest/case04-med-01); the request date is 2026-08-07, only 11 days from onset and 8 days of naproxen use. Both durations fall well short of the four-week threshold the LCD requires for a non-red-flag conservative trial, so this criterion is not met on this record.",
+   "evidence": [
+    "Condition/case04-cond-01",
+    "MedicationRequest/case04-med-01",
+    "Encounter/case04-enc-01",
+    "Encounter/case04-enc-02"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36"
+   ],
+   "policy_quote": "has not responded to a reasonable trial of conservative management lasting at least four weeks",
+   "status": "unsupported"
+  },
+  "C3_informs_management": {
+   "explanation": "The structured reasonCode of the 2026-08-07 encounter records an 'urgent spine surgery referral' and the visit note's plan documents urgent referral to spine surgery to evaluate for decompression, indicating a surgical intervention is actively under consideration whose planning depends on the MRI findings.",
+   "evidence": [
+    "Encounter/case04-enc-02",
+    "note:p5"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "Medicare expects that the information gained from the test will be used for medical decision-making",
+   "status": "supported"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "The record contains no CT scan, prior lumbar MRI, or other imaging study of the spine; there is nothing documenting a duplicative study, so the requested MRI is not shown to duplicate prior imaging.",
+   "evidence": [],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "supported"
+  }
+ },
+ "contradictions": [],
+ "missing_document_suggested": null,
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a lumbar MRI without contrast for a 71-year-old man with acute, 11-day left-sided radiculopathy and progressively worsening left foot weakness, documented by structured exam findings showing strength decline from 4/5 to 2/5. C1 is supported by this objective, progressive motor deficit; C2 is not supported because both symptom duration and conservative therapy (naproxen) are under four weeks; C3 is supported by a structured and narrative record of urgent surgical referral for decompression evaluation; C4 is supported because no other spinal imaging appears in the record. No contradictions were identified and no single missing document is needed to resolve any criterion.",
+ "confidence": "high",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 6063,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 6462,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 5349,
+  "output_tokens_details": {
+   "thinking_tokens": 4123
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNQteSBdRS2BgWA9m2z",
+ "attempts": 1,
+ "seconds": 49.8
+}
