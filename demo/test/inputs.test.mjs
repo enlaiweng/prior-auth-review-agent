@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { build, startFakeModel, startDemo, live, sql, PASSCODE, FAKE_KEY, ROOT, finalLabels, reportFrom } from "./local-demo.mjs";
 
 const ALL = Array.from({ length: 12 }, (_, i) => "case_" + String(i + 1).padStart(2, "0"));
-const LIVE = ["case_01", "case_02", "case_03"];
+const LIVE = ["case_01", "case_02", "case_03", "case_04", "case_05"];   // the development cases: the live scope until run 1
 let fake;
 before(async () => { build(); fake = await startFakeModel(); });
 after(() => fake.stop());
@@ -84,7 +84,7 @@ test("positive: with approvals on, each live case gets its own right outcome (ap
       for (const other of ALL.filter(x => x !== id)) assert.ok(!sent.includes(`case${other.slice(5)}-claim`), id + ": no other case's record");
       assert.ok(!/expected_routing|intended answer/i.test(sent), id + ": no labels or intended answers");
     }
-    assert.deepEqual(Object.values(seen).sort(), ["approve", "request", "route"], "all three outcomes are exercised");
+    assert.deepEqual([...new Set(Object.values(seen))].sort(), ["approve", "request", "route"], "all three outcomes are exercised");
   });
 });
 
@@ -245,7 +245,7 @@ test("negative: refused cases and wrong passcodes never reach the model; refusal
       assert.equal(r.status, 403, "passcode " + JSON.stringify(p)); assert.equal(r.json.code, "bad_passcode");
     }
     assert.equal(fake.calls.length, 0);
-    for (let i = 0; i < 5; i++) assert.equal((await live(base, "case_01", "nope-" + i, v)).status, 403, "27 refusals cost none of the five tries");
+    for (let i = 0; i < 5; i++) assert.equal((await live(base, "case_01", "nope-" + i, v)).status, 403, "21 refusals cost none of the five tries");
     // Request header names are not case-sensitive, so a correctly made request in another letter case still works.
     fake.reply = () => ({ report: goodReport("case_01") });
     const r = await fetch(base + "/api/run/case_01", { method: "POST", headers: { "x-demo": "1", "content-type": "application/json; charset=utf-8", "CF-Connecting-IP": "192.0.2.21" }, body: JSON.stringify({ passcode: PASSCODE, extra: "ignored" }) });

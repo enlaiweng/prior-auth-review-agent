@@ -6,10 +6,10 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
-import { build, startFakeModel, startDemo, PASSCODE, ROOT, finalLabels, reportFrom } from "./local-demo.mjs";
+import { build, startFakeModel, startDemo, PASSCODE, ROOT, finalLabels, reportFrom, editContent, unsettledAndOutside } from "./local-demo.mjs";
 
 const ALL = Array.from({ length: 12 }, (_, i) => "case_" + String(i + 1).padStart(2, "0"));
-const LIVE = ["case_01", "case_02", "case_03"];
+const LIVE = ["case_01", "case_02", "case_03", "case_04", "case_05"];   // the development cases: the live scope until run 1
 const HELD = ["case_08", "case_10", "case_12"];
 let browser, fake;
 before(async () => {
@@ -93,7 +93,7 @@ test("2. browsing every case: the right heading, record, address and live-run pa
       if (LIVE.includes(id)) assert.equal(await page.locator("#pc").count(), 1, id + ": a passcode box");
       else {
         assert.equal(await page.locator("#pc").count(), 0, id + ": no passcode box");
-        assert.match(card, HELD.includes(id) ? /held-out/ : /isn't settled yet|outside clinician|Until the first full run/, id);
+        assert.match(card, HELD.includes(id) ? /held-out/ : /Until the first full run/, id);
       }
       if (HELD.includes(id)) assert.match(await page.locator("#main .lead").first().innerText(), /held-out case/);
     }
@@ -156,7 +156,8 @@ test("6. with approvals on: approve, request one document, and physician review,
   await withDemo({ CHECKLIST_MODE: "false" }, async d => {
     const { ctx, page, problems } = await visit(d.base);
     assert.match(await page.locator("#mode").innerText(), /^Approvals are on/);
-    const want = { case_01: /Approve[\s\S]*The approval rests on C2/, case_02: /Send to physician review/, case_03: /Request one document[\s\S]*Document requested for C2: dates, duration/ };
+    const want = { case_01: /Approve[\s\S]*The approval rests on C2/, case_02: /Send to physician review/, case_03: /Request one document[\s\S]*Document requested for C2: dates, duration/,
+                   case_04: /Approve[\s\S]*The approval rests on C1/, case_05: /Send to physician review/ };
     for (const id of LIVE) {
       fake.reply = () => ({ report: goodReport(id) });
       await openCase(page, id);
@@ -412,4 +413,26 @@ test("18. if the demo stops answering mid-visit, the page says so in plain words
     await v.page.waitForSelector("#main .err", { timeout: 10000 });
     assert.match(await v.page.locator("#main .err").innerText(), /can't be reached/);
   } finally { await ctx?.close(); d.stop(); }
+});
+
+test("19. a case that isn't settled yet, and one an outside clinician is reading, say why and offer no passcode box", async () => {
+  // No golden case is in either state now, so the built content is changed for this scenario: case 05 as not settled
+  // yet, case 04 as an outside clinician's case.
+  try {
+    editContent(unsettledAndOutside);
+    await withDemo({}, async d => {
+      const { ctx, page, problems } = await visit(d.base);
+      for (const [id, why] of [["case_05", /isn't settled yet/], ["case_04", /outside clinician is reading this case/]]) {
+        assert.equal(await page.locator(`.cases button[data-case="${id}"] .sub`).innerText(), "Not live yet", id);
+        await openCase(page, id);
+        assert.match(await page.locator("#livecard").innerText(), why, id);
+        assert.equal(await page.locator("#pc").count(), 0, id + ": no passcode box");
+      }
+      assert.equal(await page.locator('.cases button[data-case="case_01"] .sub').innerText(), "Can run live", "the other cases are unaffected");
+      assert.deepEqual(problems, []);
+      await ctx.close();
+    });
+  } finally {
+    build();   // back to the repository's own content
+  }
 });

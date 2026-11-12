@@ -1,0 +1,29 @@
+# Final labels for one case (Amendment 2): Enlai Weng's blind labels with the disagreements settled against the
+# policy text. labels_blind.yaml stays unchanged; every change from it is listed under changes_from_blind with its reason.
+# Written by eval/tools/settle.py from the owner's decisions; check_labels.py confirms the list matches the real difference.
+case_id: case_05
+settled_on: 2026-11-10
+criteria:
+  C1_red_flag:             {status: unsupported, evidence: []}
+  C2_conservative_4wk:     {status: supported, evidence: [Procedure/case05-pt-01, note:p2]}
+  C3_informs_management:   {status: supported, evidence: [Encounter/case05-enc-04, note:p5]}
+  C4_no_duplicate_imaging: {status: unsupported, evidence: [Procedure/case05-img-01, DiagnosticReport/case05-dr-01, Observation/case05-obs-02, note:p5]}
+expected_routing: route
+named_gap: null
+changes_from_blind:
+  - field: C4_no_duplicate_imaging.status
+    from: undeterminable
+    to: unsupported
+    reason: "There is a lumbar MRI from April 9 with a clear report: wear-and-tear changes and facet arthritis, no stenosis and no nerve compression. Since then his symptoms and exam are unchanged, and the only reason the plan gives for repeating it is that four months have passed. C4 allows a second study only when the record documents the need for both, such as an inconclusive first study. Nothing here does, so C4 is unsupported."
+  - field: C4_no_duplicate_imaging.evidence
+    from: [DiagnosticReport/case05-dr-01, note:p5]
+    to: [Procedure/case05-img-01, DiagnosticReport/case05-dr-01, Observation/case05-obs-02, note:p5]
+    reason: "Cite the earlier MRI and its report, the unchanged August exam, and the plan line that gives time as the only reason."
+  - field: expected_routing
+    from: request
+    to: route
+    reason: "With C4 unsupported, the case can't be approved, and no document the office could send would change that, because the record already holds the reason they gave. A physician can decide whether time alone justifies a repeat MRI before the block. My blind request asked for a better reason, not a missing document."
+  - field: named_gap
+    from: "{criterion: C4, missing: \"not determined if duplicate MRI is needed. need confirmation.\"}"
+    to: "null"
+    reason: "Route, not request, so no gap."

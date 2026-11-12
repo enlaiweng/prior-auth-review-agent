@@ -57,9 +57,9 @@ changes daily. No address, passcode or browser detail is stored.
 | Setting | Now | Change it when |
 | --- | --- | --- |
 | `scope` | `dev`: only cases 01 to 05 | Run 1 is done: set it to `nine` (every case not held out). |
-| `outside_reader_open` | 04, 05, 07, 10 | Dr. Dabs's labels are merged: remove his cases (an empty list is `[]`). |
+| `outside_reader_open` | none (`[]`) | An outside reader is invited: list their cases here until their labels are merged. |
 
-With today's settings, cases 01, 02 and 03 run live. Each change reaches the demo at its next deploy.
+With today's settings, cases 01 to 05 run live. Each change reaches the demo at its next deploy.
 
 ## Stored decisions
 

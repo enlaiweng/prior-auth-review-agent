@@ -2,10 +2,11 @@
 // Each refusal is checked for its status, its reason, and that it reached no model and changed no count.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { build, startFakeModel, startDemo, live, PASSCODE, FAKE_KEY, finalLabels, reportFrom } from "./local-demo.mjs";
+import { build, startFakeModel, startDemo, live, PASSCODE, FAKE_KEY, finalLabels, reportFrom, editContent, unsettledAndOutside } from "./local-demo.mjs";
 
-// Live now: the development cases (01 to 05) that are settled and not being read by the outside clinician (demo/live_scope.json).
-const LIVE = ["case_01", "case_02", "case_03"];
+// Live now: the development cases, 01 to 05. All twelve cases are settled and no outside reader is invited
+// (demo/live_scope.json), so until run 1 the development set is the whole live scope.
+const LIVE = ["case_01", "case_02", "case_03", "case_04", "case_05"];
 let fake;
 before(async () => { build(); fake = await startFakeModel(); });
 after(() => fake.stop());
@@ -44,9 +45,7 @@ test("the page and the read-only interface, in the default (checklist) mode", as
     assert.deepEqual(list.filter(c => c.live_refusal === null).map(c => c.case), LIVE, "exactly the cases the live scope allows");
     const why = id => list.find(c => c.case === id);
     for (const id of ["case_08", "case_10", "case_12"]) { assert.equal(why(id).refusal, "held_out"); assert.match(why(id).live_refusal, /held-out/); }
-    for (const id of ["case_05", "case_07"]) { assert.equal(why(id).refusal, "unlabeled"); assert.match(why(id).live_refusal, /isn't settled yet/); }
-    assert.equal(why("case_04").refusal, "outside_reader"); assert.match(why("case_04").live_refusal, /outside clinician is reading/);
-    for (const id of ["case_06", "case_09", "case_11"]) { assert.equal(why(id).refusal, "before_run1"); assert.match(why(id).live_refusal, /run 1/); }
+    for (const id of ["case_06", "case_07", "case_09", "case_11"]) { assert.equal(why(id).refusal, "before_run1"); assert.match(why(id).live_refusal, /run 1/); }
     assert.equal(s.live_scope, "dev");
     assert.ok(list.every(c => c.stored === null), "no stored run yet");
 
@@ -82,9 +81,7 @@ test("live runs: every refusal, then a real one routed in checklist mode, with t
     }
     r = await live(base, "case_99"); assert.equal(r.status, 404);
     for (const id of ["case_08", "case_10", "case_12"]) { r = await live(base, id); assert.equal(r.status, 409, id); assert.equal(r.json.code, "not_live"); assert.match(r.json.error, /held-out/); }
-    for (const id of ["case_05", "case_07"]) { r = await live(base, id); assert.equal(r.status, 409, id); assert.match(r.json.error, /isn't settled yet/); }
-    r = await live(base, "case_04"); assert.equal(r.status, 409); assert.match(r.json.error, /outside clinician/);
-    for (const id of ["case_06", "case_09", "case_11"]) { r = await live(base, id); assert.equal(r.status, 409, id); assert.match(r.json.error, /run 1/); }
+    for (const id of ["case_06", "case_07", "case_09", "case_11"]) { r = await live(base, id); assert.equal(r.status, 409, id); assert.match(r.json.error, /run 1/); }
     r = await live(base, "case_01", "wrong-passcode-123"); assert.equal(r.status, 403); assert.equal(r.json.code, "bad_passcode");
     r = await live(base, "case_01", PASSCODE + " "); assert.equal(r.status, 403, "no trimming: the passcode must match exactly");
     assert.equal(fake.calls.length, 0, "no refusal reached the model");
@@ -232,6 +229,29 @@ test("without a key or a proper passcode, live runs say they aren't set up", asy
   });
 });
 
+test("a case that isn't settled yet, and one an outside clinician is reading, say why and never run live", async () => {
+  // No golden case is in either state now, so the built content is changed for this test: case 05 as not settled yet,
+  // case 04 as an outside clinician's case.
+  try {
+    editContent(unsettledAndOutside);
+    await withDemo({}, async base => {
+      fake.calls.length = 0;
+      const before = await used(base);
+      const list = (await getJson(base, "/api/cases")).json.cases;
+      const why = id => list.find(c => c.case === id);
+      assert.deepEqual(list.filter(c => c.live_refusal === null).map(c => c.case), ["case_01", "case_02", "case_03"]);
+      assert.equal(why("case_05").refusal, "unlabeled"); assert.match(why("case_05").live_refusal, /isn't settled yet/);
+      assert.equal(why("case_04").refusal, "outside_reader"); assert.match(why("case_04").live_refusal, /outside clinician is reading/);
+      let r = await live(base, "case_05"); assert.equal(r.status, 409); assert.equal(r.json.code, "not_live"); assert.match(r.json.error, /isn't settled yet/);
+      r = await live(base, "case_04"); assert.equal(r.status, 409); assert.equal(r.json.code, "not_live"); assert.match(r.json.error, /outside clinician/);
+      assert.equal(fake.calls.length, 0, "neither refusal reached the model");
+      assert.equal(await used(base), before, "neither refusal counted as a run");
+    });
+  } finally {
+    build();   // back to the repository's own content
+  }
+});
+
 test("stored decisions from a finished run are shown, decided again under the current mode", async () => {
   const { reviewCase, AGENT_VERSION } = await import("../../agent/agent.js");
   const { SPEC_SHA256 } = await import("../../agent/spec.generated.js");
@@ -252,14 +272,11 @@ test("stored decisions from a finished run are shown, decided again under the cu
       started_utc: "2026-11-01T18:00:00Z", finished_utc: "2026-11-01T18:20:00Z", cases: { case_01: {}, case_02: {} } }));
     build(["--stored-run", dir]);
     // The Worker's own backstop: even if the content held a stored decision for a held-out case or an outside
-    // reader's case, it is never served.
-    const gen = join(ROOT, "demo/src/content.generated.js");
-    const text = readFileSync(gen, "utf8");
-    const prefix = "export const CONTENT = ";
-    const at = text.indexOf(prefix);
-    const content = JSON.parse(text.slice(at + prefix.length).replace(/;\s*$/, ""));
-    for (const id of ["case_04", "case_08"]) content.stored[id] = { ...content.stored.case_01, case_id: id };
-    writeFileSync(gen, text.slice(0, at) + prefix + JSON.stringify(content) + ";\n");
+    // reader's case, it is never served. No outside reader is invited now, so case 04 is made one for this test.
+    editContent(content => {
+      content.cases.case_04.refusal = "outside_reader";
+      for (const id of ["case_04", "case_08"]) content.stored[id] = { ...content.stored.case_01, case_id: id };
+    });
     for (const [mode, expected] of [[null, "route"], ["false", "approve"]]) {
       await withDemo({ CHECKLIST_MODE: mode }, async base => {
         const s = (await getJson(base, "/api/status")).json;

@@ -4,7 +4,7 @@
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
 import { createServer as netServer } from "node:net";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,25 @@ const ENV = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "true" };
 
 export function build(extra = []) {
   execFileSync("python3", ["demo/build_demo.py", ...extra], { cwd: ROOT, stdio: "ignore" });
+}
+
+// Changes the built content for one test, to stand in for a state no golden case is in right now: a case whose final
+// labels aren't settled yet, or one an outside clinician is still reading. All twelve cases are settled and no outside
+// reader is invited, so the repository itself can no longer show either. Call build() afterwards to go back to the
+// repository's own content, and only use this while no local demo is running.
+export function editContent(change) {
+  const gen = join(DEMO, "src/content.generated.js");
+  const text = readFileSync(gen, "utf8");
+  const prefix = "export const CONTENT = ";
+  const at = text.indexOf(prefix);
+  const content = JSON.parse(text.slice(at + prefix.length).replace(/;\s*$/, ""));
+  change(content);
+  writeFileSync(gen, text.slice(0, at) + prefix + JSON.stringify(content) + ";\n");
+}
+// The two made-up states the tests use: case 05 as not settled yet, case 04 as an outside clinician's case.
+export function unsettledAndOutside(content) {
+  Object.assign(content.cases.case_05, { labeled: false, refusal: "unlabeled" });
+  content.cases.case_04.refusal = "outside_reader";
 }
 
 // The labels a case's fake report is built from: the owner's final labels, so an approvable case's report really is
