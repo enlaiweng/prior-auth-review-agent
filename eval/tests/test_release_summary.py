@@ -99,6 +99,8 @@ class SummaryTest(unittest.TestCase):
         self.assertEqual(r("routing_agreement", [False, False, False]), "**below** in every run")
         self.assertEqual(r("routing_agreement", [True]), "met")
         self.assertEqual(r("routing_agreement", [False]), "**below**")
+        self.assertEqual(r("false_approvals", [True]), "holds")
+        self.assertEqual(r("evidence_validity", [False]), "**fails**")
         self.assertEqual(r("abstention_calibration", [None, None, None]), "nothing to measure")
 
     def test_the_held_out_list_is_the_one_the_run_script_enforces(self):
@@ -175,7 +177,7 @@ class SummaryTest(unittest.TestCase):
         rows = [row("case_91", "approve", "route")]
         s = score_of(rows, checklist=True, metrics=dict(cases_all_supported_but_label_not=1), meets=dict(false_approvals=None, checklist_all_supported=False))
         text = self.rs.summary([self.write("only", [decision("case_91", "route")], s)])
-        self.assertIn("| All four supported where the labels are not (checklist mode) | 0 (hard gate) | 1 | **fails** (run 1) |", text)
+        self.assertIn("| All four supported where the labels are not (checklist mode) | 0 (hard gate) | 1 | **fails** |", text)
         self.assertNotIn("| False approvals |", text)
         self.assertNotIn("For a checklist-mode release only", text)
         self.assertIn("checklist mode |", text)   # in the list of runs
@@ -329,6 +331,7 @@ class SummaryTest(unittest.TestCase):
         self.assertIn("## Thresholds\n", text)
         self.assertIn("| Metric | Threshold | The run | Reading |", text)
         self.assertIn("- Hard gates: hold in the run.", text)
+        self.assertIn("| False approvals | 0 (hard gate) | 0 of 2 | holds |", text)
         self.assertIn("- Citation faithfulness: meets its threshold.", text)
         self.assertIn("| case_00 | request | request (C3) | 4 of 4 |", text)
         self.assertIn("## Without the notes", text)

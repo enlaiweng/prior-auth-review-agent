@@ -132,10 +132,10 @@ def reading(metric, met):
     if all(x is None for x in met):
         return "nothing to measure"
     runs = lambda want: ", ".join(str(i + 1) for i, x in enumerate(met) if x is want)
+    if len(met) == 1:
+        return {True: "holds", False: "**fails**"}[met[0]] if metric in HARD else {True: "met", False: "**below**"}[met[0]]
     if metric in HARD:  # no range: one failure in any run fails the gate
         return "holds in every run" if not any(x is False for x in met) else f"**fails** (run {runs(False)})"
-    if len(met) == 1:
-        return "met" if met[0] else "**below**"
     if not any(x is False for x in met):
         return "met in every run"
     if not any(x is True for x in met):
