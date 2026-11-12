@@ -1,0 +1,129 @@
+{
+ "run": "eval/runs/2026-11-12_agent-0.3_nine_release_run-43151946612",
+ "checklist_mode": false,
+ "scored_cases": [
+  "case_01",
+  "case_02",
+  "case_03",
+  "case_04",
+  "case_05",
+  "case_06",
+  "case_07",
+  "case_09",
+  "case_11"
+ ],
+ "unscored_cases": [],
+ "errors": [],
+ "metrics": {
+  "false_approvals": 0,
+  "not_approvable_cases": 6,
+  "citation_faithfulness": 1.0,
+  "criteria_without_quote": 0,
+  "evidence_validity": 1.0,
+  "ids_cited": 121,
+  "per_criterion_agreement": 0.9722222222222222,
+  "routing_agreement": 1.0,
+  "missing_documentation_recall": 1.0,
+  "labeled_gaps": 1,
+  "abstention_calibration": 1.0,
+  "labeled_routes": 5,
+  "pend_rate": 0.6666666666666666,
+  "reviewer_minutes_per_case_estimate": 6.277777777777778,
+  "baseline_minutes_per_case_estimate": 9.833333333333334,
+  "cases_all_supported_but_label_not": 0
+ },
+ "meets_threshold": {
+  "false_approvals": true,
+  "citation_faithfulness": true,
+  "evidence_validity": true,
+  "per_criterion_agreement": true,
+  "routing_agreement": true,
+  "missing_documentation_recall": true,
+  "abstention_calibration": true
+ },
+ "cases": [
+  {
+   "case": "case_01",
+   "label": "approve",
+   "agent": "approve",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 6.0
+  },
+  {
+   "case": "case_02",
+   "label": "route",
+   "agent": "route",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 6.5
+  },
+  {
+   "case": "case_03",
+   "label": "request",
+   "agent": "request",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "gap": {
+    "label": {
+     "criterion": "C2",
+     "missing": "dates, duration, and response of the physical therapy and anti-inflammatory treatment"
+    },
+    "agent": {
+     "criterion": "C2",
+     "missing": "A structured Procedure entry or medication order documenting the physical therapy and/or anti-inflammatory trial for back pain (with dates/duration), to establish a reasonable trial of conservative management lasting at least four weeks."
+    },
+    "matched": true
+   },
+   "reviewer_minutes_estimate": 3.75
+  },
+  {
+   "case": "case_04",
+   "label": "approve",
+   "agent": "approve",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 5.25
+  },
+  {
+   "case": "case_05",
+   "label": "route",
+   "agent": "route",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 11.0
+  },
+  {
+   "case": "case_06",
+   "label": "route",
+   "agent": "route",
+   "error": null,
+   "statuses_agreeing": "3 of 4",
+   "reviewer_minutes_estimate": 7.25
+  },
+  {
+   "case": "case_07",
+   "label": "route",
+   "agent": "route",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 6.5
+  },
+  {
+   "case": "case_09",
+   "label": "approve",
+   "agent": "approve",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 4.5
+  },
+  {
+   "case": "case_11",
+   "label": "route",
+   "agent": "route",
+   "error": null,
+   "statuses_agreeing": "4 of 4",
+   "reviewer_minutes_estimate": 5.75
+  }
+ ]
+}

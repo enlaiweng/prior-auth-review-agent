@@ -1,0 +1,104 @@
+{
+ "case_id": "case_11",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case11-claim",
+ "routing": "route",
+ "named_gap": null,
+ "basis": null,
+ "routing_reasons": [
+  "Not approvable: C3 is not met (unsupported); neither C1 (unsupported) nor C2 (undeterminable) is met.",
+  "No single missing document was named, so the case is routed."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "The structured record (Condition/case11-cond-01, Observation/case11-obs-01) documents only non-specific low back pain with a normal neurologic exam: straight leg raise negative, strength 5/5, reflexes symmetric, sensation intact. No red-flag item from the LCD list (trauma, cancer, fever, weight loss, saddle anesthesia, bladder dysfunction, progressive neurologic deficit, etc.) is present in any structured entry, and the note itself (note:p1, note:p3, note:p4) also denies leg symptoms, fever, or weight loss.",
+   "evidence": [
+    "Observation/case11-obs-01",
+    "Condition/case11-cond-01"
+   ],
+   "policy_passages": [
+    "L34220-16",
+    "L34220-17",
+    "L34220-30",
+    "L34220-33"
+   ],
+   "policy_quote": "Clinically significant or progressive neurologic deficit in the lower extremity",
+   "status": "unsupported"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "The note (note:p2) states the patient completed eight weeks of physical therapy and NSAIDs without improvement, which would satisfy the four-week conservative-trial requirement, and the Condition's onset (2026-06-01) to the claim date (2026-08-14) exceeds one month of symptoms. However, no Procedure resource documents the physical therapy and no MedicationRequest documents an NSAID order; the only MedicationRequests present (simvastatin, metoprolol) are unrelated, so the conservative-care claim rests solely on the note with no structured entry behind it.",
+   "evidence": [
+    "note:p2",
+    "MedicationRequest/d17a831a-279f-aae8-fcbf-7956fb520a6b",
+    "MedicationRequest/d17a831a-279f-aae8-082f-af40c1f0b6ce",
+    "Condition/case11-cond-01"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36",
+    "L34220-37"
+   ],
+   "policy_quote": "has not responded to a reasonable trial of conservative management lasting at least four weeks",
+   "status": "undeterminable"
+  },
+  "C3_informs_management": {
+   "explanation": "The plan section of the note (note:p5) states the patient does not want injections or surgery and wants the MRI only to learn the cause of the pain, with continuation of home exercises as the only other plan. No surgical intervention or aggressive treatment (e.g., injection) is under consideration, so the findings would not change the treatment choice per the policy's requirement.",
+   "evidence": [
+    "note:p5"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "When the findings will not affect the treatment choices, the test is not reasonable or necessary.",
+   "status": "unsupported"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "The record contains no prior spinal CT, X-ray, or other imaging study for this patient, so there is nothing the requested lumbar MRI would duplicate; the claim item itself is the only imaging order present.",
+   "evidence": [],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "supported"
+  }
+ },
+ "contradictions": [],
+ "missing_document_suggested": null,
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a non-contrast lumbar MRI in a 79-year-old man with chronic low back pain since June 2026. The structured record shows a normal neurologic exam with no red-flag findings (C1 unsupported) and no other imaging to duplicate (C4 supported). The note's claim of an 8-week trial of physical therapy and NSAIDs is not backed by any structured Procedure or MedicationRequest, leaving C2 undeterminable, and the note explicitly states the patient declines surgery or injection, so the study would not inform an aggressive treatment decision (C3 unsupported). No single missing document would resolve the case, since C3 fails on its own terms regardless of further documentation.",
+ "confidence": "high",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 6082,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 6462,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 4515,
+  "output_tokens_details": {
+   "thinking_tokens": 3177
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNkUeMjQgZjpcN1FsWC",
+ "attempts": 1,
+ "seconds": 44.5
+}

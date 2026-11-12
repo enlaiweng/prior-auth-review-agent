@@ -1,0 +1,117 @@
+{
+ "case_id": "case_03",
+ "agent_version": "agent-0.3",
+ "spec_sha256": "d5ece339fac3dd8f5149b2aa3b16d3f42ef1f249512e6324394afcfcba5a107d",
+ "request": "Claim/case03-claim",
+ "routing": "request",
+ "named_gap": {
+  "criterion": "C2",
+  "missing": "A structured Procedure entry or medication order documenting the physical therapy and/or anti-inflammatory trial for back pain (with dates/duration), to establish a reasonable trial of conservative management lasting at least four weeks."
+ },
+ "basis": null,
+ "routing_reasons": [
+  "Not approvable: neither C1 (unsupported) nor C2 (undeterminable) is met.",
+  "The case falls short only on C2, which is undeterminable for want of one named document, and nothing in the record is contradicted."
+ ],
+ "checklist_mode": false,
+ "criteria": {
+  "C1_red_flag": {
+   "explanation": "The structured record (Condition/case03-cond-01 'Low back pain, unspecified'; Observation/case03-obs-01 exam findings) and the visit note both document a neurologically intact patient with negative straight-leg-raise, normal strength, reflexes, and sensation, no fever, weight loss, bladder/bowel change, or leg symptoms. No listed red-flag finding is present in any structured entry or the note, so the record shows the red-flag criterion is not met.",
+   "evidence": [
+    "Condition/case03-cond-01",
+    "Observation/case03-obs-01",
+    "note:p1",
+    "note:p3",
+    "note:p4"
+   ],
+   "policy_passages": [
+    "L34220-15",
+    "L34220-16",
+    "L34220-17",
+    "L34220-30",
+    "L34220-33",
+    "L34220-34"
+   ],
+   "policy_quote": "Clinically significant or progressive neurologic deficit in the lower extremity",
+   "status": "unsupported"
+  },
+  "C2_conservative_4wk": {
+   "explanation": "Low back pain onset is documented as 2026-05-08 (Condition/case03-cond-01, Encounter/case03-enc-01), and the request is dated 2026-08-12, so the one-month symptom threshold is met. However, the only mention of conservative therapy is in the note, which states the patient 'reports having tried physical therapy and anti-inflammatories' but 'cannot say when or for how long,' and no therapy Procedure or medication order for back pain appears in the structured record (the only MedicationRequest present is for hyperlipidemia), so the conservative-care element cannot be verified.",
+   "evidence": [
+    "note:p1",
+    "note:p2",
+    "Condition/case03-cond-01",
+    "Encounter/case03-enc-01",
+    "Encounter/case03-enc-02"
+   ],
+   "policy_passages": [
+    "L34220-35",
+    "L34220-36",
+    "L34220-37"
+   ],
+   "policy_quote": "MRI will be covered only if the patient has not responded to a reasonable trial of conservative management lasting at least four weeks.",
+   "status": "undeterminable"
+  },
+  "C3_informs_management": {
+   "explanation": "Both the note (p5) and the structured Encounter/case03-enc-02 reason code document that a lumbar facet joint injection was discussed and the patient wishes to proceed, with the MRI requested specifically to identify injection levels beforehand. This indicates the findings will directly inform an aggressive treatment decision.",
+   "evidence": [
+    "note:p5",
+    "Encounter/case03-enc-02"
+   ],
+   "policy_passages": [
+    "L34220-38",
+    "L34220-39"
+   ],
+   "policy_quote": "When a lumbar MRI is ordered, Medicare expects that the information gained from the test will be used for medical decision-making.",
+   "status": "supported"
+  },
+  "C4_no_duplicate_imaging": {
+   "explanation": "No prior lumbar imaging study (such as a CT) is referenced anywhere in the structured record or the visit note, so there is no indication this MRI duplicates another study.",
+   "evidence": [],
+   "policy_passages": [
+    "L34220-41"
+   ],
+   "policy_quote": "A lumbar MRI that is a duplication of other imaging studies (such as a spinal CT scan) may be unreasonable or unnecessary.",
+   "status": "supported"
+  }
+ },
+ "contradictions": [],
+ "missing_document_suggested": {
+  "criterion": "C2",
+  "missing": "A structured Procedure entry or medication order documenting the physical therapy and/or anti-inflammatory trial for back pain (with dates/duration), to establish a reasonable trial of conservative management lasting at least four weeks."
+ },
+ "invalid_evidence": [],
+ "invalid_policy_passages": [],
+ "case_summary": "This is a request for a lumbar spine MRI prior to a planned lumbar facet joint injection in a 70-year-old man with three months of low back pain. The record supports C3 (injection under consideration, MRI to guide it) and C4 (no evidence of prior duplicate imaging), but does not support C1 (no red-flag findings are documented in either the structured record or the note) and leaves C2 undeterminable because the note mentions physical therapy and anti-inflammatory use without any corroborating structured Procedure or medication order or clear duration. There are no internal contradictions on any criterion. A structured record of the conservative therapy trial, if available, could resolve the open question on C2.",
+ "confidence": "moderate",
+ "error": null,
+ "model": {
+  "requested": "claude-sonnet-5",
+  "returned": "claude-sonnet-5",
+  "effort": "high",
+  "thinking": {
+   "type": "adaptive"
+  },
+  "max_tokens": 16000
+ },
+ "stop_reason": "end_turn",
+ "usage": {
+  "input_tokens": 5631,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 6462,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 4283,
+  "output_tokens_details": {
+   "thinking_tokens": 2899
+  },
+  "service_tier": "standard",
+  "inference_geo": "global",
+  "speed": "standard"
+ },
+ "request_id": "req_011CgxNMsj34gYzp5UQtX5jg",
+ "attempts": 1,
+ "seconds": 40.9
+}
