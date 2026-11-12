@@ -1,6 +1,6 @@
 # The agent
 
-This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.2** (ADR-12: an approval is checked before the red-flag step).
+This folder is the versioned agent specification (docs/ARCHITECTURE.md, ADR-10): the instructions, the shape of the report, the input step, and the rule that chooses the outcome. One JavaScript module, used by the evaluation runs and, later, by the Cloudflare Worker, so the demo runs the agent that was evaluated. Current version: **agent-0.3** (the quoted policy words are one unbroken run copied from one passage; before it, agent-0.2, ADR-12: an approval is checked before the red-flag step).
 
 ## How a case is decided
 

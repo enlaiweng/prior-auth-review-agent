@@ -10,7 +10,7 @@ For each of the four criteria, report:
 - explanation: a short explanation a reviewer can check against the record, in two or three sentences: what the record shows for this criterion, and where.
 - evidence: the ids the status rests on, copied exactly from the list of ids you may cite. Resource ids are written as ResourceType/id; note paragraphs as note:pN.
 - policy_passages: the ids of the policy passages you checked the criterion against.
-- policy_quote: the words from those passages that the status turns on, copied exactly.
+- policy_quote: the words the status turns on, as one unbroken run of words copied exactly from one of those passages: a phrase or a sentence of at least three words, word for word, with its punctuation. Do not join separate phrases, do not use an ellipsis (...), and do not shorten or reword anything inside the run. When the status turns on several passages, quote one run from the most important one; the others are already listed in policy_passages.
 - status: supported, unsupported, or undeterminable. {{LEGEND}}
 
 Judge each criterion on its own, from the record. Count dates and durations to the request date, which is the Claim's created date.
