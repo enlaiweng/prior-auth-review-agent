@@ -67,7 +67,7 @@ while IFS='|' read -r set options suffix count; do
   echo "$out" >> "$list"
   # One notice per case in the run's log and check annotations: the decision in brief, readable without downloading
   # the artifact. Decisions carry no keys; for golden cases they appear only after the blind labels are in.
-  node eval/print_notices.mjs "$out"
+  node eval/print_notices.mjs "$out" || echo "(the notices for $out could not be printed; its files are complete)"
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
       echo "## ${out}"; echo
@@ -84,9 +84,16 @@ EOF
 # and its log.
 if [ "$cases" = "release-evaluation" ] || [ "$cases" = "rehearsal" ]; then
   page="eval/runs/${stamp}_${version}_${cases}_${budget}_run-${GITHUB_RUN_ID:-local}${mode}_summary.md"
+  # The page is a reading aid. If it cannot be made, the runs themselves are still delivered: a release evaluation
+  # runs once, and nothing after the runs may cost their results.
   # shellcheck disable=SC2046
-  python3 eval/release_summary.py $(cat "$list") > "$page"
-  echo "$page" >> "$list"
-  cat "$page"
-  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$page" >> "$GITHUB_STEP_SUMMARY"; fi
+  if python3 eval/release_summary.py $(cat "$list") > "$page.tmp"; then
+    mv "$page.tmp" "$page"
+    echo "$page" >> "$list"
+    cat "$page"
+    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$page" >> "$GITHUB_STEP_SUMMARY"; fi
+  else
+    rm -f "$page.tmp"
+    echo "::warning title=No summary page::eval/release_summary.py could not read these runs together; each run's own results are complete and are delivered as they are."
+  fi
 fi
