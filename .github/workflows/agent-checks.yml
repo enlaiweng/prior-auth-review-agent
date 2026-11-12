@@ -5,7 +5,8 @@
 #   1. The agent's tests (agent/test/): the routing rule, one scenario per rule; the note paragraphs and ids against the
 #      Python that builds the case pages, on every bundle; and the module with a fake model (settings, schema output,
 #      retries, failures routing). Nothing is sent to Anthropic.
-#   2. The scoring script's tests (eval/tests/test_score.py), on the smoke case.
+#   2. The scoring script's tests (eval/tests/test_score.py), on the smoke case, and the tests of the page that reads a
+#      release evaluation's runs together (eval/tests/test_release_summary.py), on made-up values.
 #   3. Up to date: rebuilding agent/spec.generated.js from the instructions, schema, criteria, and policy changes nothing.
 name: Agent checks
 
@@ -35,7 +36,7 @@ jobs:
       - name: Agent tests
         run: node --test 'agent/test/*.test.js'
       - name: Scoring tests
-        run: python -m unittest eval/tests/test_score.py -v
+        run: python -m unittest eval/tests/test_score.py eval/tests/test_release_summary.py -v
       - name: The generated spec matches its sources
         run: |
           python3 eval/tools/build_agent_spec.py

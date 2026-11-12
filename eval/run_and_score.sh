@@ -2,14 +2,22 @@
 # Run the agent and score the result: the body of the "Agent run" workflow, kept here so both of its jobs run the same
 # steps. Run from the repository root:
 #   bash eval/run_and_score.sh BUDGET CASES RUNS CHECKLIST
-# BUDGET is experiments or release; CASES is smoke, dev, nine, or all12; RUNS is how many runs in a row (3 for the
-# release evaluation); CHECKLIST is true to turn the approve output off. The key comes from ANTHROPIC_API_KEY.
-# Writes eval/runs/NAME/ for each run (decisions, run.json, score.json, score.md), and lists the folders it wrote in
-# the file named by RUN_LIST (default: run_folders.txt in the runner's temporary folder). Exit code 0 even when a case failed: the failure is in the decision and the score.
+# BUDGET is experiments or release; CASES is smoke, dev, nine, all12, release-evaluation, vendor-update, or rehearsal;
+# RUNS is how many runs in a row; CHECKLIST is true to turn the approve output off. The key comes from ANTHROPIC_API_KEY.
+# release-evaluation (release budget, after the freeze; docs/EVAL_PLAN.md; eval/README.md, rule 10) is the whole
+# release evaluation in one go, RUNS ignored: three runs on all 12, the two fairness pairs, one run on all 12 with the
+# notes removed, the two instruction-bearing cases with that sentence taken out, and all 12 on the vendor-update model.
+# vendor-update (release budget, after the freeze) is that last part by itself, for when it has to be run again.
+# rehearsal (experiments budget) tries the same machinery on the smoke case only: as it is, without its note, and on
+# the vendor-update model.
+# Writes eval/runs/NAME/ for each run (decisions, run.json, score.json, score.md); for release-evaluation and rehearsal
+# also eval/runs/NAME_summary.md, the runs read together (eval/release_summary.py). Lists what it wrote in the file
+# named by RUN_LIST (default: run_folders.txt in the runner's temporary folder).
+# Exit code 0 even when a case failed: the failure is in the decision and the score.
 set -euo pipefail
 budget="$1"; cases="$2"; runs="$3"; checklist="$4"
 case "$budget" in experiments|release) ;; *) echo "unknown budget: $budget"; exit 1 ;; esac
-case "$cases" in smoke|dev|nine|all12) ;; *) echo "unknown case set: $cases"; exit 1 ;; esac
+case "$cases" in smoke|dev|nine|all12|release-evaluation|vendor-update|rehearsal) ;; *) echo "unknown case set: $cases"; exit 1 ;; esac
 case "$runs" in 1|2|3) ;; *) echo "runs must be 1, 2, or 3"; exit 1 ;; esac
 case "$checklist" in true|false) ;; *) echo "checklist must be true or false"; exit 1 ;; esac
 
@@ -23,16 +31,38 @@ fi
 
 version=$(node -e 'import("./agent/agent.js").then(m => console.log(m.AGENT_VERSION))')
 stamp=$(date -u +%Y-%m-%d)
-base="${stamp}_${version}_${cases}_${budget}_run-${GITHUB_RUN_ID:-local}"
-flag=""; [ "$checklist" = "true" ] && flag="--checklist" && base="${base}_checklist"
+flag=""; mode=""; [ "$checklist" = "true" ] && flag="--checklist" && mode="_checklist"
 list="${RUN_LIST:-${RUNNER_TEMP:-/tmp}/run_folders.txt}"
 mkdir -p eval/runs
 : > "$list"
-for i in $(seq 1 "$runs"); do
+# The plan: one line per part, as "case set | extra options for eval/run_agent.mjs | name suffix | how many runs".
+if [ "$cases" = "release-evaluation" ]; then
+  [ "$budget" = "release" ] || { echo "stopped: the release evaluation runs only on the release budget"; exit 1; }
+  plan="all12||_|3
+pairs||_|1
+all12|--variant no-notes|-no-notes|1
+injection|--variant no-instruction|-no-instruction|1
+all12|--model vendor-update|-vendor-update|1"
+elif [ "$cases" = "vendor-update" ]; then
+  [ "$budget" = "release" ] || { echo "stopped: the vendor-update run uses the release budget"; exit 1; }
+  plan="all12|--model vendor-update|-vendor-update|1"
+elif [ "$cases" = "rehearsal" ]; then
+  [ "$budget" = "experiments" ] || { echo "stopped: the rehearsal runs only on the experiments budget"; exit 1; }
+  plan="smoke||_|1
+smoke|--variant no-notes|-no-notes|1
+smoke|--model vendor-update|-vendor-update|1"
+else
+  plan="${cases}||_|${runs}"
+fi
+while IFS='|' read -r set options suffix count; do
+ [ "$suffix" = "_" ] && suffix=""
+ base="${stamp}_${version}_${set}${suffix}_${budget}_run-${GITHUB_RUN_ID:-local}${mode}"
+ for i in $(seq 1 "$count"); do
   out="eval/runs/${base}"
-  [ "$runs" != "1" ] && out="${out}_${i}-of-${runs}"
+  [ "$count" != "1" ] && out="${out}_${i}-of-${count}"
+  runs="$count"
   echo "== run $i of $runs: $out"
-  node eval/run_agent.mjs --cases "$cases" --budget "$budget" --out "$out" $flag || [ $? -eq 2 ]
+  node eval/run_agent.mjs --cases "$set" --budget "$budget" --out "$out" $flag $options < /dev/null || [ $? -eq 2 ]
   python3 eval/score.py "$out" > /dev/null
   echo "$out" >> "$list"
   # One notice per case in the run's log and check annotations: the decision in brief, readable without downloading
@@ -46,3 +76,17 @@ for i in $(seq 1 "$runs"); do
     } >> "$GITHUB_STEP_SUMMARY"
   fi
 done
+done <<EOF
+$plan
+EOF
+
+# The runs read together (eval/README.md, rule 10): one page beside the run folders, also shown in the run's summary
+# and its log.
+if [ "$cases" = "release-evaluation" ] || [ "$cases" = "rehearsal" ]; then
+  page="eval/runs/${stamp}_${version}_${cases}_${budget}_run-${GITHUB_RUN_ID:-local}${mode}_summary.md"
+  # shellcheck disable=SC2046
+  python3 eval/release_summary.py $(cat "$list") > "$page"
+  echo "$page" >> "$list"
+  cat "$page"
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$page" >> "$GITHUB_STEP_SUMMARY"; fi
+fi
