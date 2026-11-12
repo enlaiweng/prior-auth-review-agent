@@ -3,7 +3,8 @@
 
 Usage (from the repository root): python3 eval/score.py eval/runs/RUN
 Reads RUN/<case>.json (decisions from eval/run_agent.mjs) and each case's final labels: data/golden/case_NN/labels.yaml,
-or data/smoke/case_00/labels.yaml for the smoke case. A case without final labels is listed as not scored. Blind and
+or data/smoke/case_00/labels.yaml for the smoke case. A paired fairness duplicate is scored against its original's
+labels (PAIRS below). A case without final labels is listed as not scored. Blind and
 Gemini labels are never used for scoring, and the locked intended answers are never read.
 Writes RUN/score.json and RUN/score.md. Exit code 0, whatever the scores; it only measures.
 
@@ -17,7 +18,8 @@ How each metric is counted (EVAL_PLAN.md; choices the plan leaves open are marke
   it is a whole passage (some passages are one word, such as "Fever"), so a fragment like "the" cannot pass.
 - Evidence validity: of every id cited (criteria and contradictions), the share that exists in the case: a resource
   in the bundle, or a note paragraph note:pN as eval/tools/build_case_pages.py numbers them. Hard gate: 100%. A run
-  that cites no id at all cannot show this, so the gate counts as not met.
+  that cites no id at all cannot show this, so the gate counts as not met. When a side check changed the note the
+  agent was given, the paragraphs that count are the ones it was shown (run.json records how many).
 - Checklist mode (run.json says checklist_mode): the false-approval gate is vacuous, so it is replaced by the plan's
   check that no case has all four criteria supported when its labels do not (EVAL_PLAN.md, Go/no-go rule), at zero.
 - Per-criterion agreement: of the four statuses per case, the share equal to the label's.
@@ -65,19 +67,30 @@ def quote_faithful(quote, cited_passages, passages):
     return len(q.split()) >= 3 or any(q.rstrip(".,;:") == t.rstrip(".,;:") for t in texts)
 
 
+# The paired fairness duplicates and the case each one copies (EVAL_PLAN.md): a pair shares its original's final labels.
+PAIRS = {"case_01_pair_sex": "case_01", "case_09_pair_race": "case_09"}
+
+
 def case_dir(case_id):
     return "data/smoke/case_00" if case_id == "case_00" else f"data/golden/{case_id}"
 
 
-def case_ids(cdir):
-    """Ids in the case: every resource in the bundle, and the note's paragraphs as build_case_pages.py numbers them."""
+def labels_path(case_id):
+    return os.path.join(case_dir(PAIRS.get(case_id, case_id)), "labels.yaml")
+
+
+def case_ids(cdir, note_paragraphs=None):
+    """Ids in the case: every resource in the bundle, and the note's paragraphs as build_case_pages.py numbers them.
+    note_paragraphs, when a run recorded it, is how many paragraphs the agent was shown: a side check that changes
+    the note (the no-notes run, the injection check) is held to the note as given, not as stored."""
     bundle = load(os.path.join(cdir, "bundle.json"))
     res = [e["resource"] for e in bundle["entry"]]
     ids = {f"{r['resourceType']}/{r['id']}" for r in res}
     doc = next(r for r in res if r["resourceType"] == "DocumentReference")
     note = base64.b64decode(doc["content"][0]["attachment"]["data"]).decode()
     paras = [p.strip() for p in re.split(r"\n\s*\n", note.strip()) if p.strip()]
-    ids.update(f"note:p{i}" for i in range(1, len(paras) + 1))
+    shown = len(paras) if note_paragraphs is None else note_paragraphs
+    ids.update(f"note:p{i}" for i in range(1, shown + 1))
     n_elements = len([r for r in res if r["resourceType"] != "DocumentReference"]) + 1
     return ids, f"DocumentReference/{doc['id']}", n_elements
 
@@ -92,17 +105,19 @@ def score(run_dir):
     for p in sorted(glob.glob(os.path.join(run_dir, "case_*.json"))):
         d = load(p)
         decisions[d["case_id"]] = d
+    run_json = os.path.join(run_dir, "run.json")
+    run = load(run_json) if os.path.exists(run_json) else {}
     scored, unscored, rows = [], [], []
     c = dict(fa=0, not_approvable=0, quotes=0, quotes_ok=0, no_quote=0, ids=0, ids_ok=0, crit=0, crit_ok=0,
              route_ok=0, gaps=0, gaps_hit=0, routes=0, routes_ok=0, pended=0, minutes=0.0, baseline=0.0, all_supported_mismatch=0)
     for cid, d in decisions.items():
-        lp = os.path.join(case_dir(cid), "labels.yaml")
+        lp = labels_path(cid)
         if not os.path.exists(lp):
             unscored.append(cid)
             continue
         lab = load(lp, "yaml")
         scored.append(cid)
-        ids, note_doc, n_el = case_ids(case_dir(cid))
+        ids, note_doc, n_el = case_ids(case_dir(cid), ((run.get("cases") or {}).get(cid) or {}).get("note_paragraphs"))
         crit = d.get("criteria") or {}
         routing = d["routing"]
         expected = lab["expected_routing"]
@@ -173,8 +188,7 @@ def score(run_dir):
         "baseline_minutes_per_case_estimate": ratio(c["baseline"], n),
         "cases_all_supported_but_label_not": c["all_supported_mismatch"],
     }
-    run_json = os.path.join(run_dir, "run.json")
-    checklist = os.path.exists(run_json) and bool(load(run_json).get("checklist_mode"))
+    checklist = bool(run.get("checklist_mode"))
     gates = {}
     for m, (kind, t) in THRESHOLDS.items():
         v = metrics[m]

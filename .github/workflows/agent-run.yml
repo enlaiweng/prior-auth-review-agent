@@ -7,9 +7,16 @@
 #      request lists these runs. No golden case runs before its final labels are merged on main (eval/run_agent.mjs).
 #   2. By hand, from the Actions page: choose the cases, the budget, and how many runs. On the "release" budget the job
 #      uses the "release" environment, so it runs only from main and only after the owner approves it, and it delivers
-#      the results as a pull request into eval/runs/. Nothing is merged by this workflow.
+#      the results as a pull request into eval/runs/. Nothing is merged by this workflow. The held-out cases run only
+#      after the freeze (the tag v1.0-freeze, holding the agent being run). "release-evaluation" is the whole release
+#      evaluation under one approval: three runs on all 12, the fairness pairs, the no-notes run, the injection check,
+#      and the vendor-update run, with one page reading them together (eval/run_and_score.sh;
+#      eval/release_summary.py; eval/README.md, rule 10). "vendor-update" is that last run by itself.
 # Keys: none is printed. The agent sends the key only in a request header to api.anthropic.com.
 name: Agent run
+# What a run started by hand is called in the list of runs and on the approval screen, so the owner can see what he is
+# about to approve: for example "Agent run: release-evaluation on the release budget".
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Agent run: {0} on the {1} budget', inputs.cases, inputs.budget) || 'Agent run: experiments on a push' }}"
 
 on:
   push:
@@ -20,14 +27,16 @@ on:
       - "eval/run_and_score.sh"
       - "eval/print_notices.mjs"
       - "eval/score.py"
+      - "eval/release_summary.py"
       - "eval/experiment_cases.txt"
+      - "eval/instruction_sentences.json"
       - ".github/workflows/agent-run.yml"
   workflow_dispatch:
     inputs:
       cases:
-        description: "Cases: smoke (the test case), dev (cases 01 to 05), nine (all but the held-out cases), all12"
+        description: "Cases: smoke (the test case), dev (cases 01 to 05), nine (all but the held-out cases), all12, release-evaluation (after the freeze: the whole release evaluation in one run), or vendor-update (after the freeze: all 12 on the newer model)"
         type: choice
-        options: ["smoke", "dev", "nine", "all12"]
+        options: ["smoke", "dev", "nine", "all12", "release-evaluation", "vendor-update"]
         default: "smoke"
         required: true
       budget:
@@ -37,7 +46,7 @@ on:
         default: "experiments"
         required: true
       runs:
-        description: "How many runs in a row (3 for the release evaluation)"
+        description: "How many runs in a row (ignored for release-evaluation and vendor-update)"
         type: choice
         options: ["1", "2", "3"]
         default: "1"
@@ -123,6 +132,13 @@ jobs:
           RUNS_IN: ${{ inputs.runs }}
           CHECKLIST_IN: ${{ inputs.checklist }}
         run: bash eval/run_and_score.sh release "$CASES_IN" "$RUNS_IN" "$CHECKLIST_IN"
+      - name: Keep the results with the run
+        if: always()   # also when the run stops partway: a release evaluation runs once, so nothing already produced may be lost
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: agent-run-${{ github.run_id }}
+          path: eval/runs/
+          retention-days: 90
       - name: Deliver the results as a pull request
         env:
           GH_TOKEN: ${{ github.token }}
@@ -138,11 +154,18 @@ jobs:
           git push -q origin "$branch"
           python3 - "$branch" > "$RUNNER_TEMP/pr.json" <<'PY'
           import json, os, sys
-          folders = [l.strip() for l in open(os.path.join(os.environ["RUNNER_TEMP"], "run_folders.txt")) if l.strip()]
+          written = [l.strip() for l in open(os.path.join(os.environ["RUNNER_TEMP"], "run_folders.txt")) if l.strip()]
+          folders = [w for w in written if os.path.isdir(w)]
+          pages = [w for w in written if os.path.isfile(w)]   # the runs read together (eval/release_summary.py)
           parts = ["**What to check**",
                    "- False approvals and evidence validity in each score table: both are hard gates.",
                    "- The model version returned, and the settings, at the top of each run.",
                    "- Any case marked as an error.", ""]
+          if pages:
+              parts[1:1] = ["- The page below reads the runs together. The release decision is not made here: it is the owner's, in docs/RELEASE_DECISION.md."]
+              for page in pages:
+                  parts += [f"Saved as `{page}`.", "", open(page).read().split("\n", 2)[2], ""]
+              parts += ["## Each run's own score table", ""]
           for f in folders:
               run = json.load(open(os.path.join(f, "run.json")))
               parts += [f"### {f}", "",
@@ -152,8 +175,11 @@ jobs:
                         f"Cost estimate ${run['cost_usd_estimate_total']}.", "",
                         open(os.path.join(f, "score.md")).read().split("\n", 2)[2], ""]
           parts += ["Opened by the Agent run workflow: " + os.environ["RUN_URL"]]
+          body = "\n".join(parts)
+          if len(body) > 60000:   # GitHub's limit is 65,536 characters; the full tables are in the files either way
+              body = body[:59000].rsplit("\n", 1)[0] + "\n\n(Shortened to fit; each folder's score.md has its full table.)\n\n" + parts[-1]
           print(json.dumps({"title": f"Agent run: {os.environ['CASES_IN']} (run {os.environ['GITHUB_RUN_ID']})",
-                            "head": sys.argv[1], "base": "main", "body": "\n".join(parts)}))
+                            "head": sys.argv[1], "base": "main", "body": body}))
           PY
           url=$(gh api "repos/${GITHUB_REPOSITORY}/pulls" --input "$RUNNER_TEMP/pr.json" --jq .html_url)
           echo "Pull request: $url" >> "$GITHUB_STEP_SUMMARY"

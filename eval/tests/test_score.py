@@ -142,5 +142,54 @@ class ScoreTest(unittest.TestCase):
             self.assertIn("case_01", s["unscored_cases"])
 
 
+class NoteAsGivenTest(unittest.TestCase):
+    """A side check that changes the note is held to the note the agent was shown (run.json, note_paragraphs).
+    The smoke case's stored note is one paragraph, so note:p1 exists in it and note:p2 does not."""
+
+    def setUp(self):
+        self.old = os.getcwd()
+        os.chdir(ROOT)
+        self.dir = tempfile.mkdtemp()
+        import score
+        self.score = score
+
+    def tearDown(self):
+        os.chdir(self.old)
+        shutil.rmtree(self.dir)
+
+    def validity(self, cited, **case):
+        with open(os.path.join(self.dir, "case_00.json"), "w") as f:
+            json.dump(decision(extra_ids=cited), f)
+        if case:
+            with open(os.path.join(self.dir, "run.json"), "w") as f:
+                json.dump({"checklist_mode": False, "cases": {"case_00": case}}, f)
+        s = self.score.score(self.dir)
+        return s["metrics"]["evidence_validity"], s["meets_threshold"]["evidence_validity"]
+
+    def test_the_count_the_run_recorded_decides_which_paragraphs_exist(self):
+        self.assertEqual(self.validity(["note:p1"]), (1.0, True))                        # no run.json: the stored note
+        self.assertEqual(self.validity(["note:p2"]), (2 / 3, False))
+        self.assertEqual(self.validity(["note:p2"], note_paragraphs=2), (1.0, True))     # the agent was shown two
+        self.assertEqual(self.validity(["note:p1"], note_paragraphs=1), (1.0, True))
+        self.assertEqual(self.validity(["note:p1"], note_paragraphs=0), (2 / 3, False))  # the agent was shown none
+        self.assertEqual(self.validity(["note:p3"], note_paragraphs=2), (2 / 3, False))
+
+    def test_a_run_that_did_not_record_it_is_held_to_the_stored_note(self):
+        self.assertEqual(self.validity(["note:p1"], routing="request"), (1.0, True))     # an older run.json: no count
+        self.assertEqual(self.validity(["note:p2"], routing="request"), (2 / 3, False))
+        self.assertEqual(self.validity(["note:p1"], note_paragraphs=None), (1.0, True))  # a bundle the agent could not read
+
+
+class PairLabelsTest(unittest.TestCase):
+    def test_a_fairness_pair_is_scored_against_its_originals_labels(self):
+        import score
+        self.assertEqual(score.labels_path("case_01_pair_sex"), os.path.join("data/golden/case_01", "labels.yaml"))
+        self.assertEqual(score.labels_path("case_09_pair_race"), os.path.join("data/golden/case_09", "labels.yaml"))
+        self.assertEqual(score.labels_path("case_03"), os.path.join("data/golden/case_03", "labels.yaml"))
+        self.assertEqual(score.labels_path("case_00"), os.path.join("data/smoke/case_00", "labels.yaml"))
+        # The pair's own folder is still where its record is read from, for the ids that may be cited.
+        self.assertEqual(score.case_dir("case_01_pair_sex"), "data/golden/case_01_pair_sex")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -100,6 +100,11 @@ def stored(run_dir, cases, version, sha, outside):
         raise SystemExit(f"{run_dir}: the run did not finish (no finished_utc); nothing built")
     if run.get("budget") != "release":
         raise SystemExit(f"{run_dir}: not a run on the release budget (budget {run.get('budget')!r}); nothing built")
+    if run.get("variant") or run.get("vendor_update"):
+        # A side check of the release evaluation (eval/README.md, rule 10): the agent was given a changed note, or the
+        # request went to another model. The viewer shows the agent as released, on the records as they are.
+        raise SystemExit(f"{run_dir}: a side check of the release evaluation (variant {run.get('variant')!r}, vendor-update model "
+                         f"{bool(run.get('vendor_update'))}), not a run of the agent as released; nothing built")
     if run.get("agent_version") != version or run.get("spec_sha256") != sha:
         raise SystemExit(f"{run_dir}: made by {run.get('agent_version')} (spec {str(run.get('spec_sha256'))[:12]}), but this "
                          f"commit's agent is {version} (spec {sha[:12]}). Point demo/stored_run.txt at a run of this agent.")
