@@ -132,6 +132,13 @@ jobs:
           RUNS_IN: ${{ inputs.runs }}
           CHECKLIST_IN: ${{ inputs.checklist }}
         run: bash eval/run_and_score.sh release "$CASES_IN" "$RUNS_IN" "$CHECKLIST_IN"
+      - name: Keep the results with the run
+        if: always()   # also when the run stops partway: a release evaluation runs once, so nothing already produced may be lost
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: agent-run-${{ github.run_id }}
+          path: eval/runs/
+          retention-days: 90
       - name: Deliver the results as a pull request
         env:
           GH_TOKEN: ${{ github.token }}
